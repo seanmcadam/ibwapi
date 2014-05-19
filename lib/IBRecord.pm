@@ -19,6 +19,7 @@ sub is_dirty;
 sub flush;
 sub _get_field;
 sub _flush;
+sub _lwp;
 
 # ---------------------------
 # READONLY VARIABLES
@@ -165,15 +166,21 @@ sub flush {
 }
 
 # ---------------------------
-# _get_field, go to the server and get the field
+# _lwp
+# ---------------------------
+sub _lwp {
+    my ( $self ) = @_;
+    $self->{$_IBR_PARENT}->_lwp
+
+}
+# ---------------------------
+# _get_field, go to the server and get the field, and return it
+# Returns nothing
 # ---------------------------
 sub _get_field {
     my ( $self, $f ) = @_;
-    $self->{$_IBR_FIELD_VALUES}->{$f};
 
-    #
-    # Call parent->get_ref( _ref, field )
-    #
+    $self->_lwp->get_ref( $self->get_ref(), $f );
 
 }
 

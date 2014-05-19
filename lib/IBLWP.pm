@@ -13,15 +13,34 @@ use Readonly;
 use strict;
 
 # ---------------------------
+# get ( [REF]|[IBRecord]|[ObjType + param], search/fields, return fields )
+#	Adds or Updates IBRecord(s)
+# post ( [ObjType + param] )
+#	Adds IBRecord
+# put ( [REF]|[IBRecord] )
+#	flushes IBRecord
+# delete ( [REF]|[IBRecord] )
+#	deletes IBRecord
+#
+# get_ref ( REF, [FIELDS] )
+#	Sends request to server for the ref object
+#
+# ---------------------------
+
+# ---------------------------
 # PROTOTYPES
 # ---------------------------
+sub get;
 sub get_objref;     #
 sub get_objtype;    #
 sub response;       # Returns HTTP::Response Object
 sub is_success;     # Returns HTTP::Response->is_success()
 sub is_error;       # Returns HTTP::Response->is_error()
-sub add_return_field;
-sub add_return_field_plus;
+sub _reset_search_fields;
+sub _add_search_fields;
+sub _reset_return_fields;
+sub _add_return_fields;
+sub _add_return_fields_plus;
 
 # ---------------------------
 # READONLY VARIABLES
@@ -41,12 +60,16 @@ Readonly our $_DEFAULT_HOSTNAME         => 'localhost';
 Readonly our $_DEFAULT_RETURN_TYPE      => $_JSON;
 Readonly our $_DEFAULT_MAX_RESULTS      => 5000;
 Readonly our $_IBLWP_PARENT_OBJ         => '_IBLWP_PARENT_OBJ';
+Readonly our $_IBLWP_BASE_URL           => '_IBLWP_BASE_URL';
 Readonly our $_IBLWP_URL                => '_IBLWP_URL';
 Readonly our $_IBLWP_USERNAME           => '_IBLWP_USERNAME';
 Readonly our $_IBLWP_PASSWORD           => '_IBLWP_PASSWORD';
 Readonly our $_IBLWP_HOSTNAME           => '_IBLWP_HOSTNAME';
+Readonly our $_IBLWP_OBJREF             => '_IBLWP_OBJREF';
+Readonly our $_IBLWP_OBJTYPE            => '_IBLWP_OBJTYPE';
 Readonly our $_IBLWP_MAX_RESULTS        => '_IBLWP_MAX_RESULTS';
 Readonly our $_IBLWP_RETURN_TYPE        => '_IBLWP_RETURN_TYPE';
+Readonly our $_IBLWP_SEARCH_FIELDS      => '_IBLWP_SEARCH_FIELDS';
 Readonly our $_IBLWP_RETURN_FIELDS      => '_IBLWP_RETURN_FIELDS';
 Readonly our $_IBLWP_RETURN_FIELDS_PLUS => '_IBLWP_RETURN_FIELDS_PLUS';
 
@@ -81,6 +104,8 @@ sub new() {
     my %h;
     my $self = \%h;
 
+    PRINT_MYNAMELINE if $DEBUG;
+
     #
     # Whose my parent?
     #
@@ -99,6 +124,9 @@ sub new() {
     $h{$_IBLWP_HOSTNAME}           = $_DEFAULT_HOSTNAME;
     $h{$_IBLWP_MAX_RESULTS}        = $_DEFAULT_MAX_RESULTS;
     $h{$_IBLWP_RETURN_TYPE}        = $_DEFAULT_RETURN_TYPE;
+    $h{$_IBLWP_OBJREF}             = undef;
+    $h{$_IBLWP_OBJTYPE}            = undef;
+    $h{$_IBLWP_SEARCH_FIELDS}      = undef;
     $h{$_IBLWP_RETURN_FIELDS}      = undef;
     $h{$_IBLWP_RETURN_FIELDS_PLUS} = undef;
 
@@ -112,7 +140,7 @@ sub new() {
         }
     }
 
-    $h{$_IBLWP_URL} = $_HTTPS
+    $h{$_IBLWP_BASE_URL} = $_HTTPS
       . $h{$_IBLWP_USERNAME} . ':'
       . $h{$_IBLWP_PASSWORD} . '@'
       . $h{$_IBLWP_HOSTNAME}
@@ -120,6 +148,99 @@ sub new() {
 
     bless $self, $class;
     $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub _get_reset {
+    my ($self) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
+
+    $self->{$_HTTP_REQUEST_OBJ}  = undef;
+    $self->{$_HTTP_RESPONSE_OBJ} = undef;
+    $self->{$_IBLWP_OBJTYPE}     = undef;
+    $self->{$_IBLWP_OBJREF}      = undef;
+    $self->_reset_search_fields();
+    $self->_reset_return_fields();
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub _get_url {
+    my ($self) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
+
+    if ( !( ( defined $self->{$_IBLWP_OBJTYPE} ) ^ ( defined $self->{$_IBLWP_OBJREF} ) ) ) { confess Dumper $self ; }
+
+    if ( defined $self->{$_IBLWP_OBJTYPE} ) {
+        $self->{$_IBLWP_URL} =
+          $self->{$_IBLWP_BASE_URL}
+          . URL_MODULE_NAME( $self->{$_IBLWP_OBJTYPE} )
+          . '?'
+          . URL_PARM_NAME($IB_RETURN_TYPE)
+          . '='
+          . $_JSON
+          . '&'
+          . URL_PARM_NAME($IB_MAX_RESULTS)
+          . '='
+          . $self->{$_IBLWP_MAX_RESULTS}
+          ;
+    }
+    elsif ( defined $self->{$_IBLWP_OBJREF} ) {
+        $self->{$_IBLWP_URL} =
+          $self->{$_IBLWP_BASE_URL}
+          . $self->{$_IBLWP_OBJREF}
+          . '?'
+          . URL_PARM_NAME($IB_RETURN_TYPE)
+          . '='
+          . $_JSON
+          . '&'
+          . URL_PARM_NAME($IB_MAX_RESULTS)
+          . '='
+          . $self->{$_IBLWP_MAX_RESULTS}
+          ;
+    }
+    else {
+        confess Dumper $self;
+    }
+
+    if ( defined $self->{$_IBLWP_RETURN_FIELDS} ) {
+        $self->{$_IBLWP_URL} .=
+          '&'
+          . URL_PARM_NAME($IB_RETURN_FIELDS)
+          . '='
+          . ( join( ',', ( sort( keys( %{$self->{$_IBLWP_RETURN_FIELDS}} ) ) ) ) )
+          ;
+    }
+    elsif ( defined $self->{$_IBLWP_RETURN_FIELDS_PLUS} ) {
+        $self->{$_IBLWP_URL} .=
+          '&'
+          . URL_PARM_NAME($IB_RETURN_FIELDS_PLUS)
+          . '='
+          . ( join( ',', ( sort( keys( %{$self->{$_IBLWP_RETURN_FIELDS_PLUS}} ) ) ) ) )
+          ;
+    }
+
+    if ( defined $self->{$_IBLWP_SEARCH_FIELDS} ) {
+        foreach my $s ( sort( keys( %{$self->{$_IBLWP_SEARCH_FIELDS}} ) ) ) {
+            $self->{$_IBLWP_URL} .=
+              '&'
+              . URL_FIELD_NAME($s)
+              . '='
+              . $self->{$_IBLWP_SEARCH_FIELDS}->{$s}
+              ;
+        }
+    }
+
+print $self->{$_IBLWP_URL} . "\n";
+
+    $self->{$_HTTP_REQUEST_OBJ} = HTTP::Request->new( GET => $self->{$_IBLWP_URL} );
+    $self->{$_HTTP_RESPONSE_OBJ} = $self->{$_UA}->request( $self->{_HTTP_REQUEST_OBJ} );
+
 }
 
 # ---------------------------
@@ -132,32 +253,35 @@ sub new() {
 #
 # ---------------------------
 sub get {
-    my ( $self, $parm, $parm_ref ) = @_;
+    my ( $self, $parm, $parm_ref, $parm2_ref ) = @_;
 
     PRINT_MYNAMELINE if $DEBUG;
 
     confess if ( !defined $parm );
 
-    if ( ref($parm) eq 'IBRecord' ) {
+    $self->_get_reset();
 
-        # Get _ref
+    if ( ref($parm) eq 'IBRecord' ) {
+        $self->_set_objref( $parm->get_ref() );
+        $self->_add_return_fields($parm_ref) if ( defined $parm_ref );
+        if ( defined $parm2_ref ) { confess; }
+
     }
     elsif ( URL_MODULE_EXISTS($parm) ) {
-
-        # Get OBJType + parm_ref
+        $self->_set_objtype($parm);
+        $self->_add_search_fields($parm_ref)       if ( defined $parm_ref );
+        $self->_add_return_fields_plus($parm2_ref) if ( defined $parm2_ref );
     }
-    elsif ( URL_MODULE_EXISTS( ( split( /\//, $parm ) )[0] ) ) {
-
-        # RAW _ref value
+    elsif ( URL_REF_MODULE_EXISTS($parm) ) {
+        $self->_set_objtype( URL_REF_MODULE_NAME($parm) );
+        $self->_add_search_fields($parm_ref)       if ( defined $parm_ref );
+        $self->_add_return_fields_plus($parm2_ref) if ( defined $parm2_ref );
     }
     else {
         confess "BAD PARAMETER:" . Dumper $parm;
     }
 
-    my $url = '';
-
-    $self->{$_HTTP_REQUEST_OBJ} = HTTP::Request->new( GET => $url );
-    $self->{$_HTTP_RESPONSE_OBJ} = $self->{$_UA}->request( $self->{_HTTP_REQUEST_OBJ} );
+    $self->_get_url;
 
     $self;
 }
@@ -165,14 +289,10 @@ sub get {
 # ---------------------------
 # is_success()
 # ---------------------------
-sub _get_ref {
-}
-
-# ---------------------------
-# is_success()
-# ---------------------------
 sub is_success {
     my ($self) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
 
     if ( defined $self->{$_HTTP_RESPONSE_OBJ} ) {
         return $self->{$_HTTP_RESPONSE_OBJ}->is_success();
@@ -185,6 +305,8 @@ sub is_success {
 # ---------------------------
 sub is_error {
     my ($self) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
 
     if ( defined $self->{$_HTTP_RESPONSE_OBJ} ) {
         return $self->{$_HTTP_RESPONSE_OBJ}->is_error();
@@ -212,17 +334,105 @@ sub response {
 # ---------------------------
 #
 # ---------------------------
-sub add_return_field {
-    my ( $self, $field ) = @_;
+sub _set_objref {
+    my ( $self, $r ) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
+
+    $self->{$_IBLWP_OBJREF}  = $r;
+    $self->{$_IBLWP_OBJTYPE} = undef;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub _set_objtype {
+    my ( $self, $t ) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
+
+    $self->{$_IBLWP_OBJTYPE} = $t;
+    $self->{$_IBLWP_OBJREF}  = undef;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub _reset_search_fields {
+    my ($self) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
+
+    $self->{$_IBLWP_SEARCH_FIELDS} = undef;
+    $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub _add_search_fields {
+    my ( $self, $f ) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
+
+    if ( ref($f) eq 'HASH' ) {
+        foreach my $k ( keys(%$f) ) {
+            $self->{$_IBLWP_SEARCH_FIELDS}->{$k} = $f->{$k};
+        }
+    }
+    elsif ( ref($f) eq 'ARRAY' ) {
+        foreach my $k (@$f) {
+            $self->{$_IBLWP_SEARCH_FIELDS}->{$k} = $f->{$k};
+        }
+    }
+    else {
+        $self->{$_IBLWP_SEARCH_FIELDS}->{$f} = 1;
+    }
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub _reset_return_fields {
+    my ($self) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
+
+    $self->{$_IBLWP_RETURN_FIELDS}      = undef;
+    $self->{$_IBLWP_RETURN_FIELDS_PLUS} = undef;
+    $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub _add_return_fields {
+
+    PRINT_MYNAMELINE if $DEBUG;
+
+    my ( $self, $f ) = @_;
     if ( defined $self->{$_IBLWP_RETURN_FIELDS_PLUS} ) {
         $self->{$_IBLWP_RETURN_FIELDS_PLUS} = undef;
     }
+
     if ( !defined $self->{$_IBLWP_RETURN_FIELDS} ) {
         my %h;
         $self->{$_IBLWP_RETURN_FIELDS} = \%h;
     }
 
-    $self->{$_IBLWP_RETURN_FIELDS}->{$field}++;
+    if ( ref($f) eq 'HASH' ) {
+        foreach my $k ( keys(%$f) ) {
+            $self->{$_IBLWP_RETURN_FIELDS}->{$k}++;
+        }
+    }
+    elsif ( ref($f) eq 'ARRAY' ) {
+        foreach my $k (@$f) {
+            $self->{$_IBLWP_RETURN_FIELDS}->{$k}++;
+        }
+    }
+    else {
+        $self->{$_IBLWP_RETURN_FIELDS}->{$f}++;
+    }
 
     $self;
 }
@@ -230,8 +440,11 @@ sub add_return_field {
 # ---------------------------
 #
 # ---------------------------
-sub add_return_field_plus {
-    my ( $self, $field ) = @_;
+sub _add_return_fields_plus {
+    my ( $self, $f ) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
+
     if ( defined $self->{$_IBLWP_RETURN_FIELDS} ) {
         $self->{$_IBLWP_RETURN_FIELDS} = undef;
     }
@@ -240,7 +453,19 @@ sub add_return_field_plus {
         $self->{$_IBLWP_RETURN_FIELDS_PLUS} = \%h;
     }
 
-    $self->{$_IBLWP_RETURN_FIELDS_PLUS}->{$field}++;
+    if ( ref($f) eq 'HASH' ) {
+        foreach my $k ( keys(%$f) ) {
+            $self->{$_IBLWP_RETURN_FIELDS_PLUS}->{$k}++;
+        }
+    }
+    elsif ( ref($f) eq 'ARRAY' ) {
+        foreach my $k (@$f) {
+            $self->{$_IBLWP_RETURN_FIELDS_PLUS}->{$k}++;
+        }
+    }
+    else {
+        $self->{$_IBLWP_RETURN_FIELDS_PLUS}->{$f}++;
+    }
 
     $self;
 

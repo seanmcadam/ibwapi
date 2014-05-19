@@ -17,6 +17,19 @@ use Readonly;
 use strict;
 
 # ---------------------------
+# GET:    ( field = val, ...) 
+#	returns Array Ref to IBRecords 
+# POST:   ( field = val, ... )
+#	returns Ref to IBRecord
+# PUT:    ( REF, field = val, ... )
+#	updates existing record, flushes the record, and
+#	returns Ref to IBRecord
+# DELETE: ( REF )
+#	Returns T/F
+#
+# ---------------------------
+
+# ---------------------------
 # PROTOTYPES
 # ---------------------------
 sub GET;
@@ -50,7 +63,6 @@ Readonly our $_IB_READONLY_FIELDS    => '_IB_READONLY_FIELDS';
 Readonly our $_IB_RETURN_FIELDS      => '_IB_RETURN_FIELDS';
 Readonly our $_IB_RETURN_FIELDS_PLUS => '_IB_RETURN_FIELDS_PLUS';
 Readonly our $_IB_SEARCHABLE_FIELDS  => '_IB_SEARCHABLE_FIELDS';
-Readonly our $_IB_LWP                => '_IB_LWP';
 Readonly our $_IB_URL                => '_IB_URL';
 
 # ---------------------------
@@ -119,6 +131,9 @@ sub new {
 # ---------------------------
 sub create_lwp {
     my ( $self, $parm_ref ) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
+
     if ( defined( $self->{$_LWP_OBJ} ) ) { confess Dumper $self; }
     $self->{$_LWP_OBJ} = IBLWP->new( $self, $parm_ref );
 }
@@ -136,18 +151,37 @@ sub GET {
     #
     $self->_verify_search_parameters($field_ref);
 
-    if ( $self->_lwp->get( $self->_obj_name, $field_ref ) ) {
+    if( ref($self->_lwp)  ne 'IBLWP' ) { confess 'Ref:' . ref( $self->_lwp); }
 
-    }
+    $self->_lwp->get( $self->_obj_name, $field_ref );
+
 }
 
+# ---------------------------------------------------------------------------------
+#
+# ---------------------------------------------------------------------------------
 sub POST {
+    my ( $self, $parm_ref ) = @_;
+    PRINT_MYNAMELINE if $DEBUG;
+    confess;
 }
 
+# ---------------------------------------------------------------------------------
+#
+# ---------------------------------------------------------------------------------
 sub PUT {
+    my ( $self, $parm_ref ) = @_;
+    PRINT_MYNAMELINE if $DEBUG;
+    confess;
 }
 
+# ---------------------------------------------------------------------------------
+#
+# ---------------------------------------------------------------------------------
 sub DELETE {
+    my ( $self, $parm_ref ) = @_;
+    PRINT_MYNAMELINE if $DEBUG;
+    confess;
 }
 
 # ---------------------------------------------------------------------------------
@@ -322,9 +356,9 @@ sub _lwp {
 
     PRINT_MYNAMELINE if $DEBUG;
 
-    defined $self->{$_IB_LWP} || confess @_;
+    defined $self->{$_LWP_OBJ} || confess Dumper @_; 
 
-    $self->{$_IB_LWP};
+    return $self->{$_LWP_OBJ};
 }
 
 # ----------------------------------------------------------------------
@@ -364,6 +398,8 @@ sub _verify_search_parameters {
     my ( $self, $parm_ref ) = @_;
 
     PRINT_MYNAMELINE if $DEBUG;
+
+    if( ! defined $parm_ref ) { warn MYNAMELINE . " NO PARM_REF defined\n"; return; }
 
     foreach my $p ( sort( keys(%$parm_ref) ) ) {
         if ( URL_FIELD_EXISTS($p) ) {
