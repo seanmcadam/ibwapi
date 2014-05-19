@@ -3,7 +3,8 @@
 package IBWAPI::Network;
 use FindBin;
 use lib "$FindBin::Bin/..";
-use IBFields;
+use IBConsts;
+use IBWAPI;
 use base qw( Exporter );
 
 use Carp;
@@ -17,10 +18,6 @@ our @ISA = qw(IBWAPI);
 # ---------------------------
 # PROTOTYPES
 # ---------------------------
-sub GET;
-sub POST;
-sub PUT;
-sub DELETE;
 
 # ---------------------------
 # READONLY VARIABLES
@@ -134,7 +131,7 @@ Readonly::Hash our %_SEARCHABLE_FIELDS => (
 );
 
 # ---------------------------------------------------
-sub new() {
+sub new {
     my ( $class, $parm_ref ) = @_;
 
     $parm_ref->{$IB_BASE_FIELDS}       = \%_BASE_FIELDS;
@@ -144,44 +141,9 @@ sub new() {
 
     my $self = $class->SUPER::new( $_OBJECT_NAME, $parm_ref );
 
-    #    if ( defined $parm_ref ) {
-    #        if ( 'HASH' ne ref($parm_ref) ) { confess Dumper $parm_ref; }
-    #        foreach my $p ( sort( keys(%$parm_ref) ) ) {
-    #            if ( !defined $_PARM_NAMES{$p} ) { next; }
-    #            if ( $_PARM_REF_TYPES{$p} ne ref( $parm_ref->{$p} ) ) { confess Dumper $parm_ref; }
-    #            $h{ $_PARM_NAMES{$p} } = $parm_ref->{$p};
-    #        }
-    #    }
-
     bless $self, $class;
 
     $self;
-}
-
-# ---------------------------------------------------
-#
-#
-# ---------------------------------------------------
-sub GET {
-    my ( $self, $parm_ref ) = @_;
-
-    $self->_get($parm_ref);
-
-}
-
-# ---------------------------------------------------
-sub POST {
-    my ($self) = @_;
-}
-
-# ---------------------------------------------------
-sub PUT {
-    my ($self) = @_;
-}
-
-# ---------------------------------------------------
-sub DELETE {
-    my ($self) = @_;
 }
 
 1;

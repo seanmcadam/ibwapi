@@ -3,40 +3,45 @@
 package IBWAPI;
 use FindBin;
 use lib "$FindBin::Bin";
-use IBFields;
-use IBCred;
+use IBConsts;
+use IBLWP;
+use IBRecord;
 
 use base qw( Exporter );
 
 use Carp;
+use JSON;
 use warnings;
 use Data::Dumper;
-use JSON;
 use Readonly;
 use strict;
 
 # ---------------------------
 # PROTOTYPES
 # ---------------------------
+sub GET;
+sub POST;
+sub PUT;
+sub DELETE;
 sub _get;
 sub _post;
 sub _put;
-sub _delete;
+sub _get_ref;
+sub _update_ref;
+sub _flush_ref;
+sub _delete_ref;
 
 # ---------------------------
 # READONLY VARIABLES
 # ---------------------------
 Readonly our $_DEFAULT_MAX_RESULTS => 5000;
 
-Readonly our $_HTTPS    => 'https://';
-Readonly our $_JSON     => 'json';
-Readonly our $_URI      => '/wapi/v1.2/';
-Readonly our $_REF      => '_ref';
+Readonly our $_LWP_OBJ  => '_LWP_OBJ';
 Readonly our $_OPTIONS  => 'options';
 Readonly our $_EXTATTRS => 'extattrs';
 
+Readonly our $_IB_RECORDS            => '_IB_RECORDS';
 Readonly our $_IB_BASE_FIELDS        => '_IB_BASE_FIELDS';
-Readonly our $_IB_CRED               => '_IB_CRED';
 Readonly our $_IB_PARM_NAMES         => '_IB_PARM_NAMES';
 Readonly our $_IB_PARM_REF_TYPES     => '_IB_PARM_REF_TYPES';
 Readonly our $_IB_MAX_RESULTS        => '_IB_MAX_RESULTS';
@@ -45,6 +50,7 @@ Readonly our $_IB_READONLY_FIELDS    => '_IB_READONLY_FIELDS';
 Readonly our $_IB_RETURN_FIELDS      => '_IB_RETURN_FIELDS';
 Readonly our $_IB_RETURN_FIELDS_PLUS => '_IB_RETURN_FIELDS_PLUS';
 Readonly our $_IB_SEARCHABLE_FIELDS  => '_IB_SEARCHABLE_FIELDS';
+Readonly our $_IB_LWP                => '_IB_LWP';
 Readonly our $_IB_URL                => '_IB_URL';
 
 # ---------------------------
@@ -54,14 +60,12 @@ our @EXPORT = qw (
 );
 
 Readonly::Hash our %_PARM_NAMES => (
-    $IB_CRED               => $_IB_CRED,
     $IB_MAX_RESULTS        => $_IB_MAX_RESULTS,
     $IB_RETURN_FIELDS      => $_IB_RETURN_FIELDS,
     $IB_RETURN_FIELDS_PLUS => $_IB_RETURN_FIELDS_PLUS,
 );
 
 Readonly::Hash our %_PARM_REF_TYPES => (
-    $IB_CRED               => 'IBCred',
     $IB_MAX_RESULTS        => '',
     $IB_RETURN_FIELDS      => 'ARRAY',
     $IB_RETURN_FIELDS_PLUS => 'ARRAY',
@@ -70,28 +74,30 @@ Readonly::Hash our %_PARM_REF_TYPES => (
 # ---------------------------
 # new()
 # ---------------------------
-sub new() {
-    my ( $class, $obj, $parm_ref ) = @_;
+sub new {
+    my ( $class, $module_name, $parm_ref ) = @_;
     my %h;
+    my %r;
     my $self = \%h;
 
-    if ( !defined $obj ) { confess; }
-    $h{$_IB_OBJECT_NAME} = $obj;
+    PRINT_MYNAMELINE if $DEBUG;
 
-    #
-    # Define WEB Credentials
-    #
-    if ( !defined $parm_ref->{$IB_CRED} ) { confess; }
-    $h{$_IB_CRED} = $parm_ref->{$IB_CRED};
-    if ( ref( $h{$_IB_CRED} ) ne 'IBCred' ) { confess; }
-    $h{$_IB_URL} = $h{$_IB_CRED}->URL();
+    if ( !defined $module_name ) { confess; }
+    $h{$_IB_OBJECT_NAME} = $module_name;
+    $h{$_IB_RECORDS}     = \%r;
 
-    $h{$_IB_BASE_FIELDS}        = $parm_ref->{$IB_BASE_FIELDS};
-    $h{$_IB_MAX_RESULTS}        = ( defined $parm_ref->{$IB_MAX_RESULTS} ) ? $parm_ref->{$IB_MAX_RESULTS} : $_DEFAULT_MAX_RESULTS;
-    $h{$_IB_READONLY_FIELDS}    = $parm_ref->{$IB_READONLY_FIELDS};
+    if ( !defined $parm_ref->{$IB_BASE_FIELDS} )       { confess; }
+    if ( !defined $parm_ref->{$IB_RETURN_FIELDS} )     { confess; }
+    if ( !defined $parm_ref->{$IB_READONLY_FIELDS} )   { confess; }
+    if ( !defined $parm_ref->{$IB_SEARCHABLE_FIELDS} ) { confess; }
+
+    $h{$_IB_BASE_FIELDS}       = $parm_ref->{$IB_BASE_FIELDS};
+    $h{$_IB_MAX_RESULTS}       = ( defined $parm_ref->{$IB_MAX_RESULTS} ) ? $parm_ref->{$IB_MAX_RESULTS} : $_DEFAULT_MAX_RESULTS;
+    $h{$_IB_READONLY_FIELDS}   = $parm_ref->{$IB_READONLY_FIELDS};
+    $h{$_IB_SEARCHABLE_FIELDS} = $parm_ref->{$IB_SEARCHABLE_FIELDS};
+
     $h{$_IB_RETURN_FIELDS}      = $parm_ref->{$IB_RETURN_FIELDS};
     $h{$_IB_RETURN_FIELDS_PLUS} = $parm_ref->{$IB_RETURN_FIELDS_PLUS};
-    $h{$_IB_SEARCHABLE_FIELDS}  = $parm_ref->{$IB_SEARCHABLE_FIELDS};
 
     #    if ( defined $parm_ref ) {
     #        if ( 'HASH' ne ref($parm_ref) ) { confess Dumper $parm_ref; }
@@ -107,52 +113,168 @@ sub new() {
     $self;
 }
 
+# ---------------------------
+# create_lwp()
+# Called from the child object
+# ---------------------------
+sub create_lwp {
+    my ( $self, $parm_ref ) = @_;
+    if ( defined( $self->{$_LWP_OBJ} ) ) { confess Dumper $self; }
+    $self->{$_LWP_OBJ} = IBLWP->new( $self, $parm_ref );
+}
+
 # ---------------------------------------------------------------------------------
-# Returns: 200 (search OK), 400 (results > max_results), 404 (object not found)
+#
+# ---------------------------------------------------------------------------------
+sub GET {
+    my ( $self, $field_ref ) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
+
+    #
+    # Verify parameters (Searchable fields)
+    #
+    $self->_verify_search_parameters($field_ref);
+
+    if ( $self->_lwp->get( $self->_obj_name, $field_ref ) ) {
+
+    }
+}
+
+sub POST {
+}
+
+sub PUT {
+}
+
+sub DELETE {
+}
+
+# ---------------------------------------------------------------------------------
+#
 # ---------------------------------------------------------------------------------
 sub _get {
     my ( $self, $parm_ref ) = @_;
     my $get_url    = '';
     my $search_url = '';
 
+    PRINT_MYNAMELINE if $DEBUG;
+
     if ( defined $parm_ref ) {
 
+        #
         # Verify parameters (Searchable fields)
+        #
         $self->_verify_search_parameters($parm_ref);
 
+        #
         # Generate URL
+        #
         $search_url = $self->_get_search_parameters($parm_ref);
     }
 
+    #
     # Retrieve URL
+    #
+
+    #$get_url = $self->{$_IB_URL}
+    #  . $self->{$_IB_OBJECT_NAME}
+    #  . '?'
+    #  . URL_PARM_NAME($IB_RETURN_TYPE)
+    #  . '='
+    #  . $_JSON
+    #  . '&'
+    #  . URL_PARM_NAME($IB_MAX_RESULTS)
+    #  . '='
+    #  . $self->{$_IB_MAX_RESULTS}
+    #  . $search_url
+    #  ;
+
+    #
     # Check for error
+    #
+    if ( $self->_lwp->get($get_url)->is_error() ) {
+        print $get_url . "\n";
+        confess $self->_lwp->get_error . "\n";
+    }
 
-    $get_url = $self->{$_IB_URL}
-      . $self->{$_IB_OBJECT_NAME}
-      . '?'
-      . URL_PARM_NAME($IB_RETURN_TYPE)
-      . '='
-      . $_JSON
-      . '&'
-      . URL_PARM_NAME($IB_MAX_RESULTS)
-      . '='
-      . $self->{$_IB_MAX_RESULTS}
-      . '&'
-      . $search_url;
+    my $json = decode_json( $self->_lwp->response()->content() );
 
-    #    print Dumper $self;
-    print $search_url . "\n";
-    print $get_url . "\n";
-    exit;
+    foreach my $record (@$json) {
+        $self->{_RECORDS}->{ $record->{'_ref'} } = IBRecord->new($record);
+    }
 
 }
 
 # ---------------------------------------------------------------------------------
-sub _getref {
-    my ( $self, $ref_obj ) = @_;
-    my $obj_type = IBFields::URL_MODULE_NAME( ( split( '::', ref($self) ) )[-1] );
+sub _get_ref {
+    my ( $self, $ref ) = @_;
 
-    my $url = $self->{$_IB_URL};
+    PRINT_MYNAMELINE if $DEBUG;
+
+    if ( !defined $ref || !URL_REF_MODULE_EXISTS($ref) ) { confess @_; }
+
+    if ( defined $self->{$_IB_RECORDS}->{$ref} ) {
+        return $self->{$_IB_RECORDS}->{$ref};
+    }
+
+    return undef;
+
+}
+
+# ---------------------------------------------------------------------------------
+sub _update_ref {
+    my ( $self, $ref, $field_ref ) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
+
+    if ( !defined $ref || !URL_REF_MODULE_EXISTS($ref) ) { confess @_; }
+
+    $self->get_ibr_ref($ref)->update_field
+
+}
+
+# ---------------------------------------------------------------------------------
+# Call the IB_RECORD flush function for the given _ref
+# ---------------------------------------------------------------------------------
+sub _flush_ref {
+    my ( $self, $ref ) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
+}
+
+# ---------------------------------------------------------------------------------
+# Call the IB_RECORD delete function for the given _ref
+# ---------------------------------------------------------------------------------
+sub _delete_ref {
+    my ( $self, $ref ) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
+}
+
+# ---------------------------------------------------------------------------------
+# Add an IBRecord to the _IB_RECORD HASH
+# ---------------------------------------------------------------------------------
+sub _add_obj {
+    my ( $self, $obj ) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
+
+    if ( !defined $obj || ref($obj) ne 'IBRecord' ) { confess @_; }
+    my $ref = $obj->get_ref();
+    if ( !defined $ref || !URL_REF_MODULE_EXISTS($ref) ) { confess @_; }
+    my $obj_name = URL_MODULE_NAME( ( split( /\//, $ref ) )[0] );
+    if ( $ref ne $self->{$_IB_OBJECT_NAME} ) { confess @_; }
+
+    if ( defined $self->{$_IB_RECORDS}->{$ref} ) {
+        confess "Adding the same object: '$ref'\n";
+    }
+    else {
+        $self->{$_IB_RECORDS}->{$ref} = $obj;
+    }
+
+    return 1;
+
 }
 
 # ---------------------------------------------------------------------------------
@@ -160,6 +282,7 @@ sub _getref {
 # ---------------------------------------------------------------------------------
 sub _post {
     my ($self) = @_;
+    PRINT_MYNAMELINE if $DEBUG;
 }
 
 # ---------------------------------------------------------------------------------
@@ -167,6 +290,7 @@ sub _post {
 # ---------------------------------------------------------------------------------
 sub _put {
     my ($self) = @_;
+    PRINT_MYNAMELINE if $DEBUG;
 }
 
 # ---------------------------------------------------------------------------------
@@ -174,6 +298,33 @@ sub _put {
 # ---------------------------------------------------------------------------------
 sub _delete {
     my ($self) = @_;
+    PRINT_MYNAMELINE if $DEBUG;
+}
+
+# ---------------------------------------------------------------------------------
+#
+# ---------------------------------------------------------------------------------
+sub _obj_name {
+    my ($self) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
+
+    defined $self->{$_IB_OBJECT_NAME} || confess @_;
+
+    $self->{$_IB_OBJECT_NAME};
+}
+
+# ---------------------------------------------------------------------------------
+#
+# ---------------------------------------------------------------------------------
+sub _lwp {
+    my ($self) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
+
+    defined $self->{$_IB_LWP} || confess @_;
+
+    $self->{$_IB_LWP};
 }
 
 # ----------------------------------------------------------------------
@@ -182,8 +333,11 @@ sub _get_search_parameters {
     my ( $self, $parm_ref ) = @_;
     my $ret = '';
 
+    PRINT_MYNAMELINE if $DEBUG;
+
     foreach my $p ( sort( keys(%$parm_ref) ) ) {
-        print "SEARCHING PARM $p\n";
+
+        # print "SEARCHING PARM $p\n";
         if ( URL_FIELD_EXISTS($p) ) {
             confess "FIELD '$p' NOT SEARCHABLE FOR " . $self->{$_IB_OBJECT_NAME} . "\n" if ( !$self->_is_field_searchable($p) );
             confess "FIELD VALUE FOR '$p' NOT AN ARRAY\n" if ( ref( $parm_ref->{$p} ) ne 'ARRAY' );
@@ -191,8 +345,8 @@ sub _get_search_parameters {
             confess "UNDEFINED VALUE FOR '$p'\n"          if ( !defined $parm_ref->{$p}->[1] );
             confess "BAD SEARCH TYPE FOR '$p'\n"          if ( !URL_SEARCH_EXISTS( $parm_ref->{$p}->[0] ) );
 
-            $ret .= '&' if ( $ret ne '' );
-            $ret .= URL_FIELD_NAME($p) . URL_SEARCH_NAME( $parm_ref->{$p}->[0] ) . '"' . $parm_ref->{$p}->[1] . '"';
+            $ret .= '&';
+            $ret .= URL_FIELD_NAME($p) . URL_SEARCH_NAME( $parm_ref->{$p}->[0] ) . $parm_ref->{$p}->[1];
 
         }
         else {
@@ -208,6 +362,8 @@ sub _get_search_parameters {
 # ----------------------------------------------------------------------
 sub _verify_search_parameters {
     my ( $self, $parm_ref ) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
 
     foreach my $p ( sort( keys(%$parm_ref) ) ) {
         if ( URL_FIELD_EXISTS($p) ) {
@@ -225,9 +381,68 @@ sub _verify_search_parameters {
 # ----------------------------------------------------------------------
 sub _is_field_searchable {
     my ( $self, $field ) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
+
     confess if ( !defined $self->{$_IB_SEARCHABLE_FIELDS} );
 
     return ( ( defined $self->{$_IB_SEARCHABLE_FIELDS}->{$field} ) ? 1 : 0 );
+
+}
+
+# ----------------------------------------------------------------------
+# Base Field Exists
+# ----------------------------------------------------------------------
+sub base_field_exists {
+    my ( $self, $f ) = @_;
+
+    defined $f || confess @_;
+    URL_FIELD_EXISTS($f) || confess @_;
+
+    $self->_field_exists( $self->{$_IB_BASE_FIELDS}, $f )
+}
+
+# ----------------------------------------------------------------------
+# readonly Field Exists
+# ----------------------------------------------------------------------
+sub readonly_field_exists {
+    my ( $self, $f ) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
+
+    defined $f || confess @_;
+    URL_FIELD_EXISTS($f) || confess @_;
+
+    $self->_field_exists( $self->{$_IB_BASE_FIELDS}, $f )
+}
+
+# ----------------------------------------------------------------------
+# Searchable Field Exists
+# ----------------------------------------------------------------------
+sub searchable_field_exists {
+    my ( $self, $f ) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
+
+    defined $f || confess @_;
+    URL_FIELD_EXISTS($f) || confess @_;
+
+    $self->_field_exists( $self->{$_IB_SEARCHABLE_FIELDS}, $f )
+}
+
+# ----------------------------------------------------------------------
+# Field Exists
+# ----------------------------------------------------------------------
+sub _field_exists {
+    my ( $self, $table_ref, $f ) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
+
+    defined $table_ref   || confess @_;
+    defined $f           || confess @_;
+    URL_FIELD_EXISTS($f) || confess @_;
+
+    defined $table_ref->{$f};
 
 }
 

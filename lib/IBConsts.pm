@@ -1,28 +1,44 @@
 #!/usr/bin/perl
 
-package IBFields;
-
-# use FindBin;
-# use lib "$FindBin::Bin";
-
+package IBConsts;
 use base qw( Exporter );
-
 use Carp;
 use warnings;
 use Readonly;
 use strict;
 
+sub URL_PARM_EXISTS;
 sub URL_FIELD_EXISTS;
+sub URL_NAME_FIELD_EXISTS;
 sub URL_MODULE_EXISTS;
+sub URL_REF_MODULE_EXISTS;
+sub URL_NAME_MODULE_EXISTS;
 sub URL_SEARCH_EXISTS;
 sub URL_PARM_NAME;
 sub URL_FIELD_NAME;
+sub URL_FIELD_TYPE;
+sub URL_NAME_FIELD;
 sub URL_MODULE_NAME;
+sub URL_NAME_MODULE;
+sub URL_REF_NAME_MODULE;
 sub URL_SEARCH_NAME;
+sub MYNAME();
+sub MYLINE();
+sub MYNAMELINE();
+sub PRINT_MYNAME();
+sub PRINT_MYLINE();
+sub PRINT_MYNAMELINE();
+
+Readonly our $_IB_VERSION => '0.95';
+Readonly our $DEBUG       => 1;
 
 # ---------------------------
+Readonly our $_IB_REF => '_ref';
+
+Readonly our $IB_USERNAME           => 'IB_USERNAME';
+Readonly our $IB_PASSWORD           => 'IB_PASSWORD';
+Readonly our $IB_HOSTNAME           => 'IB_HOSTNAME';
 Readonly our $IB_BASE_FIELDS        => 'IB_BASE_FIELDS';
-Readonly our $IB_CRED               => 'IB_CRED';
 Readonly our $IB_MAX_RESULTS        => 'IB_MAX_RESULTS';
 Readonly our $IB_RETURN_FIELDS      => 'IB_RETURN_FIELDS';
 Readonly our $IB_RETURN_FIELDS_PLUS => 'IB_RETURN_FIELDS_PLUS';
@@ -49,6 +65,7 @@ Readonly our $TYPE_UINT              => 'TYPE_UINT';
 Readonly our $TYPE_UNKNOWN           => 'TYPE_UNKNOWN';
 Readonly our $TYPE_ZONE_ASSOCIATIONS => 'TYPE_ZONE_ASSOCIATIONS';
 
+Readonly our $FIELD_REF                                  => 'FIELD_REF';
 Readonly our $FIELD_ACCESS_LIST                          => 'FIELD_ACCESS_LIST';
 Readonly our $FIELD_ADDRESS                              => 'FIELD_ADDRESS';
 Readonly our $FIELD_ADDRESS_TYPE                         => 'FIELD_ADDRESS_TYPE';
@@ -425,7 +442,7 @@ Readonly our $MODULE_ZONE_DELEGATED       => 'Zone_delegated';
 Readonly our $MODULE_ZONE_FORWARD         => 'Zone_forward';
 Readonly our $MODULE_ZONE_STUB            => 'Zone_stub';
 
-Readonly::Hash our %_TYPE_NAMES => (
+Readonly::Hash our %_TYPE_NAME => (
     $TYPE_BOOL              => $TYPE_BOOL,
     $TYPE_EXTATTRS          => $TYPE_EXTATTRS,
     $TYPE_INT               => $TYPE_INT,
@@ -438,7 +455,7 @@ Readonly::Hash our %_TYPE_NAMES => (
     $TYPE_ZONE_ASSOCIATIONS => $TYPE_ZONE_ASSOCIATIONS,
 );
 
-Readonly::Hash our %_SEARCH_URL_NAMES => (
+Readonly::Hash our %_SEARCH_NAME => (
     $SEARCH_PARM_CASE_INSENSATIVE => ':',
     $SEARCH_PARM_EQUAL            => '=',
     $SEARCH_PARM_GT               => '>',
@@ -447,14 +464,22 @@ Readonly::Hash our %_SEARCH_URL_NAMES => (
     $SEARCH_PARM_REGEX            => '~',
 );
 
-Readonly::Hash our %_PARM_URL_NAMES => (
+Readonly::Hash our %_PARM_NAME => (
     $IB_MAX_RESULTS        => '_max_results',
     $IB_RETURN_FIELDS      => '_return_fields',
     $IB_RETURN_FIELDS_PLUS => '_return_fields+',
     $IB_RETURN_TYPE        => '_return_type',
 );
 
-Readonly::Hash our %_FIELD_URL_NAMES => (
+Readonly::Hash our %_NAME_PARM => (
+    '_max_results'    => $IB_MAX_RESULTS,
+    '_return_fields'  => $IB_RETURN_FIELDS,
+    '_return_fields+' => $IB_RETURN_FIELDS_PLUS,
+    '_return_type'    => $IB_RETURN_TYPE,
+);
+
+Readonly::Hash our %_FIELD_NAME => (
+    $FIELD_REF                                  => $_IB_REF,
     $FIELD_ACCESS_LIST                          => 'access_list',
     $FIELD_ADDRESS                              => 'address',
     $FIELD_ADDRESS_TYPE                         => 'address_type',
@@ -795,7 +820,352 @@ Readonly::Hash our %_FIELD_URL_NAMES => (
     $FIELD_ZONE_NOT_QUERIED_ENABLED_TIME        => 'zone_not_queried_enabled_time',
 );
 
-Readonly::Hash our %_FIELD_TYPES => (
+Readonly::Hash our %_NAME_FIELD => (
+    $_IB_REF                               => $FIELD_REF,
+    'access_list'                          => $FIELD_ACCESS_LIST,
+    'address'                              => $FIELD_ADDRESS,
+    'address_type'                         => $FIELD_ADDRESS_TYPE,
+    'agent_circuit_id'                     => $FIELD_AGENT_CIRCUIT_ID,
+    'agent_remote_id'                      => $FIELD_AGENT_REMOTE_ID,
+    'aliases'                              => $FIELD_ALIASES,
+    'allow_active_dir'                     => $FIELD_ALLOW_ACTIVE_DIR,
+    'allow_gss_tsig_for_underscore_zone'   => $FIELD_ALLOW_GSS_TSIG_FOR_UNDERSCORE_ZONE,
+    'allow_gss_tsig_zone_updates'          => $FIELD_ALLOW_GSS_TSIG_ZONE_UPDATES,
+    'allow_query'                          => $FIELD_ALLOW_QUERY,
+    'allow_transfer'                       => $FIELD_ALLOW_TRANSFER,
+    'allow_update'                         => $FIELD_ALLOW_UPDATE,
+    'allow_update_forwarding'              => $FIELD_ALLOW_UPDATE_FORWARDING,
+    'always_update_dns'                    => $FIELD_ALWAYS_UPDATE_DNS,
+    'approval_status'                      => $FIELD_APPROVAL_STATUS,
+    'approver'                             => $FIELD_APPROVER,
+    'approver_comment'                     => $FIELD_APPROVER_COMMENT,
+    'authentication_time'                  => $FIELD_AUTHENTICATION_TIME,
+    'authority'                            => $FIELD_AUTHORITY,
+    'auto_create_reversezone'              => $FIELD_AUTO_CREATE_REVERSEZONE,
+    'automatic_restart'                    => $FIELD_AUTOMATIC_RESTART,
+    'billing_class'                        => $FIELD_BILLING_CLASS,
+    'binding_state'                        => $FIELD_BINDING_STATE,
+    'blacklist_action'                     => $FIELD_BLACKLIST_ACTION,
+    'blacklist_log_query'                  => $FIELD_BLACKLIST_LOG_QUERY,
+    'blacklist_redirect_addresses'         => $FIELD_BLACKLIST_REDIRECT_ADDRESSES,
+    'blacklist_redirect_ttl'               => $FIELD_BLACKLIST_REDIRECT_TTL,
+    'blacklist_rulesets'                   => $FIELD_BLACKLIST_RULESETS,
+    'bootfile'                             => $FIELD_BOOTFILE,
+    'bootserver'                           => $FIELD_BOOTSERVER,
+    'canonical'                            => $FIELD_CANONICAL,
+    'changed_objects'                      => $FIELD_CHANGED_OBJECTS,
+    'client_hostname'                      => $FIELD_CLIENT_HOSTNAME,
+    'client_identifier_prepend_zero'       => $FIELD_CLIENT_IDENTIFIER_PREPEND_ZERO,
+    'cltt'                                 => $FIELD_CLTT,
+    'comment'                              => $FIELD_COMMENT,
+    'configure_for_dhcp'                   => $FIELD_CONFIGURE_FOR_DHCP,
+    'configure_for_dns'                    => $FIELD_CONFIGURE_FOR_DNS,
+    'copy_xfer_to_notify'                  => $FIELD_COPY_XFER_TO_NOTIFY,
+    'create_ptr_for_bulk_hosts'            => $FIELD_CREATE_PTR_FOR_BULK_HOSTS,
+    'create_ptr_for_hosts'                 => $FIELD_CREATE_PTR_FOR_HOSTS,
+    'create_underscore_zones'              => $FIELD_CREATE_UNDERSCORE_ZONES,
+    'custom_root_name_servers'             => $FIELD_CUSTOM_ROOT_NAME_SERVERS,
+    'ddns_domainname'                      => $FIELD_DDNS_DOMAINNAME,
+    'ddns_generate_hostname'               => $FIELD_DDNS_GENERATE_HOSTNAME,
+    'ddns_hostname'                        => $FIELD_DDNS_HOSTNAME,
+    'ddns_server_always_updates'           => $FIELD_DDNS_SERVER_ALWAYS_UPDATES,
+    'ddns_ttl'                             => $FIELD_DDNS_TTL,
+    'ddns_update_fixed_addresses'          => $FIELD_DDNS_UPDATE_FIXED_ADDRESSES,
+    'ddns_user_option81'                   => $FIELD_DDNS_USER_OPTION81,
+    'delegated_ttl'                        => $FIELD_DELEGATED_TTL,
+    'delegate_to'                          => $FIELD_DELEGATE_TO,
+    'deny_all_clients'                     => $FIELD_DENY_ALL_CLIENTS,
+    'deny_bootp'                           => $FIELD_DENY_BOOTP,
+    'dhcp_client_identifier'               => $FIELD_DHCP_CLIENT_IDENTIFIER,
+    'dhcp_status'                          => $FIELD_DHCP_STATUS,
+    'disable'                              => $FIELD_DISABLE,
+    'disable_forwarding'                   => $FIELD_DISABLE_FORWARDING,
+    'discovered_data'                      => $FIELD_DISCOVERED_DATA,
+    'display_domain'                       => $FIELD_DISPLAY_DOMAIN,
+    'dns64_enabled'                        => $FIELD_DNS64_ENABLED,
+    'dns64_groups'                         => $FIELD_DNS64_GROUPS,
+    'dns_aliases'                          => $FIELD_DNS_ALIASES,
+    'dns_canonical'                        => $FIELD_DNS_CANONICAL,
+    'dns_fqdn'                             => $FIELD_DNS_FQDN,
+    'dns_mail_exchanger'                   => $FIELD_DNS_MAIL_EXCHANGER,
+    'dns_name'                             => $FIELD_DNS_NAME,
+    'dns_ptrdname'                         => $FIELD_DNS_PTRDNAME,
+    'dnssec_enabled'                       => $FIELD_DNSSEC_ENABLED,
+    'dnssec_expired_signatures_enabled'    => $FIELD_DNSSEC_EXPIRED_SIGNATURES_ENABLED,
+    'dnssec_key_params'                    => $FIELD_DNSSEC_KEY_PARAMS,
+    'dnssec_trusted_keys'                  => $FIELD_DNSSEC_TRUSTED_KEYS,
+    'dnssec_validation_enabled'            => $FIELD_DNSSEC_VALIDATION_ENABLED,
+    'dns_soa_email'                        => $FIELD_DNS_SOA_EMAIL,
+    'dns_soa_mname'                        => $FIELD_DNS_SOA_MNAME,
+    'dns_status'                           => $FIELD_DNS_STATUS,
+    'dns_target'                           => $FIELD_DNS_TARGET,
+    'do_host_abstraction'                  => $FIELD_DO_HOST_ABSTRACTION,
+    'domain_name'                          => $FIELD_DOMAIN_NAME,
+    'domain_name_servers'                  => $FIELD_DOMAIN_NAME_SERVERS,
+    'duid'                                 => $FIELD_DUID,
+    'effective_check_names_policy'         => $FIELD_EFFECTIVE_CHECK_NAMES_POLICY,
+    'effective_record_name_policy'         => $FIELD_EFFECTIVE_RECORD_NAME_POLICY,
+    'email_list'                           => $FIELD_EMAIL_LIST,
+    'enable_blacklist'                     => $FIELD_ENABLE_BLACKLIST,
+    'enable_ddns'                          => $FIELD_ENABLE_DDNS,
+    'enable_dhcp_thresholds'               => $FIELD_ENABLE_DHCP_THRESHOLDS,
+    'enable_email_warnings'                => $FIELD_ENABLE_EMAIL_WARNINGS,
+    'enable_ifmap_publishing'              => $FIELD_ENABLE_IFMAP_PUBLISHING,
+    'enable_pxe_lease_time'                => $FIELD_ENABLE_PXE_LEASE_TIME,
+    'enable_rfc2317_exclusion'             => $FIELD_ENABLE_RFC2317_EXCLUSION,
+    'enable_snmp_warnings'                 => $FIELD_ENABLE_SNMP_WARNINGS,
+    'end_addr'                             => $FIELD_END_ADDR,
+    'ends'                                 => $FIELD_ENDS,
+    'exclude'                              => $FIELD_EXCLUDE,
+    'execute_now'                          => $FIELD_EXECUTE_NOW,
+    'execution_status'                     => $FIELD_EXECUTION_STATUS,
+    'execution_time'                       => $FIELD_EXECUTION_TIME,
+    'expiration_time'                      => $FIELD_EXPIRATION_TIME,
+    'exploded_access_list'                 => $FIELD_EXPLODED_ACCESS_LIST,
+    'extattrs'                             => $FIELD_EXTATTRS,
+    'external_primaries'                   => $FIELD_EXTERNAL_PRIMARIES,
+    'external_secondaries'                 => $FIELD_EXTERNAL_SECONDARIES,
+    'failover_association'                 => $FIELD_FAILOVER_ASSOCIATION,
+    'filter'                               => $FIELD_FILTER,
+    'filter_aaaa'                          => $FIELD_FILTER_AAAA,
+    'filter_aaaa_list'                     => $FIELD_FILTER_AAAA_LIST,
+    'fingerprint'                          => $FIELD_FINGERPRINT,
+    'fingerprint_filter_rules'             => $FIELD_FINGERPRINT_FILTER_RULES,
+    'forwarders'                           => $FIELD_FORWARDERS,
+    'forwarders_only'                      => $FIELD_FORWARDERS_ONLY,
+    'forwarding_servers'                   => $FIELD_FORWARDING_SERVERS,
+    'forward_only'                         => $FIELD_FORWARD_ONLY,
+    'forward_to'                           => $FIELD_FORWARD_TO,
+    'fqdn'                                 => $FIELD_FQDN,
+    'grid_primary'                         => $FIELD_GRID_PRIMARY,
+    'grid_primary_shared_with_ms_parent_d' => $FIELD_GRID_PRIMARY_SHARED_WITH_MS_PARENT_D,
+    'grid_secondaries'                     => $FIELD_GRID_SECONDARIES,
+    'guest_custom_field1'                  => $FIELD_GUEST_CUSTOM_FIELD1,
+    'guest_custom_field2'                  => $FIELD_GUEST_CUSTOM_FIELD2,
+    'guest_custom_field3'                  => $FIELD_GUEST_CUSTOM_FIELD3,
+    'guest_custom_field4'                  => $FIELD_GUEST_CUSTOM_FIELD4,
+    'guest_email'                          => $FIELD_GUEST_EMAIL,
+    'guest_first_name'                     => $FIELD_GUEST_FIRST_NAME,
+    'guest_last_name'                      => $FIELD_GUEST_LAST_NAME,
+    'guest_middle_name'                    => $FIELD_GUEST_MIDDLE_NAME,
+    'guest_phone'                          => $FIELD_GUEST_PHONE,
+    'hardware'                             => $FIELD_HARDWARE,
+    'high_water_mark'                      => $FIELD_HIGH_WATER_MARK,
+    'high_water_mark_reset'                => $FIELD_HIGH_WATER_MARK_RESET,
+    'host'                                 => $FIELD_HOST,
+    'host_name'                            => $FIELD_HOST_NAME,
+    'ignore_client_requested_options'      => $FIELD_IGNORE_CLIENT_REQUESTED_OPTIONS,
+    'ignore_dhcp_option_list_request'      => $FIELD_IGNORE_DHCP_OPTION_LIST_REQUEST,
+    'import_from'                          => $FIELD_IMPORT_FROM,
+    'ip_address'                           => $FIELD_IP_ADDRESS,
+    'ipv4addr'                             => $FIELD_IPV4ADDR,
+    'ipv4addrs'                            => $FIELD_IPV4ADDRS,
+    'ipv6addr'                             => $FIELD_IPV6ADDR,
+    'ipv6addrs'                            => $FIELD_IPV6ADDRS,
+    'ipv6_duid'                            => $FIELD_IPV6_DUID,
+    'ipv6_end_prefix'                      => $FIELD_IPV6_END_PREFIX,
+    'ipv6_end_prefix'                      => $FIELD_IPV6_IAID,
+    'ipv6_preferred_lifetime'              => $FIELD_IPV6_PREFERRED_LIFETIME,
+    'ipv6prefix'                           => $FIELD_IPV6PREFIX,
+    'ipv6_prefix_bits'                     => $FIELD_IPV6_PREFIX_BITS,
+    'ipv6prefix_bits'                      => $FIELD_IPV6PREFIX_BITS,
+    'ipv6_start_prefix'                    => $FIELD_IPV6_START_PREFIX,
+    'is_conflict'                          => $FIELD_IS_CONFLICT,
+    'is_default'                           => $FIELD_IS_DEFAULT,
+    'is_dnssec_enabled'                    => $FIELD_IS_DNSSEC_ENABLED,
+    'is_dnssec_signed'                     => $FIELD_IS_DNSSEC_SIGNED,
+    'is_registered_user'                   => $FIELD_IS_REGISTERED_USER,
+    'is_split_scope'                       => $FIELD_IS_SPLIT_SCOPE,
+    'known_clients'                        => $FIELD_KNOWN_CLIENTS,
+    'known_clients'                        => $FIELD_LAME_TTL,
+    'last_queried'                         => $FIELD_LAST_QUERIED,
+    'lease_scavenge_time'                  => $FIELD_LEASE_SCAVENGE_TIME,
+    'lease_state'                          => $FIELD_LEASE_STATE,
+    'locked'                               => $FIELD_LOCKED,
+    'locked_by'                            => $FIELD_LOCKED_BY,
+    'logic_filter_rules'                   => $FIELD_LOGIC_FILTER_RULES,
+    'low_water_mark'                       => $FIELD_LOW_WATER_MARK,
+    'low_water_mark_reset'                 => $FIELD_LOW_WATER_MARK_RESET,
+    'mac'                                  => $FIELD_MAC,
+    'mac_address'                          => $FIELD_MAC_ADDRESS,
+    'mac_filter_rules'                     => $FIELD_MAC_FILTER_RULES,
+    'mail_exchanger'                       => $FIELD_MAIL_EXCHANGER,
+    'mask_prefix'                          => $FIELD_MASK_PREFIX,
+    'match_client'                         => $FIELD_MATCH_CLIENT,
+    'match_clients'                        => $FIELD_MATCH_CLIENTS,
+    'match_destinations'                   => $FIELD_MATCH_DESTINATIONS,
+    'member'                               => $FIELD_MEMBER,
+    'members'                              => $FIELD_MEMBERS,
+    'ms_ad_integrated'                     => $FIELD_MS_AD_INTEGRATED,
+    'ms_allow_transfer'                    => $FIELD_MS_ALLOW_TRANSFER,
+    'ms_allow_transfer_mode'               => $FIELD_MS_ALLOW_TRANSFER_MODE,
+    'ms_ddns_mode'                         => $FIELD_MS_DDNS_MODE,
+    'ms_managed'                           => $FIELD_MS_MANAGED,
+    'ms_options'                           => $FIELD_MS_OPTIONS,
+    'ms_primaries'                         => $FIELD_MS_PRIMARIES,
+    'ms_read_only'                         => $FIELD_MS_READ_ONLY,
+    'ms_secondaries'                       => $FIELD_MS_SECONDARIES,
+    'ms_server'                            => $FIELD_MS_SERVER,
+    'ms_sync_master_name'                  => $FIELD_MS_SYNC_MASTER_NAME,
+    'nac_filter_rules'                     => $FIELD_NAC_FILTER_RULES,
+    'name'                                 => $FIELD_NAME,
+    'names'                                => $FIELD_NAMES,
+    'netmask'                              => $FIELD_NETMASK,
+    'network'                              => $FIELD_NETWORK,
+    'network_associations'                 => $FIELD_NETWORK_ASSOCIATIONS,
+    'network_container'                    => $FIELD_NETWORK_CONTAINER,
+    'network_view'                         => $FIELD_NETWORK_VIEW,
+    'never_ends'                           => $FIELD_NEVER_ENDS,
+    'never_expires'                        => $FIELD_NEVER_EXPIRES,
+    'never_starts'                         => $FIELD_NEVER_STARTS,
+    'next_binding_state'                   => $FIELD_NEXT_BINDING_STATE,
+    'nextserver'                           => $FIELD_NEXTSERVER,
+    'notify_delay'                         => $FIELD_NOTIFY_DELAY,
+    'ns_group'                             => $FIELD_NS_GROUP,
+    'nxdomain_log_query'                   => $FIELD_NXDOMAIN_LOG_QUERY,
+    'nxdomain_redirect'                    => $FIELD_NXDOMAIN_REDIRECT,
+    'nxdomain_redirect_addresses'          => $FIELD_NXDOMAIN_REDIRECT_ADDRESSES,
+    'nxdomain_redirect_ttl'                => $FIELD_NXDOMAIN_REDIRECT_TTL,
+    'nxdomain_rulesets'                    => $FIELD_NXDOMAIN_RULESETS,
+    'objects'                              => $FIELD_OBJECTS,
+    'on_commit'                            => $FIELD_ON_COMMIT,
+    'on_expiry'                            => $FIELD_ON_EXPIRY,
+    'on_release'                           => $FIELD_ON_RELEASE,
+    'option'                               => $FIELD_OPTION,
+    'option_filter_rules'                  => $FIELD_OPTION_FILTER_RULES,
+    'options'                              => $FIELD_OPTIONS,
+    'parent'                               => $FIELD_PARENT,
+    'port'                                 => $FIELD_PORT,
+    'preference'                           => $FIELD_PREFERENCE,
+    'preferred_lifetime'                   => $FIELD_PREFERRED_LIFETIME,
+    'prefix'                               => $FIELD_PREFIX,
+    'primary_type'                         => $FIELD_PRIMARY_TYPE,
+    'priority'                             => $FIELD_PRIORITY,
+    'protocol'                             => $FIELD_PROTOCOL,
+    'ptrdname'                             => $FIELD_PTRDNAME,
+    'pxe_lease_time'                       => $FIELD_PXE_LEASE_TIME,
+    'record_name_policy'                   => $FIELD_RECORD_NAME_POLICY,
+    'records_monitored'                    => $FIELD_RECORDS_MONITORED,
+    'recursion'                            => $FIELD_RECURSION,
+    'recycle_leases'                       => $FIELD_RECYCLE_LEASES,
+    'relay_agent_filter_rules'             => $FIELD_RELAY_AGENT_FILTER_RULES,
+    'reporting_status'                     => $FIELD_REPORTING_STATUS,
+    'reserved_for_infoblox'                => $FIELD_RESERVED_FOR_INFOBLOX,
+    'root_name_server_type'                => $FIELD_ROOT_NAME_SERVER_TYPE,
+    'rr_not_queried_enabled_time'          => $FIELD_RR_NOT_QUERIED_ENABLED_TIME,
+    'server_rrset_order'                   => $FIELD_RRSET_ORDER,
+    'scheduled_time'                       => $FIELD_SCHEDULED_TIME,
+    'served_by'                            => $FIELD_SERVED_BY,
+    'server_association_type'              => $FIELD_SERVER_ASSOCIATION_TYPE,
+    'server_host_name'                     => $FIELD_SERVER_HOST_NAME,
+    'set_soa_serial_number'                => $FIELD_SET_SOA_SERIAL_NUMBER,
+    'soa_default_ttl'                      => $FIELD_SOA_DEFAULT_TTL,
+    'soa_email'                            => $FIELD_SOA_EMAIL,
+    'soa_expire'                           => $FIELD_SOA_EXPIRE,
+    'soa_mname'                            => $FIELD_SOA_MNAME,
+    'soa_negative_ttl'                     => $FIELD_SOA_NEGATIVE_TTL,
+    'soa_refresh'                          => $FIELD_SOA_REFRESH,
+    'soa_retry'                            => $FIELD_SOA_RETRY,
+    'soa_serial_number'                    => $FIELD_SOA_SERIAL_NUMBER,
+    'sortlist'                             => $FIELD_SORTLIST,
+    'split_member'                         => $FIELD_SPLIT_MEMBER,
+    'split_scope_exclusion_percent'        => $FIELD_SPLIT_SCOPE_EXCLUSION_PERCENT,
+    'srgs'                                 => $FIELD_SRGS,
+    'start_addr'                           => $FIELD_START_ADDR,
+    'starts'                               => $FIELD_STARTS,
+    'status'                               => $FIELD_STATUS,
+    'stub_from'                            => $FIELD_STUB_FROM,
+    'stub_members'                         => $FIELD_STUB_MEMBERS,
+    'stub_msservers'                       => $FIELD_STUB_MSSERVERS,
+    'submitter'                            => $FIELD_SUBMITTER,
+    'submitter_comment'                    => $FIELD_SUBMITTER_COMMENT,
+    'submit_time'                          => $FIELD_SUBMIT_TIME,
+    'target'                               => $FIELD_TARGET,
+    'task_id'                              => $FIELD_TASK_ID,
+    'template'                             => $FIELD_TEMPLATE,
+    'text'                                 => $FIELD_TEXT,
+    'ticket_number'                        => $FIELD_TICKET_NUMBER,
+    'tsfp'                                 => $FIELD_TSFP,
+    'tstp'                                 => $FIELD_TSTP,
+    'ttl'                                  => $FIELD_TTL,
+    'types'                                => $FIELD_TYPES,
+    'uid'                                  => $FIELD_UID,
+    'unknown_clients'                      => $FIELD_UNKNOWN_CLIENTS,
+    'update_dns_on_lease_renewal'          => $FIELD_UPDATE_DNS_ON_LEASE_RENEWAL,
+    'update_forwarding'                    => $FIELD_UPDATE_FORWARDING,
+    'usage'                                => $FIELD_USAGE,
+    'use_allow_active_dir'                 => $FIELD_USE_ALLOW_ACTIVE_DIR,
+    'use_allow_query'                      => $FIELD_USE_ALLOW_QUERY,
+    'use_allow_transfer'                   => $FIELD_USE_ALLOW_TRANSFER,
+    'use_allow_update'                     => $FIELD_USE_ALLOW_UPDATE,
+    'use_allow_update_forwarding'          => $FIELD_USE_ALLOW_UPDATE_FORWARDING,
+    'use_authority'                        => $FIELD_USE_AUTHORITY,
+    'use_blacklist'                        => $FIELD_USE_BLACKLIST,
+    'use_bootfile'                         => $FIELD_USE_BOOTFILE,
+    'use_bootserver'                       => $FIELD_USE_BOOTSERVER,
+    'use_check_names_policy'               => $FIELD_USE_CHECK_NAMES_POLICY,
+    'use_copy_xfer_to_notify'              => $FIELD_USE_COPY_XFER_TO_NOTIFY,
+    'use_ddns_domainname'                  => $FIELD_USE_DDNS_DOMAINNAME,
+    'use_ddns_generate_hostname'           => $FIELD_USE_DDNS_GENERATE_HOSTNAME,
+    'use_ddns_ttl'                         => $FIELD_USE_DDNS_TTL,
+    'use_ddns_update_fixed_addresses'      => $FIELD_USE_DDNS_UPDATE_FIXED_ADDRESSES,
+    'use_ddns_use_option81'                => $FIELD_USE_DDNS_USE_OPTION81,
+    'use_delegated_ttl'                    => $FIELD_USE_DELEGATED_TTL,
+    'use_deny_bootp'                       => $FIELD_USE_DENY_BOOTP,
+    'use_dns64'                            => $FIELD_USE_DNS64,
+    'use_dnssec'                           => $FIELD_USE_DNSSEC,
+    'use_dnssec_key_params'                => $FIELD_USE_DNSSEC_KEY_PARAMS,
+    'use_domain_name'                      => $FIELD_USE_DOMAIN_NAME,
+    'use_domain_name_servers'              => $FIELD_USE_DOMAIN_NAME_SERVERS,
+    'use_email_list'                       => $FIELD_USE_EMAIL_LIST,
+    'use_enable_ddns'                      => $FIELD_USE_ENABLE_DDNS,
+    'use_enable_dhcp_thresholds'           => $FIELD_USE_ENABLE_DHCP_THRESHOLDS,
+    'use_enable_ifmap_publishing'          => $FIELD_USE_ENABLE_IFMAP_PUBLISHING,
+    'use_external_primary'                 => $FIELD_USE_EXTERNAL_PRIMARY,
+    'use_filter_aaaa'                      => $FIELD_USE_FILTER_AAAA,
+    'use_for_ea_inheritance'               => $FIELD_USE_FOR_EA_INHERITANCE,
+    'use_forwarders'                       => $FIELD_USE_FORWARDERS,
+    'use_grid_zone_timer'                  => $FIELD_USE_GRID_ZONE_TIMER,
+    'use_ignore_client_requested_options'  => $FIELD_USE_IGNORE_CLIENT_REQUESTED_OPTIONS,
+    'use_ignore_dhcp_option_list_request'  => $FIELD_USE_IGNORE_DHCP_OPTION_LIST_REQUEST,
+    'use_import_from'                      => $FIELD_USE_IMPORT_FROM,
+    'use_known_clients'                    => $FIELD_USE_KNOWN_CLIENTS,
+    'use_lame_ttl'                         => $FIELD_USE_LAME_TTL,
+    'use_lease_scavenge_time'              => $FIELD_USE_LEASE_SCAVENGE_TIME,
+    'use_nextserver'                       => $FIELD_USE_NEXTSERVER,
+    'use_notify_delay'                     => $FIELD_USE_NOTIFY_DELAY,
+    'use_nxdomain_redirect'                => $FIELD_USE_NXDOMAIN_REDIRECT,
+    'use_options'                          => $FIELD_USE_OPTIONS,
+    'use_preferred_lifetime'               => $FIELD_USE_PREFERRED_LIFETIME,
+    'use_pxe_lease_time'                   => $FIELD_USE_PXE_LEASE_TIME,
+    'use_record_name_policy'               => $FIELD_USE_RECORD_NAME_POLICY,
+    'use_recursion'                        => $FIELD_USE_RECURSION,
+    'use_recycle_leases'                   => $FIELD_USE_RECYCLE_LEASES,
+    'username'                             => $FIELD_USERNAME,
+    'use_root_name_server'                 => $FIELD_USE_ROOT_NAME_SERVER,
+    'use_soa_email'                        => $FIELD_USE_SOA_EMAIL,
+    'use_soa_mname'                        => $FIELD_USE_SOA_MNAME,
+    'use_sortlist'                         => $FIELD_USE_SORTLIST,
+    'use_ttl'                              => $FIELD_USE_TTL,
+    'use_unknown_clients'                  => $FIELD_USE_UNKNOWN_CLIENTS,
+    'use_update_dns_on_lease_renewal'      => $FIELD_USE_UPDATE_DNS_ON_LEASE_RENEWAL,
+    'use_valid_lifetime'                   => $FIELD_USE_VALID_LIFETIME,
+    'use_zone_associations'                => $FIELD_USE_ZONE_ASSOCIATIONS,
+    'using_srg_associations'               => $FIELD_USING_SRG_ASSOCIATIONS,
+    'valid_lifetime'                       => $FIELD_VALID_LIFETIME,
+    'variable'                             => $FIELD_VARIABLE,
+    'view'                                 => $FIELD_VIEW,
+    'weight'                               => $FIELD_WEIGHT,
+    'zone'                                 => $FIELD_ZONE,
+    'zone_associations'                    => $FIELD_ZONE_ASSOCIATIONS,
+    'zone_format'                          => $FIELD_ZONE_FORMAT,
+    'zone_not_queried_enabled_time'        => $FIELD_ZONE_NOT_QUERIED_ENABLED_TIME,
+);
+
+#
+# These need to be Updated HERE
+#
+Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_ACCESS_LIST                          => $TYPE_UNKNOWN,
     $FIELD_ADDRESS                              => $TYPE_UNKNOWN,
     $FIELD_ADDRESS_TYPE                         => $TYPE_UNKNOWN,
@@ -1136,7 +1506,7 @@ Readonly::Hash our %_FIELD_TYPES => (
     $FIELD_ZONE_NOT_QUERIED_ENABLED_TIME        => $TYPE_UNKNOWN,
 );
 
-Readonly::Hash our %_MODULE_OBJ_NAMES => (
+Readonly::Hash our %_MODULE_OBJ_NAME => (
     $MODULE_FIXEDADDRESS         => 'fixedaddress',
     $MODULE_GRID                 => 'grid',
     $MODULE_IPV4ADDRESS          => 'ipv4address',
@@ -1174,18 +1544,73 @@ Readonly::Hash our %_MODULE_OBJ_NAMES => (
     $MODULE_ZONE_STUB            => 'zone_stub',
 );
 
+Readonly::Hash our %_NAME_MODULE_OBJ => (
+    'fixedaddress'         => $MODULE_FIXEDADDRESS,
+    'grid'                 => $MODULE_GRID,
+    'ipv4address'          => $MODULE_IPV4ADDRESS,
+    'ipv6address'          => $MODULE_IPV6ADDRESS,
+    'ipv6fixedaddress'     => $MODULE_IPV6FIXEDADDRESS,
+    'ipv6networkcontainer' => $MODULE_IPV6NETWORKCONTAINER,
+    'ipv6network'          => $MODULE_IPV6NETWORK,
+    'ipv6range'            => $MODULE_IPV6RANGE,
+    'lease'                => $MODULE_LEASE,
+    'macfilteraddress'     => $MODULE_MACFILTERADDRESS,
+    'member'               => $MODULE_MEMBER,
+    'namedacl'             => $MODULE_NAMEDACL,
+    'networkcontainer'     => $MODULE_NETWORKCONTAINER,
+    'network'              => $MODULE_NETWORK,
+    'networkview'          => $MODULE_NETWORKVIEW,
+    'range'                => $MODULE_RANGE,
+    'record_aaaa'          => $MODULE_RECORD_AAAA,
+    'record_a'             => $MODULE_RECORD_A,
+    'record_cname'         => $MODULE_RECORD_CNAME,
+    'record_host_ipv4addr' => $MODULE_RECORD_IPV4ADDR,
+    'record_host_ipv6addr' => $MODULE_RECORD_IPV6ADDR,
+    'record_host'          => $MODULE_RECORD_HOST,
+    'record_mx'            => $MODULE_RECORD_MX,
+    'record'               => $MODULE_RECORD,
+    'record_ptr'           => $MODULE_RECORD_PTR,
+    'record_srv'           => $MODULE_RECORD_SRV,
+    'record_txt'           => $MODULE_RECORD_TXT,
+    'restartservicestatus' => $MODULE_RESTARTSERVICESTATUS,
+    'scheduledtask'        => $MODULE_SCHEDULEDTASK,
+    'search'               => $MODULE_SEARCH,
+    'view'                 => $MODULE_VIEW,
+    'zone_auth'            => $MODULE_ZONE_AUTH,
+    'zone_delegated'       => $MODULE_ZONE_DELEGATED,
+    'zone_forward'         => $MODULE_ZONE_FORWARD,
+    'zone_stub'            => $MODULE_ZONE_STUB,
+);
+
 #  $FIELD_NAMES
 # ---------------------------
 # EXPORTS
 # ---------------------------
 our @EXPORT = qw (
-  URL_PARM_NAME
+  $DEBUG
+  URL_PARM_EXISTS;
   URL_FIELD_EXISTS
+  URL_NAME_FIELD_EXISTS
   URL_MODULE_EXISTS
+  URL_REF_MODULE_EXISTS
+  URL_NAME_MODULE_EXISTS
   URL_SEARCH_EXISTS
+  URL_PARM_NAME
   URL_FIELD_NAME
+  URL_FIELD_TYPE
+  URL_NAME_FIELD
   URL_MODULE_NAME
+  URL_REF_MODULE_NAME
+  URL_NAME_MODULE
   URL_SEARCH_NAME
+  MYNAME
+  MYLINE
+  MYNAMELINE
+  PRINT_MYNAME
+  PRINT_MYLINE
+  PRINT_MYNAMELINE
+  $_IB_VERSION
+  $_IB_REF
   $IB_BASE_FIELDS
   $IB_CRED
   $IB_MAX_RESULTS
@@ -1194,12 +1619,10 @@ our @EXPORT = qw (
   $IB_RETURN_TYPE
   $IB_READONLY_FIELDS
   $IB_SEARCHABLE_FIELDS
-  $SEARCH_PARM_CASE_INSENSATIVE
-  $SEARCH_PARM_EQUAL
-  $SEARCH_PARM_GT
-  $SEARCH_PARM_NEGATIVE
-  $SEARCH_PARM_LT
-  $SEARCH_PARM_REGEX
+  $IB_USERNAME
+  $IB_PASSWORD
+  $IB_HOSTNAME
+  $FIELD_REF
   $FIELD_ACCESS_LIST
   $FIELD_ADDRESS
   $FIELD_ADDRESS_TYPE
@@ -1538,24 +1961,66 @@ our @EXPORT = qw (
   $FIELD_ZONE_ASSOCIATIONS
   $FIELD_ZONE_FORMAT
   $FIELD_ZONE_NOT_QUERIED_ENABLED_TIME
+  $SEARCH_PARM_CASE_INSENSATIVE
+  $SEARCH_PARM_EQUAL
+  $SEARCH_PARM_GT
+  $SEARCH_PARM_NEGATIVE
+  $SEARCH_PARM_LT
+  $SEARCH_PARM_REGEX
+  $TYPE_BOOL
+  $TYPE_EXTATTRS
+  $TYPE_INT
+  $TYPE_MEMBERS
+  $TYPE_OPTIONS
+  $TYPE_STRING
+  $TYPE_STRING_ARRAY
+  $TYPE_TIMESTAMP
+  $TYPE_UINT
+  $TYPE_UNKNOWN
+  $TYPE_ZONE_ASSOCIATIONS
 );
+
+# ------------------------------------------------------
+sub URL_PARM_EXISTS {
+    my ($parm) = @_;
+    return defined $_PARM_NAME{$parm};
+}
 
 # ------------------------------------------------------
 sub URL_FIELD_EXISTS {
     my ($field) = @_;
-    return defined $_FIELD_URL_NAMES{$field};
+    return defined $_FIELD_NAME{$field};
+}
+
+# ------------------------------------------------------
+sub URL_NAME_FIELD_EXISTS {
+    my ($name) = @_;
+    return defined $_NAME_FIELD{$name};
 }
 
 # ------------------------------------------------------
 sub URL_MODULE_EXISTS {
     my ($module) = @_;
-    return defined $_MODULE_OBJ_NAMES{$module};
+    return defined $_MODULE_OBJ_NAME{$module};
+}
+
+# ------------------------------------------------------
+sub URL_REF_MODULE_EXISTS {
+    my ($ref) = @_;
+    if ( !defined $ref ) { confess @_; }
+    URL_MODULE_EXISTS( ( split( /\//, $ref ) )[0] );
+}
+
+# ------------------------------------------------------
+sub URL_NAME_MODULE_EXISTS {
+    my ($module) = @_;
+    return defined $_NAME_MODULE_OBJ{$module};
 }
 
 # ------------------------------------------------------
 sub URL_SEARCH_EXISTS {
     my ($search) = @_;
-    return defined $_SEARCH_URL_NAMES{$search};
+    return defined $_SEARCH_NAME{$search};
 }
 
 # ------------------------------------------------------
@@ -1563,9 +2028,9 @@ sub URL_PARM_NAME {
     my ($parm) = @_;
 
     if ( !defined $parm || $parm eq '' ) { confess; }
-    if ( !defined $_PARM_URL_NAMES{$parm} ) { confess; }
+    if ( !defined $_PARM_NAME{$parm} ) { confess; }
 
-    return $_PARM_URL_NAMES{$parm};
+    return $_PARM_NAME{$parm};
 
 }
 
@@ -1574,9 +2039,33 @@ sub URL_FIELD_NAME {
     my ($field) = @_;
 
     if ( !defined $field || $field eq '' ) { confess; }
-    if ( !defined $_FIELD_URL_NAMES{$field} ) { confess; }
+    if ( !defined $_FIELD_NAME{$field} ) { confess; }
+    if ( !defined $_FIELD_TYPE{$field} ) { confess; }
 
-    return $_FIELD_URL_NAMES{$field};
+    return $_FIELD_NAME{$field};
+
+}
+
+# ------------------------------------------------------
+sub URL_FIELD_TYPE {
+    my ($field) = @_;
+
+    if ( !defined $field || $field eq '' ) { confess; }
+    if ( !defined $_FIELD_NAME{$field} ) { confess; }
+    if ( !defined $_FIELD_TYPE{$field} ) { confess; }
+
+    return $_FIELD_TYPE{$field};
+
+}
+
+# ------------------------------------------------------
+sub URL_NAME_FIELD {
+    my ($name) = @_;
+
+    if ( !defined $name || $name eq '' ) { confess; }
+    if ( !defined $_NAME_FIELD{$name} ) { confess "Field Name:'$name' Not found\n"; }
+
+    return $_NAME_FIELD{$name};
 
 }
 
@@ -1585,9 +2074,29 @@ sub URL_MODULE_NAME {
     my ($module) = @_;
 
     if ( !defined $module || $module eq '' ) { confess; }
-    if ( !defined $_MODULE_OBJ_NAMES{$module} ) { confess; }
+    if ( !defined $_MODULE_OBJ_NAME{$module} ) { confess; }
 
-    return $_MODULE_OBJ_NAMES{$module};
+    return $_MODULE_OBJ_NAME{$module};
+}
+
+# ------------------------------------------------------
+sub URL_REF_MODULE_NAME {
+    my ($ref) = @_;
+
+    if ( !defined $ref || $ref eq '' ) { confess; }
+    my $module = URL_MODULE_NAME( ( split( /\//, $ref ) )[0] );
+
+    return URL_MODULE_NAME {$module};
+}
+
+# ------------------------------------------------------
+sub URL_NAME_MODULE {
+    my ($name) = @_;
+
+    if ( !defined $name || $name eq '' ) { confess; }
+    if ( !defined $_NAME_MODULE_OBJ{$name} ) { confess; }
+
+    return $_NAME_MODULE_OBJ{$name};
 
 }
 
@@ -1596,10 +2105,38 @@ sub URL_SEARCH_NAME {
     my ($search) = @_;
 
     if ( !defined $search || $search eq '' ) { confess; }
-    if ( !defined $_SEARCH_URL_NAMES{$search} ) { confess; }
+    if ( !defined $_SEARCH_NAME{$search} ) { confess; }
 
-    return $_SEARCH_URL_NAMES{$search};
+    return $_SEARCH_NAME{$search};
 
+}
+
+# ------------------------------------------------------
+sub PRINT_MYNAME() { print( ( ( caller(1) )[3] ) . "\n") }
+# ------------------------------------------------------
+sub PRINT_MYLINE() { print( ( ( caller(1) )[2] ) . "\n") }
+# ------------------------------------------------------
+sub PRINT_MYNAMELINE() {
+    if ( defined caller(1) ) {
+       print ( ( ( caller(1) )[3] ) . ' line:' . ( ( caller(0) )[2] ) . "\n" );
+    }
+    else {
+       print( ( ( (caller)[1] ) . ' line:' . ( (caller)[2] ) ) . "\n");
+    }
+}
+
+# ------------------------------------------------------
+sub MYNAME() { ( ( caller(1) )[3] ) . ' ' }
+# ------------------------------------------------------
+sub MYLINE() { ( ( caller(1) )[2] ) . ' ' }
+# ------------------------------------------------------
+sub MYNAMELINE() {
+    if ( defined caller(1) ) {
+        ( ( ( caller(1) )[3] ) . ' line:' . ( ( caller(0) )[2] ) . " " );
+    }
+    else {
+        ( ( (caller)[1] ) . ' line:' . ( (caller)[2] ) ) . " ";
+    }
 }
 
 1;
