@@ -174,6 +174,8 @@ sub _get_reset {
 # ---------------------------
 sub _get_url {
     my ($self) = @_;
+    my @ret = ();
+    my $ret_array_ref = \@ret;
 
     PRINT_MYNAMELINE if $DEBUG;
 
@@ -216,7 +218,7 @@ sub _get_url {
           '&'
           . URL_PARM_NAME($IB_RETURN_FIELDS)
           . '='
-          . ( join( ',', ( sort( keys( %{ $self->{$_IBLWP_RETURN_FIELDS} } ) ) ) ) )
+          . ( join( ',', ( map {URL_FIELD_NAME($_)} sort( keys( %{ $self->{$_IBLWP_RETURN_FIELDS} } ) ) ) ) )
           ;
     }
     elsif ( defined $self->{$_IBLWP_RETURN_FIELDS_PLUS} ) {
@@ -224,7 +226,7 @@ sub _get_url {
           '&'
           . URL_PARM_NAME($IB_RETURN_FIELDS_PLUS)
           . '='
-          . ( join( ',', ( sort( keys( %{ $self->{$_IBLWP_RETURN_FIELDS_PLUS} } ) ) ) ) )
+          . ( join( ',', ( map {URL_FIELD_NAME($_)} sort( keys( %{ $self->{$_IBLWP_RETURN_FIELDS_PLUS} } ) ) ) ) )
           ;
     }
 
@@ -254,20 +256,23 @@ sub _get_url {
     my $record_ref = CONVERT_JSON_TO_IB($json);
 
     # Get each REF, get cached copied or create
-    foreach my $ref (keys(%$record_ref)) {
+    foreach my $ref ( keys(%$record_ref) ) {
+	push(@$ret_array_ref, $ref);
         my $ibrec;
         if ( defined( $ibrec = $self->parent->_get_ref($ref) ) ) {
             $ibrec->reload_record( $record_ref->{$ref} );
         }
         else {
             $ibrec = IBRecord->new( $self->parent, $record_ref->{$ref} );
-	    $self->parent->_add_obj($ibrec);
+            $self->parent->_add_obj($ibrec);
         }
     }
 
     # Get each element
 
-    PRINT_MYNAMELINE( "EXIT" ) if $DEBUG;
+    PRINT_MYNAMELINE("EXIT") if $DEBUG;
+
+    return \$ret_array_ref;
 
 }
 
@@ -308,9 +313,8 @@ sub get {
         confess "BAD PARAMETER:" . Dumper $parm;
     }
 
-    $self->_get_url;
+    return $self->_get_url;
 
-    $self;
 }
 
 # ---------------------------

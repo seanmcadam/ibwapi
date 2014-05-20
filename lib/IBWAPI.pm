@@ -10,7 +10,6 @@ use IBRecord;
 use base qw( Exporter );
 
 use Carp;
-use JSON;
 use warnings;
 use Data::Dumper;
 use Readonly;
@@ -142,18 +141,19 @@ sub create_lwp {
 #
 # ---------------------------------------------------------------------------------
 sub GET {
-    my ( $self, $field_ref ) = @_;
+    my ( $self, $search_field_ref, $return_field_ref ) = @_;
 
     PRINT_MYNAMELINE if $DEBUG;
+
+    if ( ref( $self->_lwp ) ne 'IBLWP' ) { confess 'Ref:' . ref( $self->_lwp ); }
 
     #
     # Verify parameters (Searchable fields)
     #
-    $self->_verify_search_parameters($field_ref);
+    $self->_verify_search_parameters($search_field_ref);
+    $self->_verify_return_fields($return_field_ref);
 
-    if ( ref( $self->_lwp ) ne 'IBLWP' ) { confess 'Ref:' . ref( $self->_lwp ); }
-
-    $self->_lwp->get( $self->_obj_name, $field_ref );
+    return $self->_lwp->get( $self->_obj_name, $search_field_ref, $return_field_ref );
 
 }
 
@@ -185,62 +185,6 @@ sub DELETE {
 }
 
 # ---------------------------------------------------------------------------------
-#
-# ---------------------------------------------------------------------------------
-sub _get {
-    my ( $self, $parm_ref ) = @_;
-    my $get_url    = '';
-    my $search_url = '';
-
-    PRINT_MYNAMELINE if $DEBUG;
-
-    if ( defined $parm_ref ) {
-
-        #
-        # Verify parameters (Searchable fields)
-        #
-        $self->_verify_search_parameters($parm_ref);
-
-        #
-        # Generate URL
-        #
-        $search_url = $self->_get_search_parameters($parm_ref);
-    }
-
-    #
-    # Retrieve URL
-    #
-
-    #$get_url = $self->{$_IB_URL}
-    #  . $self->{$_IB_OBJECT_NAME}
-    #  . '?'
-    #  . URL_PARM_NAME($IB_RETURN_TYPE)
-    #  . '='
-    #  . $_JSON
-    #  . '&'
-    #  . URL_PARM_NAME($IB_MAX_RESULTS)
-    #  . '='
-    #  . $self->{$_IB_MAX_RESULTS}
-    #  . $search_url
-    #  ;
-
-    #
-    # Check for error
-    #
-    if ( $self->_lwp->get($get_url)->is_error() ) {
-        print $get_url . "\n";
-        confess $self->_lwp->get_error . "\n";
-    }
-
-    my $json = decode_json( $self->_lwp->response()->content() );
-
-    foreach my $record (@$json) {
-        $self->{_RECORDS}->{ $record->{'_ref'} } = IBRecord->new($record);
-    }
-
-}
-
-# ---------------------------------------------------------------------------------
 sub _get_ref {
     my ( $self, $ref ) = @_;
 
@@ -249,7 +193,7 @@ sub _get_ref {
     if ( !defined $ref || !URL_REF_MODULE_EXISTS($ref) ) { confess "BAD REF: " . $ref; }
 
     if ( defined $self->{$_IB_RECORDS}->{$ref} ) {
-    	PRINT_MYNAMELINE(" EXIT - FOUND REF") if $DEBUG;
+        PRINT_MYNAMELINE(" EXIT - FOUND REF") if $DEBUG;
         return $self->{$_IB_RECORDS}->{$ref};
     }
 
@@ -298,12 +242,12 @@ sub _add_obj {
 
     PRINT_MYNAMELINE if $DEBUG;
 
-    if ( !defined $obj || ref($obj) ne $PERL_MODULE_IBRECORD) { confess MYNAMELINE . "Missing OBJECT\n"; }
+    if ( !defined $obj || ref($obj) ne $PERL_MODULE_IBRECORD ) { confess MYNAMELINE . "Missing OBJECT\n"; }
     my $ref = $obj->get_ref();
     if ( !defined $ref || !URL_REF_MODULE_EXISTS($ref) ) { confess MYNAMELINE . "BAD REF - " . $obj->get_ref . ' ' . Dumper $obj; }
 
     my $name = ( split( /\//, $ref ) )[0];
-    my $obj_name = URL_NAME_MODULE( $name );
+    my $obj_name = URL_NAME_MODULE($name);
 
     if ( $obj_name ne $self->_obj_name ) { confess MYNAMELINE . "BAD REF value: '$obj_name' != '" . $self->_obj_name . "\n"; }
 
@@ -312,7 +256,7 @@ sub _add_obj {
     }
     else {
         $self->{$_IB_RECORDS}->{$ref} = $obj;
-	$ret = 1;
+        $ret = 1;
     }
 
     PRINT_MYNAMELINE("EXIT") if $DEBUG;
@@ -424,6 +368,34 @@ sub _verify_search_parameters {
 }
 
 # ----------------------------------------------------------------------
+# Fails if a defined field is not on the search field
+# Ignores non-fields  (extensible attributes, and other parameters)
+# ----------------------------------------------------------------------
+sub _verify_return_fields {
+    my ( $self, $parm_ref ) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
+
+    if ( !defined $parm_ref ) { warn MYNAMELINE . " NO PARM_REF defined\n"; return; }
+
+    if ( ref($parm_ref) eq 'HASH' ) {
+        foreach my $k ( keys(%$parm_ref) ) {
+            confess "'$k' NOT A RETURN FIELD\n" if ( !$self->return_field_exists($k) );
+        }
+    }
+    elsif ( ref($parm_ref) eq 'ARRAY' ) {
+        foreach my $k (@$parm_ref) {
+            confess "'$k' NOT A RETURN FIELD\n" if ( !$self->return_field_exists($k) );
+        }
+    }
+    else {
+        confess "'$parm_ref' NOT A RETURN FIELD\n" if ( !$self->return_field_exists($parm_ref) );
+    }
+
+    PRINT_MYNAMELINE("EXIT") if $DEBUG;
+}
+
+# ----------------------------------------------------------------------
 # Returns T/F
 # ----------------------------------------------------------------------
 sub _is_field_searchable {
@@ -435,6 +407,18 @@ sub _is_field_searchable {
 
     return ( ( defined $self->{$_IB_SEARCHABLE_FIELDS}->{$field} ) ? 1 : 0 );
 
+}
+
+# ----------------------------------------------------------------------
+# return Field Exists
+# ----------------------------------------------------------------------
+sub return_field_exists {
+    my ( $self, $f ) = @_;
+
+    defined $f || confess @_;
+    URL_FIELD_EXISTS($f) || confess @_;
+
+    $self->_field_exists( $self->{$_IB_RETURN_FIELDS}, $f )
 }
 
 # ----------------------------------------------------------------------

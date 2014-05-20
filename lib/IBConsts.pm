@@ -473,7 +473,7 @@ Readonly::Hash our %_SEARCH_NAME => (
 Readonly::Hash our %_PARM_NAME => (
     $IB_MAX_RESULTS        => '_max_results',
     $IB_RETURN_FIELDS      => '_return_fields',
-    $IB_RETURN_FIELDS_PLUS => '_return_fields+',
+    $IB_RETURN_FIELDS_PLUS => '_return_fields%2B',
     $IB_RETURN_TYPE        => '_return_type',
 );
 

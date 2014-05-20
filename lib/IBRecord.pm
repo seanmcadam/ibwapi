@@ -68,10 +68,10 @@ sub new {
     #
     foreach my $key ( sort( keys(%$field_ref) ) ) {
 
-        if ( $key eq $FIELD_REF ) { 
-    		$s{$_IBR_REF}          = $field_ref->{$key};
-		next; 
-	}
+        if ( $key eq $FIELD_REF ) {
+            $s{$_IBR_REF} = $field_ref->{$key};
+            next;
+        }
 
         if ( !URL_FIELD_EXISTS($key) ) { confess @_; }
         $v{$key} = $field_ref->{$key};
@@ -79,7 +79,7 @@ sub new {
 
     }
 
-    if( ! defined $s{$_IBR_REF} || ! $s{$_IBR_REF} ) { confess MYNAMELINE("NO REF DEFINED"); }
+    if ( !defined $s{$_IBR_REF} || !$s{$_IBR_REF} ) { confess MYNAMELINE("NO REF DEFINED"); }
 
     bless $self, $class;
     PRINT_MYNAMELINE("EXIT") if $DEBUG;
@@ -356,7 +356,7 @@ sub _flush {
 }
 
 # ---------------------------
-# 
+#
 # ---------------------------
 sub CONVERT_JSON_TO_IB {
     my ($json_array) = @_;
