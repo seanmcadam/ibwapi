@@ -135,6 +135,8 @@ Readonly::Hash our %_SEARCHABLE_FIELDS => (
 sub new {
     my ( $class, $parm_ref ) = @_;
 
+    PRINT_MYNAMELINE if $DEBUG;
+
     $parm_ref->{$IB_BASE_FIELDS}       = \%_BASE_FIELDS;
     $parm_ref->{$IB_RETURN_FIELDS}     = \%_RETURN_FIELDS;
     $parm_ref->{$IB_READONLY_FIELDS}   = \%_READONLY_FIELDS;
@@ -144,7 +146,7 @@ sub new {
 
     bless $self, $class;
 
-    $self->create_lwp;
+    $self->create_lwp( $parm_ref );
 
     $self;
 }

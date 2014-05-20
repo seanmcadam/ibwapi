@@ -17,8 +17,8 @@ use Readonly;
 use strict;
 
 # ---------------------------
-# GET:    ( field = val, ...) 
-#	returns Array Ref to IBRecords 
+# GET:    ( field = val, ...)
+#	returns Array Ref to IBRecords
 # POST:   ( field = val, ... )
 #	returns Ref to IBRecord
 # PUT:    ( REF, field = val, ... )
@@ -151,7 +151,7 @@ sub GET {
     #
     $self->_verify_search_parameters($field_ref);
 
-    if( ref($self->_lwp)  ne 'IBLWP' ) { confess 'Ref:' . ref( $self->_lwp); }
+    if ( ref( $self->_lwp ) ne 'IBLWP' ) { confess 'Ref:' . ref( $self->_lwp ); }
 
     $self->_lwp->get( $self->_obj_name, $field_ref );
 
@@ -246,11 +246,14 @@ sub _get_ref {
 
     PRINT_MYNAMELINE if $DEBUG;
 
-    if ( !defined $ref || !URL_REF_MODULE_EXISTS($ref) ) { confess @_; }
+    if ( !defined $ref || !URL_REF_MODULE_EXISTS($ref) ) { confess "BAD REF: " . $ref; }
 
     if ( defined $self->{$_IB_RECORDS}->{$ref} ) {
+    	PRINT_MYNAMELINE(" EXIT - FOUND REF") if $DEBUG;
         return $self->{$_IB_RECORDS}->{$ref};
     }
+
+    PRINT_MYNAMELINE(" EXIT - undef") if $DEBUG;
 
     return undef;
 
@@ -291,23 +294,29 @@ sub _delete_ref {
 # ---------------------------------------------------------------------------------
 sub _add_obj {
     my ( $self, $obj ) = @_;
+    my $ret = 0;
 
     PRINT_MYNAMELINE if $DEBUG;
 
-    if ( !defined $obj || ref($obj) ne 'IBRecord' ) { confess @_; }
+    if ( !defined $obj || ref($obj) ne $PERL_MODULE_IBRECORD) { confess MYNAMELINE . "Missing OBJECT\n"; }
     my $ref = $obj->get_ref();
-    if ( !defined $ref || !URL_REF_MODULE_EXISTS($ref) ) { confess @_; }
-    my $obj_name = URL_MODULE_NAME( ( split( /\//, $ref ) )[0] );
-    if ( $ref ne $self->{$_IB_OBJECT_NAME} ) { confess @_; }
+    if ( !defined $ref || !URL_REF_MODULE_EXISTS($ref) ) { confess MYNAMELINE . "BAD REF - " . $obj->get_ref . ' ' . Dumper $obj; }
+
+    my $name = ( split( /\//, $ref ) )[0];
+    my $obj_name = URL_NAME_MODULE( $name );
+
+    if ( $obj_name ne $self->_obj_name ) { confess MYNAMELINE . "BAD REF value: '$obj_name' != '" . $self->_obj_name . "\n"; }
 
     if ( defined $self->{$_IB_RECORDS}->{$ref} ) {
-        confess "Adding the same object: '$ref'\n";
+        warn "Adding the same object: '$ref'\n";
     }
     else {
         $self->{$_IB_RECORDS}->{$ref} = $obj;
+	$ret = 1;
     }
 
-    return 1;
+    PRINT_MYNAMELINE("EXIT") if $DEBUG;
+    $ret;
 
 }
 
@@ -345,6 +354,8 @@ sub _obj_name {
 
     defined $self->{$_IB_OBJECT_NAME} || confess @_;
 
+    PRINT_MYNAMELINE( "EXIT " . $self->{$_IB_OBJECT_NAME} ) if $DEBUG;
+
     $self->{$_IB_OBJECT_NAME};
 }
 
@@ -356,7 +367,7 @@ sub _lwp {
 
     PRINT_MYNAMELINE if $DEBUG;
 
-    defined $self->{$_LWP_OBJ} || confess Dumper @_; 
+    defined $self->{$_LWP_OBJ} || confess Dumper @_;
 
     return $self->{$_LWP_OBJ};
 }
@@ -399,11 +410,11 @@ sub _verify_search_parameters {
 
     PRINT_MYNAMELINE if $DEBUG;
 
-    if( ! defined $parm_ref ) { warn MYNAMELINE . " NO PARM_REF defined\n"; return; }
+    if ( !defined $parm_ref ) { warn MYNAMELINE . " NO PARM_REF defined\n"; return; }
 
     foreach my $p ( sort( keys(%$parm_ref) ) ) {
         if ( URL_FIELD_EXISTS($p) ) {
-            confess "'$p' NOT SEARCHABLE FOR " . $self->{$_IB_OBJECT_NAME} . "\n" if ( !$self->_is_field_searchable($p) );
+            confess "'$p' NOT SEARCHABLE FOR " . $self->_obj_name . "\n" if ( !$self->_is_field_searchable($p) );
             confess "VALUE FOR '$p' NOT AN ARRAY\n" if ( ref( $parm_ref->{$p} ) ne 'ARRAY' );
 
             # Verify Type HERE

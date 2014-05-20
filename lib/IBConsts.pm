@@ -2,6 +2,7 @@
 
 package IBConsts;
 use base qw( Exporter );
+use Data::Dumper;
 use Carp;
 use warnings;
 use Readonly;
@@ -22,15 +23,20 @@ sub URL_MODULE_NAME;
 sub URL_NAME_MODULE;
 sub URL_REF_NAME_MODULE;
 sub URL_SEARCH_NAME;
-sub MYNAME();
-sub MYLINE();
-sub MYNAMELINE();
-sub PRINT_MYNAME();
-sub PRINT_MYLINE();
-sub PRINT_MYNAMELINE();
+sub MYNAME;
+sub MYLINE;
+sub MYNAMELINE;
+sub PRINT_MYNAME;
+sub PRINT_MYLINE;
+sub PRINT_MYNAMELINE;
 
 Readonly our $_IB_VERSION => '0.95';
 Readonly our $DEBUG       => 1;
+
+Readonly our $PERL_MODULE_IBCONSTS => 'IBConsts';
+Readonly our $PERL_MODULE_IBWAPI   => 'IBWAPI';
+Readonly our $PERL_MODULE_IBRECORD => 'IBRecord';
+Readonly our $PERL_MODULE_IBLWP    => 'IBLWP';
 
 # ---------------------------
 Readonly our $_IB_REF => '_ref';
@@ -456,12 +462,12 @@ Readonly::Hash our %_TYPE_NAME => (
 );
 
 Readonly::Hash our %_SEARCH_NAME => (
-    $SEARCH_PARM_CASE_INSENSATIVE => ':',
+    $SEARCH_PARM_CASE_INSENSATIVE => ':=',
     $SEARCH_PARM_EQUAL            => '=',
     $SEARCH_PARM_GT               => '>',
     $SEARCH_PARM_NEGATIVE         => '!',
     $SEARCH_PARM_LT               => '<',
-    $SEARCH_PARM_REGEX            => '~',
+    $SEARCH_PARM_REGEX            => '~=',
 );
 
 Readonly::Hash our %_PARM_NAME => (
@@ -1611,6 +1617,10 @@ our @EXPORT = qw (
   PRINT_MYNAMELINE
   $_IB_VERSION
   $_IB_REF
+  $PERL_MODULE_IBCONSTS
+  $PERL_MODULE_IBWAPI
+  $PERL_MODULE_IBRECORD
+  $PERL_MODULE_IBLWP
   $IB_BASE_FIELDS
   $IB_CRED
   $IB_MAX_RESULTS
@@ -1982,155 +1992,192 @@ our @EXPORT = qw (
 
 # ------------------------------------------------------
 sub URL_PARM_EXISTS {
-    my ($parm) = @_;
-    return defined $_PARM_NAME{$parm};
+    my ($u) = @_;
+    if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
+    return defined $_PARM_NAME{$u};
 }
 
 # ------------------------------------------------------
 sub URL_FIELD_EXISTS {
-    my ($field) = @_;
-    return defined $_FIELD_NAME{$field};
+    my ($u) = @_;
+    if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
+    return defined $_FIELD_NAME{$u};
 }
 
 # ------------------------------------------------------
 sub URL_NAME_FIELD_EXISTS {
-    my ($name) = @_;
-    return defined $_NAME_FIELD{$name};
+    my ($u) = @_;
+    if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
+    return defined $_NAME_FIELD{$u};
 }
 
 # ------------------------------------------------------
 sub URL_MODULE_EXISTS {
-    my ($module) = @_;
-    return defined $_MODULE_OBJ_NAME{$module};
-}
+    my ($u) = @_;
 
-# ------------------------------------------------------
-sub URL_REF_MODULE_EXISTS {
-    my ($ref) = @_;
-    if ( !defined $ref ) { confess @_; }
-    URL_MODULE_EXISTS( ( split( /\//, $ref ) )[0] );
+    if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
+    print( MYNAMELINE . " Module:$u\n" ) if $DEBUG;
+
+    return defined $_MODULE_OBJ_NAME{$u};
 }
 
 # ------------------------------------------------------
 sub URL_NAME_MODULE_EXISTS {
-    my ($module) = @_;
-    return defined $_NAME_MODULE_OBJ{$module};
+    my ($u) = @_;
+
+    if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
+    print( MYNAMELINE . " Module Name:$u\n" ) if $DEBUG;
+
+    return defined $_NAME_MODULE_OBJ{$u};
+}
+
+# ------------------------------------------------------
+sub URL_REF_MODULE_EXISTS {
+    my ($u) = @_;
+
+    if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
+    print( MYNAMELINE . " Ref:$u\n" ) if $DEBUG;
+
+    if ( !defined $u ) { confess MYNAMELINE; }
+
+    URL_NAME_MODULE_EXISTS( ( split( /\//, $u ) )[0] );
 }
 
 # ------------------------------------------------------
 sub URL_SEARCH_EXISTS {
-    my ($search) = @_;
-    return defined $_SEARCH_NAME{$search};
+    my ($u) = @_;
+    if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
+    return defined $_SEARCH_NAME{$u};
 }
 
 # ------------------------------------------------------
 sub URL_PARM_NAME {
-    my ($parm) = @_;
+    my ($u) = @_;
 
-    if ( !defined $parm || $parm eq '' ) { confess; }
-    if ( !defined $_PARM_NAME{$parm} ) { confess; }
+    if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
+    if ( !defined $_PARM_NAME{$u} ) { confess; }
 
-    return $_PARM_NAME{$parm};
+    return $_PARM_NAME{$u};
 
 }
 
 # ------------------------------------------------------
 sub URL_FIELD_NAME {
-    my ($field) = @_;
+    my ($u) = @_;
 
-    if ( !defined $field || $field eq '' ) { confess; }
-    if ( !defined $_FIELD_NAME{$field} ) { confess; }
-    if ( !defined $_FIELD_TYPE{$field} ) { confess; }
+    if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
+    if ( !defined $_FIELD_NAME{$u} ) { confess; }
+    if ( !defined $_FIELD_TYPE{$u} ) { confess; }
 
-    return $_FIELD_NAME{$field};
+    return $_FIELD_NAME{$u};
 
 }
 
 # ------------------------------------------------------
 sub URL_FIELD_TYPE {
-    my ($field) = @_;
+    my ($u) = @_;
 
-    if ( !defined $field || $field eq '' ) { confess; }
-    if ( !defined $_FIELD_NAME{$field} ) { confess; }
-    if ( !defined $_FIELD_TYPE{$field} ) { confess; }
+    if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
+    if ( !defined $_FIELD_NAME{$u} ) { confess; }
+    if ( !defined $_FIELD_TYPE{$u} ) { confess; }
 
-    return $_FIELD_TYPE{$field};
+    return $_FIELD_TYPE{$u};
 
 }
 
 # ------------------------------------------------------
 sub URL_NAME_FIELD {
-    my ($name) = @_;
+    my ($u) = @_;
 
-    if ( !defined $name || $name eq '' ) { confess; }
-    if ( !defined $_NAME_FIELD{$name} ) { confess "Field Name:'$name' Not found\n"; }
+    if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
+    if ( !defined $_NAME_FIELD{$u} ) { confess "Field Name:'$u' Not found\n"; }
 
-    return $_NAME_FIELD{$name};
+    return $_NAME_FIELD{$u};
 
 }
 
 # ------------------------------------------------------
 sub URL_MODULE_NAME {
-    my ($module) = @_;
+    my ($u) = @_;
 
-    if ( !defined $module || $module eq '' ) { confess; }
-    if ( !defined $_MODULE_OBJ_NAME{$module} ) { confess; }
+    if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
+    if ( !defined $_MODULE_OBJ_NAME{$u} ) { confess MYNAMELINE . "No Module named: $u"; }
 
-    return $_MODULE_OBJ_NAME{$module};
+    PRINT_MYNAMELINE( "Return:" . $_MODULE_OBJ_NAME{$u} ) if $DEBUG;
+
+    return $_MODULE_OBJ_NAME{$u};
 }
 
 # ------------------------------------------------------
 sub URL_REF_MODULE_NAME {
-    my ($ref) = @_;
+    my ($u) = @_;
 
-    if ( !defined $ref || $ref eq '' ) { confess; }
-    my $module = URL_MODULE_NAME( ( split( /\//, $ref ) )[0] );
+    if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
+    my $module = URL_MODULE_NAME( ( split( /\//, $u ) )[0] );
 
-    return URL_MODULE_NAME {$module};
+    return URL_MODULE_NAME {$u};
 }
 
 # ------------------------------------------------------
 sub URL_NAME_MODULE {
-    my ($name) = @_;
+    my ($u) = @_;
 
-    if ( !defined $name || $name eq '' ) { confess; }
-    if ( !defined $_NAME_MODULE_OBJ{$name} ) { confess; }
+    if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
+    if ( !defined $_NAME_MODULE_OBJ{$u} ) { confess; }
 
-    return $_NAME_MODULE_OBJ{$name};
+    return $_NAME_MODULE_OBJ{$u};
 
 }
 
 # ------------------------------------------------------
 sub URL_SEARCH_NAME {
-    my ($search) = @_;
+    my ($u) = @_;
 
-    if ( !defined $search || $search eq '' ) { confess; }
-    if ( !defined $_SEARCH_NAME{$search} ) { confess; }
+    if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
+    if ( !defined $_SEARCH_NAME{$u} ) { confess; }
 
-    return $_SEARCH_NAME{$search};
+    return $_SEARCH_NAME{$u};
 
 }
 
 # ------------------------------------------------------
-sub PRINT_MYNAME() { print( ( ( caller(1) )[3] ) . "\n") }
+sub PRINT_MYNAME {
+    my ($a) = @_;
+    print( ( caller(1) )[3] );
+    print $a if ( defined $a );
+    print "\n";
+}
+
 # ------------------------------------------------------
-sub PRINT_MYLINE() { print( ( ( caller(1) )[2] ) . "\n") }
+sub PRINT_MYLINE {
+    my ($a) = @_;
+    print( ( caller(1) )[2] );
+    print $a if ( defined $a );
+    print "\n";
+}
+
 # ------------------------------------------------------
-sub PRINT_MYNAMELINE() {
+sub PRINT_MYNAMELINE {
+    my ($a) = @_;
     if ( defined caller(1) ) {
-       print ( ( ( caller(1) )[3] ) . ' line:' . ( ( caller(0) )[2] ) . "\n" );
+        print( ( ( caller(1) )[3] ) . ' line:' . ( ( caller(0) )[2] ) );
     }
     else {
-       print( ( ( (caller)[1] ) . ' line:' . ( (caller)[2] ) ) . "\n");
+        print( ( ( (caller)[1] ) . ' line:' . ( (caller)[2] ) ) );
     }
+
+    print " $a" if ( defined $a );
+    print "\n";
 }
 
 # ------------------------------------------------------
-sub MYNAME() { ( ( caller(1) )[3] ) . ' ' }
+sub MYNAME { ( ( caller(1) )[3] ) . ' ' }
+
 # ------------------------------------------------------
-sub MYLINE() { ( ( caller(1) )[2] ) . ' ' }
+sub MYLINE { ( ( caller(1) )[2] ) . ' ' }
+
 # ------------------------------------------------------
-sub MYNAMELINE() {
+sub MYNAMELINE {
     if ( defined caller(1) ) {
         ( ( ( caller(1) )[3] ) . ' line:' . ( ( caller(0) )[2] ) . " " );
     }

@@ -4,8 +4,10 @@ package IBLWP;
 use FindBin;
 use lib "$FindBin::Bin";
 use IBConsts;
+use IBRecord;
 use Data::Dumper;
 use Carp;
+use JSON;
 use LWP;
 use LWP::UserAgent;
 use HTTP::Request;
@@ -36,6 +38,7 @@ sub get_objtype;    #
 sub response;       # Returns HTTP::Response Object
 sub is_success;     # Returns HTTP::Response->is_success()
 sub is_error;       # Returns HTTP::Response->is_error()
+sub parent;
 sub _reset_search_fields;
 sub _add_search_fields;
 sub _reset_return_fields;
@@ -213,7 +216,7 @@ sub _get_url {
           '&'
           . URL_PARM_NAME($IB_RETURN_FIELDS)
           . '='
-          . ( join( ',', ( sort( keys( %{$self->{$_IBLWP_RETURN_FIELDS}} ) ) ) ) )
+          . ( join( ',', ( sort( keys( %{ $self->{$_IBLWP_RETURN_FIELDS} } ) ) ) ) )
           ;
     }
     elsif ( defined $self->{$_IBLWP_RETURN_FIELDS_PLUS} ) {
@@ -221,25 +224,50 @@ sub _get_url {
           '&'
           . URL_PARM_NAME($IB_RETURN_FIELDS_PLUS)
           . '='
-          . ( join( ',', ( sort( keys( %{$self->{$_IBLWP_RETURN_FIELDS_PLUS}} ) ) ) ) )
+          . ( join( ',', ( sort( keys( %{ $self->{$_IBLWP_RETURN_FIELDS_PLUS} } ) ) ) ) )
           ;
     }
 
     if ( defined $self->{$_IBLWP_SEARCH_FIELDS} ) {
-        foreach my $s ( sort( keys( %{$self->{$_IBLWP_SEARCH_FIELDS}} ) ) ) {
+        foreach my $s ( sort( keys( %{ $self->{$_IBLWP_SEARCH_FIELDS} } ) ) ) {
             $self->{$_IBLWP_URL} .=
               '&'
               . URL_FIELD_NAME($s)
-              . '='
-              . $self->{$_IBLWP_SEARCH_FIELDS}->{$s}
+              . URL_SEARCH_NAME( $self->{$_IBLWP_SEARCH_FIELDS}->{$s}->[0] )
+              . $self->{$_IBLWP_SEARCH_FIELDS}->{$s}->[1]
               ;
         }
     }
 
-print $self->{$_IBLWP_URL} . "\n";
-
     $self->{$_HTTP_REQUEST_OBJ} = HTTP::Request->new( GET => $self->{$_IBLWP_URL} );
     $self->{$_HTTP_RESPONSE_OBJ} = $self->{$_UA}->request( $self->{_HTTP_REQUEST_OBJ} );
+
+    # Is the response good?
+    if ( !$self->is_success() ) {
+        return 0;
+    }
+
+    # Is it a JSON Array?
+    my $json = decode_json( $self->response()->content() );
+    if ( ref($json) ne 'ARRAY' ) { confess Dumper $self; }
+
+    my $record_ref = CONVERT_JSON_TO_IB($json);
+
+    # Get each REF, get cached copied or create
+    foreach my $ref (keys(%$record_ref)) {
+        my $ibrec;
+        if ( defined( $ibrec = $self->parent->_get_ref($ref) ) ) {
+            $ibrec->reload_record( $record_ref->{$ref} );
+        }
+        else {
+            $ibrec = IBRecord->new( $self->parent, $record_ref->{$ref} );
+	    $self->parent->_add_obj($ibrec);
+        }
+    }
+
+    # Get each element
+
+    PRINT_MYNAMELINE( "EXIT" ) if $DEBUG;
 
 }
 
@@ -261,11 +289,10 @@ sub get {
 
     $self->_get_reset();
 
-    if ( ref($parm) eq 'IBRecord' ) {
+    if ( ref($parm) eq $PERL_MODULE_IBRECORD ) {
         $self->_set_objref( $parm->get_ref() );
         $self->_add_return_fields($parm_ref) if ( defined $parm_ref );
         if ( defined $parm2_ref ) { confess; }
-
     }
     elsif ( URL_MODULE_EXISTS($parm) ) {
         $self->_set_objtype($parm);
@@ -327,6 +354,17 @@ sub response {
     my ($self) = @_;
     if ( defined $self->{$_HTTP_RESPONSE_OBJ} ) {
         return $self->{$_HTTP_RESPONSE_OBJ};
+    }
+    return undef;
+}
+
+# ---------------------------
+# parent()
+# ---------------------------
+sub parent {
+    my ($self) = @_;
+    if ( defined $self->{$_IBLWP_PARENT_OBJ} ) {
+        return $self->{$_IBLWP_PARENT_OBJ};
     }
     return undef;
 }
