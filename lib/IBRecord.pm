@@ -16,6 +16,7 @@ use base qw( Exporter );
 # ---------------------------
 sub get_ref;
 sub get_field;
+sub add_field;
 sub update_field;
 sub reload_record;
 sub is_dirty;
@@ -24,6 +25,8 @@ sub _get_field;
 sub _flush;
 sub _lwp;
 sub CONVERT_JSON_TO_IB;
+
+
 
 # ---------------------------
 # READONLY VARIABLES

@@ -22,7 +22,6 @@ our @ISA = qw(IBWAPI);
 # ---------------------------
 # READONLY VARIABLES
 # ---------------------------
-# Readonly our $_OBJECT_NAME => URL_MODULE_NAME( ( split( '::', __PACKAGE__ ) )[-1] );
 Readonly our $_OBJECT_NAME => ( split( '::', __PACKAGE__ ) )[-1];
 
 # ---------------------------

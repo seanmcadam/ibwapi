@@ -16,12 +16,14 @@ use Readonly;
 use strict;
 
 # ---------------------------
-# GET:    ( field = val, ...)
+# GET:    ( {field = val,} [,(return_fields )])
 #	returns Array Ref to IBRecords
-# POST:   ( field = val, ... )
+# POST:   ( {field = val,} )
+#	Adds new record
 #	returns Ref to IBRecord
-# PUT:    ( REF, field = val, ... )
-#	updates existing record, flushes the record, and
+# PUT:    ( REF [,{field = val,}] )
+#	updates existing record
+#	flushes the record
 #	returns Ref to IBRecord
 # DELETE: ( REF )
 #	Returns T/F
@@ -31,18 +33,30 @@ use strict;
 # ---------------------------
 # PROTOTYPES
 # ---------------------------
-sub GET;
-sub POST;
-sub PUT;
-sub DELETE;
-sub _get;
-sub _post;
-sub _put;
-sub _get_ref;
-sub _update_ref;
-sub _flush_ref;
-sub _delete_ref;
+#sub GET;
+sub GET($\$$);
+sub POST($$);
+sub PUT($$\$);
+sub DELETE($$);
+sub get;
+sub add_rec;
+sub update;
+sub flush;
+sub delete;
+sub _field_exists;
+sub _base_field_exists;
+sub _readonly_field_exists;
+sub _searchable_field_exists;
 
+#sub create_lwp {
+#sub _obj_name {
+#sub _lwp {
+#sub _get_search_parameters {
+#sub _verify_search_parameters {
+#sub _verify_return_fields {
+#sub _is_field_searchable {
+
+#
 # ---------------------------
 # READONLY VARIABLES
 # ---------------------------
@@ -138,9 +152,9 @@ sub create_lwp {
 }
 
 # ---------------------------------------------------------------------------------
-#
+# Returns an Array of REFs
 # ---------------------------------------------------------------------------------
-sub GET {
+sub GET($\$$) {
     my ( $self, $search_field_ref, $return_field_ref ) = @_;
 
     PRINT_MYNAMELINE if $DEBUG;
@@ -150,75 +164,128 @@ sub GET {
     #
     # Verify parameters (Searchable fields)
     #
-    $self->_verify_search_parameters($search_field_ref);
-    $self->_verify_return_fields($return_field_ref);
+    $self->_verify_search_parameters($search_field_ref) if ($search_field_ref);
+    $self->_verify_return_fields($return_field_ref) if ( defined $return_field_ref );
 
     return $self->_lwp->get( $self->_obj_name, $search_field_ref, $return_field_ref );
 
 }
 
 # ---------------------------------------------------------------------------------
-#
+# Creates a new Record
 # ---------------------------------------------------------------------------------
-sub POST {
-    my ( $self, $parm_ref ) = @_;
+sub POST($$) {
+    my ( $self, $field_ref ) = @_;
     PRINT_MYNAMELINE if $DEBUG;
     confess;
 }
 
 # ---------------------------------------------------------------------------------
-#
+# Updated Existing Record
 # ---------------------------------------------------------------------------------
-sub PUT {
-    my ( $self, $parm_ref ) = @_;
+sub PUT($$\$) {
+    my ( $self, $ref, $parm_ref ) = @_;
     PRINT_MYNAMELINE if $DEBUG;
     confess;
 }
 
 # ---------------------------------------------------------------------------------
-#
+# Deletes an Existing Record
 # ---------------------------------------------------------------------------------
-sub DELETE {
-    my ( $self, $parm_ref ) = @_;
-    PRINT_MYNAMELINE if $DEBUG;
-    confess;
-}
-
-# ---------------------------------------------------------------------------------
-sub _get_ref {
+sub DELETE($$) {
     my ( $self, $ref ) = @_;
+    PRINT_MYNAMELINE if $DEBUG;
+    confess;
+}
+
+# ---------------------------------------------------------------------------------
+sub get {
+    my ( $self, $ref ) = @_;
+    my $ibr_rec = undef;
 
     PRINT_MYNAMELINE if $DEBUG;
 
     if ( !defined $ref || !URL_REF_MODULE_EXISTS($ref) ) { confess "BAD REF: " . $ref; }
 
+    #
+    # Check that IBRecord exists
+    #
     if ( defined $self->{$_IB_RECORDS}->{$ref} ) {
-        PRINT_MYNAMELINE(" EXIT - FOUND REF") if $DEBUG;
-        return $self->{$_IB_RECORDS}->{$ref};
+        $ibr_rec = $self->{$_IB_RECORDS}->{$ref};
     }
 
-    PRINT_MYNAMELINE(" EXIT - undef") if $DEBUG;
+    #
+    # Or go Get it from IB
+    #
+    else {
+        ($ibr_rec) = $self->_lwp->get($ref);
+    }
 
-    return undef;
+    PRINT_MYNAMELINE(" EXIT - $ref") if $DEBUG;
+
+    return $ibr_rec;
 
 }
 
 # ---------------------------------------------------------------------------------
-sub _update_ref {
+sub verify_record {
+    my ( $self, $ref ) = @_;
+    my $ibr_rec = undef;
+
+    PRINT_MYNAMELINE if $DEBUG;
+
+    if ( defined $ref && !URL_REF_MODULE_EXISTS($ref) ) { confess "BAD REF: " . $ref; }
+
+    #
+    # Check that IBRecord exists
+    #
+    if ( defined $self->{$_IB_RECORDS}->{$ref} ) {
+        $ibr_rec = $self->{$_IB_RECORDS}->{$ref};
+    }
+
+    PRINT_MYNAMELINE("EXIT") if $DEBUG;
+
+    return $ibr_rec;
+
+}
+
+# ---------------------------------------------------------------------------------
+sub get_field {
+    my ( $self, $ref, $field ) = @_;
+    my $ibr_rec   = undef;
+    my $ret_field = undef;
+
+    PRINT_MYNAMELINE if $DEBUG;
+
+    if ( !defined $ref   || !URL_REF_MODULE_EXISTS($ref) )         { confess "BAD REF: " . $ref; }
+    if ( !defined $field || !$self->_return_field_exists($field) ) { confess "BAD FIELD: " . $field; }
+
+    if ( defined( $ibr_rec = $self->get($ref) ) ) {
+        $ret_field = $ibr_rec->get_field($field);
+    }
+
+    PRINT_MYNAMELINE(" EXIT - $ret_field") if $DEBUG;
+
+    return $ret_field;
+
+}
+
+# ---------------------------------------------------------------------------------
+sub update {
     my ( $self, $ref, $field_ref ) = @_;
 
     PRINT_MYNAMELINE if $DEBUG;
 
     if ( !defined $ref || !URL_REF_MODULE_EXISTS($ref) ) { confess @_; }
 
-    $self->get_ibr_ref($ref)->update_field
+    $self->get($ref)->update_field
 
 }
 
 # ---------------------------------------------------------------------------------
 # Call the IB_RECORD flush function for the given _ref
 # ---------------------------------------------------------------------------------
-sub _flush_ref {
+sub flush {
     my ( $self, $ref ) = @_;
 
     PRINT_MYNAMELINE if $DEBUG;
@@ -227,7 +294,7 @@ sub _flush_ref {
 # ---------------------------------------------------------------------------------
 # Call the IB_RECORD delete function for the given _ref
 # ---------------------------------------------------------------------------------
-sub _delete_ref {
+sub delete {
     my ( $self, $ref ) = @_;
 
     PRINT_MYNAMELINE if $DEBUG;
@@ -236,7 +303,7 @@ sub _delete_ref {
 # ---------------------------------------------------------------------------------
 # Add an IBRecord to the _IB_RECORD HASH
 # ---------------------------------------------------------------------------------
-sub _add_obj {
+sub add_rec {
     my ( $self, $obj ) = @_;
     my $ret = 0;
 
@@ -262,30 +329,6 @@ sub _add_obj {
     PRINT_MYNAMELINE("EXIT") if $DEBUG;
     $ret;
 
-}
-
-# ---------------------------------------------------------------------------------
-# Returns: 201 (object created)
-# ---------------------------------------------------------------------------------
-sub _post {
-    my ($self) = @_;
-    PRINT_MYNAMELINE if $DEBUG;
-}
-
-# ---------------------------------------------------------------------------------
-# Returns: 200 (object updated)
-# ---------------------------------------------------------------------------------
-sub _put {
-    my ($self) = @_;
-    PRINT_MYNAMELINE if $DEBUG;
-}
-
-# ---------------------------------------------------------------------------------
-# Returns: 200 (object deleted)
-# ---------------------------------------------------------------------------------
-sub _delete {
-    my ($self) = @_;
-    PRINT_MYNAMELINE if $DEBUG;
 }
 
 # ---------------------------------------------------------------------------------
@@ -380,16 +423,16 @@ sub _verify_return_fields {
 
     if ( ref($parm_ref) eq 'HASH' ) {
         foreach my $k ( keys(%$parm_ref) ) {
-            confess "'$k' NOT A RETURN FIELD\n" if ( !$self->return_field_exists($k) );
+            confess "'$k' NOT A RETURN FIELD\n" if ( !$self->_return_field_exists($k) );
         }
     }
     elsif ( ref($parm_ref) eq 'ARRAY' ) {
         foreach my $k (@$parm_ref) {
-            confess "'$k' NOT A RETURN FIELD\n" if ( !$self->return_field_exists($k) );
+            confess "'$k' NOT A RETURN FIELD\n" if ( !$self->_return_field_exists($k) );
         }
     }
     else {
-        confess "'$parm_ref' NOT A RETURN FIELD\n" if ( !$self->return_field_exists($parm_ref) );
+        confess "'$parm_ref' NOT A RETURN FIELD\n" if ( !$self->_return_field_exists($parm_ref) );
     }
 
     PRINT_MYNAMELINE("EXIT") if $DEBUG;
@@ -405,14 +448,14 @@ sub _is_field_searchable {
 
     confess if ( !defined $self->{$_IB_SEARCHABLE_FIELDS} );
 
-    return ( ( defined $self->{$_IB_SEARCHABLE_FIELDS}->{$field} ) ? 1 : 0 );
+    return $self->_searchable_filed_exists($field);
 
 }
 
 # ----------------------------------------------------------------------
 # return Field Exists
 # ----------------------------------------------------------------------
-sub return_field_exists {
+sub _return_field_exists {
     my ( $self, $f ) = @_;
 
     defined $f || confess @_;
@@ -424,7 +467,7 @@ sub return_field_exists {
 # ----------------------------------------------------------------------
 # Base Field Exists
 # ----------------------------------------------------------------------
-sub base_field_exists {
+sub _base_field_exists {
     my ( $self, $f ) = @_;
 
     defined $f || confess @_;
@@ -436,7 +479,7 @@ sub base_field_exists {
 # ----------------------------------------------------------------------
 # readonly Field Exists
 # ----------------------------------------------------------------------
-sub readonly_field_exists {
+sub _readonly_field_exists {
     my ( $self, $f ) = @_;
 
     PRINT_MYNAMELINE if $DEBUG;
@@ -450,7 +493,7 @@ sub readonly_field_exists {
 # ----------------------------------------------------------------------
 # Searchable Field Exists
 # ----------------------------------------------------------------------
-sub searchable_field_exists {
+sub _searchable_field_exists {
     my ( $self, $f ) = @_;
 
     PRINT_MYNAMELINE if $DEBUG;

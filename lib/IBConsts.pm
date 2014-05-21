@@ -424,8 +424,8 @@ Readonly our $MODULE_LEASE                => 'Lease';
 Readonly our $MODULE_MACFILTERADDRESS     => 'Macfilteraddress';
 Readonly our $MODULE_MEMBER               => 'Member';
 Readonly our $MODULE_NAMEDACL             => 'Namedacl';
-Readonly our $MODULE_NETWORKCONTAINER     => 'Networkcontainer';
 Readonly our $MODULE_NETWORK              => 'Network';
+Readonly our $MODULE_NETWORKCONTAINER     => 'Networkcontainer';
 Readonly our $MODULE_NETWORKVIEW          => 'Networkview';
 Readonly our $MODULE_RANGE                => 'Range';
 Readonly our $MODULE_RECORD_AAAA          => 'Record_aaaa';
@@ -1173,7 +1173,7 @@ Readonly::Hash our %_NAME_FIELD => (
 #
 Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_ACCESS_LIST                          => $TYPE_UNKNOWN,
-    $FIELD_ADDRESS                              => $TYPE_UNKNOWN,
+    $FIELD_ADDRESS                              => $TYPE_STRING,
     $FIELD_ADDRESS_TYPE                         => $TYPE_UNKNOWN,
     $FIELD_AGENT_CIRCUIT_ID                     => $TYPE_UNKNOWN,
     $FIELD_AGENT_REMOTE_ID                      => $TYPE_UNKNOWN,
@@ -1193,8 +1193,8 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_AUTHORITY                            => $TYPE_BOOL,
     $FIELD_AUTO_CREATE_REVERSEZONE              => $TYPE_BOOL,
     $FIELD_AUTOMATIC_RESTART                    => $TYPE_UNKNOWN,
-    $FIELD_BILLING_CLASS                        => $TYPE_UNKNOWN,
-    $FIELD_BINDING_STATE                        => $TYPE_UNKNOWN,
+    $FIELD_BILLING_CLASS                        => $TYPE_STRING,
+    $FIELD_BINDING_STATE                        => $TYPE_STRING,
     $FIELD_BLACKLIST_ACTION                     => $TYPE_UNKNOWN,
     $FIELD_BLACKLIST_LOG_QUERY                  => $TYPE_UNKNOWN,
     $FIELD_BLACKLIST_REDIRECT_ADDRESSES         => $TYPE_UNKNOWN,
@@ -1204,9 +1204,9 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_BOOTSERVER                           => $TYPE_STRING,
     $FIELD_CANONICAL                            => $TYPE_UNKNOWN,
     $FIELD_CHANGED_OBJECTS                      => $TYPE_UNKNOWN,
-    $FIELD_CLIENT_HOSTNAME                      => $TYPE_UNKNOWN,
+    $FIELD_CLIENT_HOSTNAME                      => $TYPE_STRING,
     $FIELD_CLIENT_IDENTIFIER_PREPEND_ZERO       => $TYPE_UNKNOWN,
-    $FIELD_CLTT                                 => $TYPE_UNKNOWN,
+    $FIELD_CLTT                                 => $TYPE_TIMESTAMP,
     $FIELD_COMMENT                              => $TYPE_STRING,
     $FIELD_CONFIGURE_FOR_DHCP                   => $TYPE_UNKNOWN,
     $FIELD_CONFIGURE_FOR_DNS                    => $TYPE_UNKNOWN,
@@ -1230,7 +1230,7 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_DHCP_STATUS                          => $TYPE_UNKNOWN,
     $FIELD_DISABLE                              => $TYPE_BOOL,
     $FIELD_DISABLE_FORWARDING                   => $TYPE_UNKNOWN,
-    $FIELD_DISCOVERED_DATA                      => $TYPE_UNKNOWN,
+    $FIELD_DISCOVERED_DATA                      => $TYPE_STRING,
     $FIELD_DISPLAY_DOMAIN                       => $TYPE_UNKNOWN,
     $FIELD_DNS64_ENABLED                        => $TYPE_UNKNOWN,
     $FIELD_DNS64_GROUPS                         => $TYPE_UNKNOWN,
@@ -1265,7 +1265,7 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_ENABLE_RFC2317_EXCLUSION             => $TYPE_BOOL,
     $FIELD_ENABLE_SNMP_WARNINGS                 => $TYPE_BOOL,
     $FIELD_END_ADDR                             => $TYPE_UNKNOWN,
-    $FIELD_ENDS                                 => $TYPE_UNKNOWN,
+    $FIELD_ENDS                                 => $TYPE_TIMESTAMP,
     $FIELD_EXCLUDE                              => $TYPE_UNKNOWN,
     $FIELD_EXECUTE_NOW                          => $TYPE_UNKNOWN,
     $FIELD_EXECUTION_STATUS                     => $TYPE_UNKNOWN,
@@ -1299,7 +1299,7 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_GUEST_LAST_NAME                      => $TYPE_UNKNOWN,
     $FIELD_GUEST_MIDDLE_NAME                    => $TYPE_UNKNOWN,
     $FIELD_GUEST_PHONE                          => $TYPE_UNKNOWN,
-    $FIELD_HARDWARE                             => $TYPE_UNKNOWN,
+    $FIELD_HARDWARE                             => $TYPE_STRING,
     $FIELD_HIGH_WATER_MARK                      => $TYPE_UINT,
     $FIELD_HIGH_WATER_MARK_RESET                => $TYPE_UINT,
     $FIELD_HOST                                 => $TYPE_UNKNOWN,
@@ -1312,13 +1312,12 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_IPV4ADDRS                            => $TYPE_UNKNOWN,
     $FIELD_IPV6ADDR                             => $TYPE_UNKNOWN,
     $FIELD_IPV6ADDRS                            => $TYPE_UNKNOWN,
-    $FIELD_IPV6_DUID                            => $TYPE_UNKNOWN,
+    $FIELD_IPV6_DUID                            => $TYPE_STRING,
     $FIELD_IPV6_END_PREFIX                      => $TYPE_UNKNOWN,
-    $FIELD_IPV6_IAID                            => $TYPE_UNKNOWN,
-    $FIELD_IPV6_PREFERRED_LIFETIME              => $TYPE_UNKNOWN,
+    $FIELD_IPV6_IAID                            => $TYPE_STRING,
+    $FIELD_IPV6_PREFERRED_LIFETIME              => $TYPE_INT,
     $FIELD_IPV6PREFIX                           => $TYPE_UNKNOWN,
-    $FIELD_IPV6_PREFIX_BITS                     => $TYPE_UNKNOWN,
-    $FIELD_IPV6PREFIX_BITS                      => $TYPE_UNKNOWN,
+    $FIELD_IPV6_PREFIX_BITS                     => $TYPE_UINT,
     $FIELD_IPV6_START_PREFIX                    => $TYPE_UNKNOWN,
     $FIELD_IS_CONFLICT                          => $TYPE_UNKNOWN,
     $FIELD_IS_DEFAULT                           => $TYPE_UNKNOWN,
@@ -1365,10 +1364,10 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_NETWORK_ASSOCIATIONS                 => $TYPE_UNKNOWN,
     $FIELD_NETWORK_CONTAINER                    => $TYPE_STRING,
     $FIELD_NETWORK_VIEW                         => $TYPE_STRING,
-    $FIELD_NEVER_ENDS                           => $TYPE_UNKNOWN,
-    $FIELD_NEVER_EXPIRES                        => $TYPE_UNKNOWN,
-    $FIELD_NEVER_STARTS                         => $TYPE_UNKNOWN,
-    $FIELD_NEXT_BINDING_STATE                   => $TYPE_UNKNOWN,
+    $FIELD_NEVER_ENDS                           => $TYPE_BOOL,
+    $FIELD_NEVER_EXPIRES                        => $TYPE_BOOL,
+    $FIELD_NEVER_STARTS                         => $TYPE_BOOL,
+    $FIELD_NEXT_BINDING_STATE                   => $TYPE_STRING,
     $FIELD_NEXTSERVER                           => $TYPE_STRING,
     $FIELD_NOTIFY_DELAY                         => $TYPE_UNKNOWN,
     $FIELD_NS_GROUP                             => $TYPE_UNKNOWN,
@@ -1378,10 +1377,10 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_NXDOMAIN_REDIRECT_TTL                => $TYPE_UNKNOWN,
     $FIELD_NXDOMAIN_RULESETS                    => $TYPE_UNKNOWN,
     $FIELD_OBJECTS                              => $TYPE_UNKNOWN,
-    $FIELD_ON_COMMIT                            => $TYPE_UNKNOWN,
-    $FIELD_ON_EXPIRY                            => $TYPE_UNKNOWN,
-    $FIELD_ON_RELEASE                           => $TYPE_UNKNOWN,
-    $FIELD_OPTION                               => $TYPE_UNKNOWN,
+    $FIELD_ON_COMMIT                            => $TYPE_STRING,
+    $FIELD_ON_EXPIRY                            => $TYPE_STRING,
+    $FIELD_ON_RELEASE                           => $TYPE_STRING,
+    $FIELD_OPTION                               => $TYPE_STRING,
     $FIELD_OPTION_FILTER_RULES                  => $TYPE_UNKNOWN,
     $FIELD_OPTIONS                              => $TYPE_OPTIONS,
     $FIELD_PARENT                               => $TYPE_UNKNOWN,
@@ -1391,7 +1390,7 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_PREFIX                               => $TYPE_UNKNOWN,
     $FIELD_PRIMARY_TYPE                         => $TYPE_UNKNOWN,
     $FIELD_PRIORITY                             => $TYPE_UNKNOWN,
-    $FIELD_PROTOCOL                             => $TYPE_UNKNOWN,
+    $FIELD_PROTOCOL                             => $TYPE_STRING,
     $FIELD_PTRDNAME                             => $TYPE_UNKNOWN,
     $FIELD_PXE_LEASE_TIME                       => $TYPE_UINT,
     $FIELD_RECORD_NAME_POLICY                   => $TYPE_UNKNOWN,
@@ -1405,9 +1404,9 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_RR_NOT_QUERIED_ENABLED_TIME          => $TYPE_UNKNOWN,
     $FIELD_RRSET_ORDER                          => $TYPE_UNKNOWN,
     $FIELD_SCHEDULED_TIME                       => $TYPE_UNKNOWN,
-    $FIELD_SERVED_BY                            => $TYPE_UNKNOWN,
+    $FIELD_SERVED_BY                            => $TYPE_STRING,
     $FIELD_SERVER_ASSOCIATION_TYPE              => $TYPE_UNKNOWN,
-    $FIELD_SERVER_HOST_NAME                     => $TYPE_UNKNOWN,
+    $FIELD_SERVER_HOST_NAME                     => $TYPE_STRING,
     $FIELD_SET_SOA_SERIAL_NUMBER                => $TYPE_UNKNOWN,
     $FIELD_SOA_DEFAULT_TTL                      => $TYPE_UNKNOWN,
     $FIELD_SOA_EMAIL                            => $TYPE_UNKNOWN,
@@ -1422,7 +1421,7 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_SPLIT_SCOPE_EXCLUSION_PERCENT        => $TYPE_UNKNOWN,
     $FIELD_SRGS                                 => $TYPE_UNKNOWN,
     $FIELD_START_ADDR                           => $TYPE_UNKNOWN,
-    $FIELD_STARTS                               => $TYPE_UNKNOWN,
+    $FIELD_STARTS                               => $TYPE_TIMESTAMP,
     $FIELD_STATUS                               => $TYPE_UNKNOWN,
     $FIELD_STUB_FROM                            => $TYPE_UNKNOWN,
     $FIELD_STUB_MEMBERS                         => $TYPE_UNKNOWN,
@@ -1435,11 +1434,11 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_TEMPLATE                             => $TYPE_STRING,
     $FIELD_TEXT                                 => $TYPE_UNKNOWN,
     $FIELD_TICKET_NUMBER                        => $TYPE_UNKNOWN,
-    $FIELD_TSFP                                 => $TYPE_UNKNOWN,
-    $FIELD_TSTP                                 => $TYPE_UNKNOWN,
+    $FIELD_TSFP                                 => $TYPE_TIMESTAMP,
+    $FIELD_TSTP                                 => $TYPE_TIMESTAMP,
     $FIELD_TTL                                  => $TYPE_UNKNOWN,
     $FIELD_TYPES                                => $TYPE_UNKNOWN,
-    $FIELD_UID                                  => $TYPE_UNKNOWN,
+    $FIELD_UID                                  => $TYPE_STRING,
     $FIELD_UNKNOWN_CLIENTS                      => $TYPE_UNKNOWN,
     $FIELD_UPDATE_DNS_ON_LEASE_RENEWAL          => $TYPE_BOOL,
     $FIELD_UPDATE_FORWARDING                    => $TYPE_BOOL,
@@ -1491,7 +1490,6 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_USE_RECORD_NAME_POLICY               => $TYPE_BOOL,
     $FIELD_USE_RECURSION                        => $TYPE_BOOL,
     $FIELD_USE_RECYCLE_LEASES                   => $TYPE_BOOL,
-    $FIELD_USERNAME                             => $TYPE_BOOL,
     $FIELD_USE_ROOT_NAME_SERVER                 => $TYPE_BOOL,
     $FIELD_USE_SOA_EMAIL                        => $TYPE_BOOL,
     $FIELD_USE_SOA_MNAME                        => $TYPE_BOOL,
@@ -1502,8 +1500,9 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_USE_VALID_LIFETIME                   => $TYPE_BOOL,
     $FIELD_USE_ZONE_ASSOCIATIONS                => $TYPE_BOOL,
     $FIELD_USING_SRG_ASSOCIATIONS               => $TYPE_UNKNOWN,
+    $FIELD_USERNAME                             => $TYPE_STRING,
     $FIELD_VALID_LIFETIME                       => $TYPE_UNKNOWN,
-    $FIELD_VARIABLE                             => $TYPE_UNKNOWN,
+    $FIELD_VARIABLE                             => $TYPE_STRING,
     $FIELD_VIEW                                 => $TYPE_UNKNOWN,
     $FIELD_WEIGHT                               => $TYPE_UNKNOWN,
     $FIELD_ZONE                                 => $TYPE_UNKNOWN,
@@ -1993,6 +1992,9 @@ our @EXPORT = qw (
 # ------------------------------------------------------
 sub URL_PARM_EXISTS {
     my ($u) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
+
     if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
     return defined $_PARM_NAME{$u};
 }
@@ -2000,6 +2002,9 @@ sub URL_PARM_EXISTS {
 # ------------------------------------------------------
 sub URL_FIELD_EXISTS {
     my ($u) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
+
     if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
     return defined $_FIELD_NAME{$u};
 }
@@ -2007,6 +2012,9 @@ sub URL_FIELD_EXISTS {
 # ------------------------------------------------------
 sub URL_NAME_FIELD_EXISTS {
     my ($u) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
+
     if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
     return defined $_NAME_FIELD{$u};
 }
@@ -2014,6 +2022,8 @@ sub URL_NAME_FIELD_EXISTS {
 # ------------------------------------------------------
 sub URL_MODULE_EXISTS {
     my ($u) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
 
     if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
     print( MYNAMELINE . " Module:$u\n" ) if $DEBUG;
@@ -2025,6 +2035,8 @@ sub URL_MODULE_EXISTS {
 sub URL_NAME_MODULE_EXISTS {
     my ($u) = @_;
 
+    PRINT_MYNAMELINE if $DEBUG;
+
     if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
     print( MYNAMELINE . " Module Name:$u\n" ) if $DEBUG;
 
@@ -2034,6 +2046,8 @@ sub URL_NAME_MODULE_EXISTS {
 # ------------------------------------------------------
 sub URL_REF_MODULE_EXISTS {
     my ($u) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
 
     if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
     print( MYNAMELINE . " Ref:$u\n" ) if $DEBUG;
@@ -2046,6 +2060,9 @@ sub URL_REF_MODULE_EXISTS {
 # ------------------------------------------------------
 sub URL_SEARCH_EXISTS {
     my ($u) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
+
     if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
     return defined $_SEARCH_NAME{$u};
 }
@@ -2053,6 +2070,8 @@ sub URL_SEARCH_EXISTS {
 # ------------------------------------------------------
 sub URL_PARM_NAME {
     my ($u) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
 
     if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
     if ( !defined $_PARM_NAME{$u} ) { confess; }
@@ -2064,6 +2083,8 @@ sub URL_PARM_NAME {
 # ------------------------------------------------------
 sub URL_FIELD_NAME {
     my ($u) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
 
     if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
     if ( !defined $_FIELD_NAME{$u} ) { confess; }
@@ -2077,6 +2098,8 @@ sub URL_FIELD_NAME {
 sub URL_FIELD_TYPE {
     my ($u) = @_;
 
+    PRINT_MYNAMELINE if $DEBUG;
+
     if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
     if ( !defined $_FIELD_NAME{$u} ) { confess; }
     if ( !defined $_FIELD_TYPE{$u} ) { confess; }
@@ -2089,6 +2112,8 @@ sub URL_FIELD_TYPE {
 sub URL_NAME_FIELD {
     my ($u) = @_;
 
+    PRINT_MYNAMELINE if $DEBUG;
+
     if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
     if ( !defined $_NAME_FIELD{$u} ) { confess "Field Name:'$u' Not found\n"; }
 
@@ -2099,6 +2124,8 @@ sub URL_NAME_FIELD {
 # ------------------------------------------------------
 sub URL_MODULE_NAME {
     my ($u) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
 
     if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
     if ( !defined $_MODULE_OBJ_NAME{$u} ) { confess MYNAMELINE . "No Module named: $u"; }
@@ -2112,15 +2139,22 @@ sub URL_MODULE_NAME {
 sub URL_REF_MODULE_NAME {
     my ($u) = @_;
 
-    if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
-    my $module = URL_MODULE_NAME( ( split( /\//, $u ) )[0] );
+    PRINT_MYNAMELINE if $DEBUG;
 
-    return URL_MODULE_NAME {$u};
+    if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
+    # my $module = URL_MODULE_NAME( ( split( /\//, $u ) )[0] );
+    my $module = ( split( /\//, $u ) )[0];
+
+    # URL_NAME_MODULE_EXISTS( $module );
+
+    return $module;
 }
 
 # ------------------------------------------------------
 sub URL_NAME_MODULE {
     my ($u) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
 
     if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
     if ( !defined $_NAME_MODULE_OBJ{$u} ) { confess; }
@@ -2132,6 +2166,8 @@ sub URL_NAME_MODULE {
 # ------------------------------------------------------
 sub URL_SEARCH_NAME {
     my ($u) = @_;
+
+    PRINT_MYNAMELINE if $DEBUG;
 
     if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
     if ( !defined $_SEARCH_NAME{$u} ) { confess; }

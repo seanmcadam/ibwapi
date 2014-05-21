@@ -33,17 +33,19 @@ use strict;
 # PROTOTYPES
 # ---------------------------
 sub get;
-sub get_objref;     #
-sub get_objtype;    #
-sub response;       # Returns HTTP::Response Object
 sub is_success;     # Returns HTTP::Response->is_success()
 sub is_error;       # Returns HTTP::Response->is_error()
-sub parent;
+sub _parent;
+sub _response;      # Returns HTTP::Response Object
 sub _reset_search_fields;
 sub _add_search_fields;
 sub _reset_return_fields;
 sub _add_return_fields;
 sub _add_return_fields_plus;
+sub _get_reset;
+sub _get_url;
+sub _set_objref;
+sub _set_objtype;
 
 # ---------------------------
 # READONLY VARIABLES
@@ -173,8 +175,8 @@ sub _get_reset {
 #
 # ---------------------------
 sub _get_url {
-    my ($self) = @_;
-    my @ret = ();
+    my ($self)        = @_;
+    my @ret           = ();
     my $ret_array_ref = \@ret;
 
     PRINT_MYNAMELINE if $DEBUG;
@@ -218,7 +220,7 @@ sub _get_url {
           '&'
           . URL_PARM_NAME($IB_RETURN_FIELDS)
           . '='
-          . ( join( ',', ( map {URL_FIELD_NAME($_)} sort( keys( %{ $self->{$_IBLWP_RETURN_FIELDS} } ) ) ) ) )
+          . ( join( ',', ( map { URL_FIELD_NAME($_) } sort( keys( %{ $self->{$_IBLWP_RETURN_FIELDS} } ) ) ) ) )
           ;
     }
     elsif ( defined $self->{$_IBLWP_RETURN_FIELDS_PLUS} ) {
@@ -226,7 +228,7 @@ sub _get_url {
           '&'
           . URL_PARM_NAME($IB_RETURN_FIELDS_PLUS)
           . '='
-          . ( join( ',', ( map {URL_FIELD_NAME($_)} sort( keys( %{ $self->{$_IBLWP_RETURN_FIELDS_PLUS} } ) ) ) ) )
+          . ( join( ',', ( map { URL_FIELD_NAME($_) } sort( keys( %{ $self->{$_IBLWP_RETURN_FIELDS_PLUS} } ) ) ) ) )
           ;
     }
 
@@ -250,21 +252,21 @@ sub _get_url {
     }
 
     # Is it a JSON Array?
-    my $json = decode_json( $self->response()->content() );
+    my $json = decode_json( $self->_response()->content() );
     if ( ref($json) ne 'ARRAY' ) { confess Dumper $self; }
 
     my $record_ref = CONVERT_JSON_TO_IB($json);
 
     # Get each REF, get cached copied or create
     foreach my $ref ( keys(%$record_ref) ) {
-	push(@$ret_array_ref, $ref);
+        push( @$ret_array_ref, $ref );
         my $ibrec;
-        if ( defined( $ibrec = $self->parent->_get_ref($ref) ) ) {
+        if ( defined( $ibrec = $self->_parent->verify_record($ref) ) ) {
             $ibrec->reload_record( $record_ref->{$ref} );
         }
         else {
-            $ibrec = IBRecord->new( $self->parent, $record_ref->{$ref} );
-            $self->parent->_add_obj($ibrec);
+            $ibrec = IBRecord->new( $self->_parent, $record_ref->{$ref} );
+            $self->_parent->add_rec($ibrec);
         }
     }
 
@@ -295,16 +297,19 @@ sub get {
     $self->_get_reset();
 
     if ( ref($parm) eq $PERL_MODULE_IBRECORD ) {
+    PRINT_MYNAMELINE if $DEBUG;
         $self->_set_objref( $parm->get_ref() );
         $self->_add_return_fields($parm_ref) if ( defined $parm_ref );
         if ( defined $parm2_ref ) { confess; }
     }
     elsif ( URL_MODULE_EXISTS($parm) ) {
+    PRINT_MYNAMELINE if $DEBUG;
         $self->_set_objtype($parm);
         $self->_add_search_fields($parm_ref)       if ( defined $parm_ref );
         $self->_add_return_fields_plus($parm2_ref) if ( defined $parm2_ref );
     }
     elsif ( URL_REF_MODULE_EXISTS($parm) ) {
+    PRINT_MYNAMELINE if $DEBUG;
         $self->_set_objtype( URL_REF_MODULE_NAME($parm) );
         $self->_add_search_fields($parm_ref)       if ( defined $parm_ref );
         $self->_add_return_fields_plus($parm2_ref) if ( defined $parm2_ref );
@@ -345,16 +350,10 @@ sub is_error {
     0;
 }
 
-# ----------------------------
-sub URL {
-    my ($self) = @_;
-    $self->{$_IBLWP_URL};
-}
-
 # ---------------------------
 # response()
 # ---------------------------
-sub response {
+sub _response {
     my ($self) = @_;
     if ( defined $self->{$_HTTP_RESPONSE_OBJ} ) {
         return $self->{$_HTTP_RESPONSE_OBJ};
@@ -365,7 +364,7 @@ sub response {
 # ---------------------------
 # parent()
 # ---------------------------
-sub parent {
+sub _parent {
     my ($self) = @_;
     if ( defined $self->{$_IBLWP_PARENT_OBJ} ) {
         return $self->{$_IBLWP_PARENT_OBJ};
@@ -379,7 +378,8 @@ sub parent {
 sub _set_objref {
     my ( $self, $r ) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    # PRINT_MYNAMELINE if $DEBUG;
+    print MYNAMELINE . " objref:$r\n" if $DEBUG;
 
     $self->{$_IBLWP_OBJREF}  = $r;
     $self->{$_IBLWP_OBJTYPE} = undef;
@@ -391,7 +391,10 @@ sub _set_objref {
 sub _set_objtype {
     my ( $self, $t ) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    # PRINT_MYNAMELINE if $DEBUG;
+    print MYNAMELINE . " objtype:$t\n" if $DEBUG;
+
+    URL_MODULE_EXISTS($t);
 
     $self->{$_IBLWP_OBJTYPE} = $t;
     $self->{$_IBLWP_OBJREF}  = undef;
