@@ -24,9 +24,8 @@ sub flush;
 sub _get_field;
 sub _flush;
 sub _lwp;
-sub CONVERT_JSON_TO_IB;
-
-
+sub CONVERT_JSON_ARRAY_TO_IB_FORMAT;
+sub CONVERT_JSON_HASH_TO_IB_FORMAT;
 
 # ---------------------------
 # READONLY VARIABLES
@@ -41,7 +40,8 @@ Readonly our $_IBR_FIELD_VALUES => '_IBR_FIELD_VALUES';
 # EXPORTS
 # ---------------------------
 our @EXPORT = qw (
-  CONVERT_JSON_TO_IB
+  CONVERT_JSON_ARRAY_TO_IB_FORMAT
+  CONVERT_JSON_HASH_TO_IB_FORMAT
 );
 
 # ---------------------------
@@ -56,15 +56,16 @@ sub new {
 
     PRINT_MYNAMELINE if $DEBUG;
 
-    $s{$_IBR_FIELD_VALUES} = \%v;
-    $s{$_IBR_REF}          = undef;
-    $s{$_IBR_DIRTY_FIELDS} = \%d;
-    $s{$_IBR_DIRTY}        = 0;
-
     if ( ( !defined $parent ) || ( !( ref($parent) =~ /IBWAPI::/ ) ) ) { confess Dumper $parent; }
     if ( ( !defined $field_ref ) || ( ref($field_ref) ne 'HASH' ) ) { confess Dumper $field_ref; }
 
     if ( !defined $field_ref->{$FIELD_REF} ) { confess @_; }
+
+    $s{$_IBR_FIELD_VALUES} = \%v;
+    $s{$_IBR_REF}          = undef;
+    $s{$_IBR_DIRTY_FIELDS} = \%d;
+    $s{$_IBR_DIRTY}        = 0;
+    $s{$_IBR_PARENT}       = $parent;
 
     #
     # Load the object filed values
@@ -316,10 +317,7 @@ sub flush {
 sub _lwp {
     my ($self) = @_;
     PRINT_MYNAMELINE if $DEBUG;
-
-    PRINT_MYNAMELINE("EXIT") if $DEBUG;
-    $self->{$_IBR_PARENT}->_lwp
-
+    $self->{$_IBR_PARENT}->_lwp();
 }
 
 # ---------------------------
@@ -332,7 +330,7 @@ sub _get_field {
     PRINT_MYNAMELINE if $DEBUG;
 
     PRINT_MYNAMELINE("EXIT") if $DEBUG;
-    $self->_lwp->get_ref( $self->get_ref(), $f );
+    $self->_lwp->get( $self, $f );
 
 }
 
@@ -361,18 +359,39 @@ sub _flush {
 # ---------------------------
 #
 # ---------------------------
-sub CONVERT_JSON_TO_IB {
+sub CONVERT_JSON_ARRAY_TO_IB_FORMAT {
     my ($json_array) = @_;
     my %result = ();
 
     if ( ref($json_array) ne 'ARRAY' ) { confess Dumper @_; }
 
     foreach my $rec (@$json_array) {
+        if ( !defined $rec->{$_IB_REF} ) { confess Dumper @_; }
         my %r = ();
         $result{ $rec->{$_IB_REF} } = \%r;
         foreach my $r ( keys(%$rec) ) {
             $r{ URL_NAME_FIELD($r) } = $rec->{$r};
         }
+    }
+
+    PRINT_MYNAMELINE("EXIT") if $DEBUG;
+    \%result;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub CONVERT_JSON_HASH_TO_IB_FORMAT {
+    my ($json_hash) = @_;
+    my %result = ();
+
+    if ( ref($json_hash) ne 'HASH' ) { confess Dumper @_; }
+    if ( !defined $json_hash->{$_IB_REF} ) { confess Dumper @_; }
+
+    my %r = ();
+    $result{ $json_hash->{$_IB_REF} } = \%r;
+    foreach my $r ( keys(%$json_hash) ) {
+        $r{ URL_NAME_FIELD($r) } = $json_hash->{$r};
     }
 
     PRINT_MYNAMELINE("EXIT") if $DEBUG;

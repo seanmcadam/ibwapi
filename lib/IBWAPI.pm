@@ -156,6 +156,7 @@ sub create_lwp {
 # ---------------------------------------------------------------------------------
 sub GET($\$$) {
     my ( $self, $search_field_ref, $return_field_ref ) = @_;
+    my $ret_array_ref;
 
     PRINT_MYNAMELINE if $DEBUG;
 
@@ -167,7 +168,11 @@ sub GET($\$$) {
     $self->_verify_search_parameters($search_field_ref) if ($search_field_ref);
     $self->_verify_return_fields($return_field_ref) if ( defined $return_field_ref );
 
-    return $self->_lwp->get( $self->_obj_name, $search_field_ref, $return_field_ref );
+    $ret_array_ref = $self->_lwp->get( $self->_obj_name, $search_field_ref, $return_field_ref );
+
+    PRINT_MYNAMELINE( "EXIT:" . Dumper $ret_array_ref) if $DEBUG;
+
+    return $ret_array_ref;
 
 }
 
@@ -448,7 +453,7 @@ sub _is_field_searchable {
 
     confess if ( !defined $self->{$_IB_SEARCHABLE_FIELDS} );
 
-    return $self->_searchable_filed_exists($field);
+    return $self->_searchable_field_exists($field);
 
 }
 

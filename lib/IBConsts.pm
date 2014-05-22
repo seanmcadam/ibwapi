@@ -1172,6 +1172,7 @@ Readonly::Hash our %_NAME_FIELD => (
 # These need to be Updated HERE
 #
 Readonly::Hash our %_FIELD_TYPE => (
+    $FIELD_REF                                  => $TYPE_STRING,
     $FIELD_ACCESS_LIST                          => $TYPE_UNKNOWN,
     $FIELD_ADDRESS                              => $TYPE_STRING,
     $FIELD_ADDRESS_TYPE                         => $TYPE_UNKNOWN,
@@ -2101,8 +2102,8 @@ sub URL_FIELD_TYPE {
     PRINT_MYNAMELINE if $DEBUG;
 
     if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
-    if ( !defined $_FIELD_NAME{$u} ) { confess; }
-    if ( !defined $_FIELD_TYPE{$u} ) { confess; }
+    if ( !defined $_FIELD_NAME{$u} ) { confess "FIELD:$u"; }
+    if ( !defined $_FIELD_TYPE{$u} ) { confess "FIELD:$u"; }
 
     return $_FIELD_TYPE{$u};
 
@@ -2142,6 +2143,7 @@ sub URL_REF_MODULE_NAME {
     PRINT_MYNAMELINE if $DEBUG;
 
     if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
+
     # my $module = URL_MODULE_NAME( ( split( /\//, $u ) )[0] );
     my $module = ( split( /\//, $u ) )[0];
 

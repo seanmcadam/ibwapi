@@ -33,10 +33,10 @@ use strict;
 # PROTOTYPES
 # ---------------------------
 sub get;
-sub is_success;     # Returns HTTP::Response->is_success()
-sub is_error;       # Returns HTTP::Response->is_error()
+sub is_success;    # Returns HTTP::Response->is_success()
+sub is_error;      # Returns HTTP::Response->is_error()
 sub _parent;
-sub _response;      # Returns HTTP::Response Object
+sub _response;     # Returns HTTP::Response Object
 sub _reset_search_fields;
 sub _add_search_fields;
 sub _reset_return_fields;
@@ -248,16 +248,35 @@ sub _get_url {
 
     # Is the response good?
     if ( !$self->is_success() ) {
+        PRINT_MYNAMELINE("NO SUCCESS - return 0") if $DEBUG;
         return 0;
     }
 
+    PRINT_MYNAMELINE( "RETURN CODE " . $self->_response()->code() )       if $DEBUG;
+    PRINT_MYNAMELINE( "RETURN MESSAGE " . $self->_response()->message() ) if $DEBUG;
+
     # Is it a JSON Array?
     my $json = decode_json( $self->_response()->content() );
-    if ( ref($json) ne 'ARRAY' ) { confess Dumper $self; }
 
-    my $record_ref = CONVERT_JSON_TO_IB($json);
+    my $record_ref;
 
-    # Get each REF, get cached copied or create
+    # Is this an array?
+    if ( ref($json) eq 'ARRAY' ) {
+        $record_ref = CONVERT_JSON_ARRAY_TO_IB_FORMAT($json);
+    }
+
+    # Is this a hash (single value)?
+    elsif ( ref($json) eq 'HASH' ) {
+        $record_ref = CONVERT_JSON_HASH_TO_IB_FORMAT($json);
+    }
+
+    # What the hell is it?
+    else {
+        confess "BAD RESPONSE " . Dumper $json;
+    }
+
+    print Dumper $record_ref;
+
     foreach my $ref ( keys(%$record_ref) ) {
         push( @$ret_array_ref, $ref );
         my $ibrec;
@@ -270,11 +289,9 @@ sub _get_url {
         }
     }
 
-    # Get each element
+    PRINT_MYNAMELINE( "EXIT:" . Dumper $ret_array_ref) if $DEBUG;
 
-    PRINT_MYNAMELINE("EXIT") if $DEBUG;
-
-    return \$ret_array_ref;
+    return $ret_array_ref;
 
 }
 
@@ -297,19 +314,19 @@ sub get {
     $self->_get_reset();
 
     if ( ref($parm) eq $PERL_MODULE_IBRECORD ) {
-    PRINT_MYNAMELINE if $DEBUG;
+        PRINT_MYNAMELINE if $DEBUG;
         $self->_set_objref( $parm->get_ref() );
         $self->_add_return_fields($parm_ref) if ( defined $parm_ref );
         if ( defined $parm2_ref ) { confess; }
     }
     elsif ( URL_MODULE_EXISTS($parm) ) {
-    PRINT_MYNAMELINE if $DEBUG;
+        PRINT_MYNAMELINE if $DEBUG;
         $self->_set_objtype($parm);
         $self->_add_search_fields($parm_ref)       if ( defined $parm_ref );
         $self->_add_return_fields_plus($parm2_ref) if ( defined $parm2_ref );
     }
     elsif ( URL_REF_MODULE_EXISTS($parm) ) {
-    PRINT_MYNAMELINE if $DEBUG;
+        PRINT_MYNAMELINE if $DEBUG;
         $self->_set_objtype( URL_REF_MODULE_NAME($parm) );
         $self->_add_search_fields($parm_ref)       if ( defined $parm_ref );
         $self->_add_return_fields_plus($parm2_ref) if ( defined $parm2_ref );
@@ -452,10 +469,10 @@ sub _reset_return_fields {
 #
 # ---------------------------
 sub _add_return_fields {
+    my ( $self, $f ) = @_;
 
     PRINT_MYNAMELINE if $DEBUG;
 
-    my ( $self, $f ) = @_;
     if ( defined $self->{$_IBLWP_RETURN_FIELDS_PLUS} ) {
         $self->{$_IBLWP_RETURN_FIELDS_PLUS} = undef;
     }
