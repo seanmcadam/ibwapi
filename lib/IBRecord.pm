@@ -94,11 +94,18 @@ sub new {
 # get_field (go get it if not loaded yet)
 # ---------------------------
 sub get_field {
-    my ( $self, $f ) = @_;
+    my ( $self, $f, $f2 ) = @_;
+    my $ret;
 
     PRINT_MYNAMELINE if $DEBUG;
 
+    if ( !defined $f || $f eq '' ) { confess @_; }
     if ( !URL_FIELD_EXISTS($f) ) { confess @_; }
+    my $type = URL_FIELD_TYPE($f);
+
+    if ( $type eq $TYPE_EXTATTRS && ( !defined $f2 || $f2 eq '' ) ) {
+        confess "Second Parameter required for EXTATTRS get requests\n";
+    }
 
     #
     # Field not loaded so go get it, then proceed
@@ -107,8 +114,48 @@ sub get_field {
         $self->_get_field($f);
     }
 
+    if (
+        ( $type eq $TYPE_STRING )
+        || ( $type eq $TYPE_BOOL )
+        || ( $type eq $TYPE_INT )
+        || ( $type eq $TYPE_TIMESTAMP )
+        || ( $type eq $TYPE_UINT )
+      ) {
+        $ret = $self->{$_IBR_FIELD_VALUES}->{$f};
+    }
+    elsif ( $type eq $TYPE_EXTATTRS ) {
+        if ( defined $self->{$_IBR_FIELD_VALUES}->{$FIELD_EXTATTRS}->{$f} ) {
+            if ( !defined $self->{$_IBR_FIELD_VALUES}->{$FIELD_EXTATTRS}->{$f}->{$EXTATTR_VALUE} ) {
+                confess "NO EXTATTR VLAUE for " . Dumper $self->{$_IBR_FIELD_VALUES}->{$FIELD_EXTATTRS}->{$f};
+            }
+            $ret = $self->{$_IBR_FIELD_VALUES}->{$FIELD_EXTATTRS}->{$f}->{$EXTATTR_VALUE};
+        }
+    }
+    else {
+        confess "get TYPE: $type not supported\n";
+    }
+
     PRINT_MYNAMELINE("EXIT") if $DEBUG;
-    $self->{$_IBR_FIELD_VALUES}->{$f};
+
+    $ret;
+}
+
+# ---------------------------
+# get_extattr_field
+# ---------------------------
+sub get_extattr_field {
+    my ( $self, $f ) = @_;
+    my $ret;
+
+    PRINT_MYNAMELINE if $DEBUG;
+
+    if ( !defined $f || $f eq '' ) { confess @_; }
+
+    $ret = $self->get( $FIELD_EXTATTRS, $f );
+
+    PRINT_MYNAMELINE("EXIT") if $DEBUG;
+
+    $ret;
 }
 
 # ---------------------------
@@ -255,6 +302,43 @@ sub reload_record {
                 print MYNAMELINE . " $type Update $f = $v\n" if $DEBUG;
                 $self->{$_IBR_FIELD_VALUES}->{$f} = $v;
             }
+        }
+        elsif ( $type eq $TYPE_EXTATTRS ) {
+            if ( ref($v) ne 'HASH' ) { confess; }
+            if ( defined $current && ref($current) ne 'HASH' ) { confess; }
+
+            #
+            # Load new values from server
+            #
+            if ( !defined $current ) {
+                $self->{$_IBR_FIELD_VALUES}->{$f} = $v;
+            }
+
+            #
+            # Values from the server were removed (erased)
+            # untested, and unliley
+            #
+            elsif ( !defined $v ) {
+                $self->{$_IBR_FIELD_VALUES}->{$f} = undef;
+            }
+
+            #
+            # Update new values from server
+            #
+            else {
+
+                #
+                # Untested...
+                #
+                foreach my $attr ( sort( keys(%$v) ) ) {
+                    if ( !( ( $self->{$_IBR_FIELD_VALUES}->{$f}->{$attr} eq $v->{$attr} )
+                            || ( $self->{$_IBR_FIELD_VALUES}->{$f}->{$attr} == $v->{$attr} ) ) ) {
+                        $self->{$_IBR_FIELD_VALUES}->{$f}->{$attr} = $v->{$attr};
+                    }
+
+                }
+            }
+
         }
         else {
             confess "Updating TYPE: $type Not supported yet\n";

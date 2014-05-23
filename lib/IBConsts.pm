@@ -59,17 +59,37 @@ Readonly our $SEARCH_PARM_NEGATIVE         => 'SEARCH_PARM_NEGATIVE';
 Readonly our $SEARCH_PARM_LT               => 'SEARCH_PARM_LT';
 Readonly our $SEARCH_PARM_REGEX            => 'SEARCH_PARM_REGEX';
 
-Readonly our $TYPE_BOOL              => 'TYPE_BOOL';
-Readonly our $TYPE_EXTATTRS          => 'TYPE_EXTATTRS';
-Readonly our $TYPE_INT               => 'TYPE_INT';
-Readonly our $TYPE_MEMBERS           => 'TYPE_MEMBERS';
-Readonly our $TYPE_OPTIONS           => 'TYPE_OPTIONS';
-Readonly our $TYPE_STRING            => 'TYPE_STRING';
-Readonly our $TYPE_STRING_ARRAY      => 'TYPE_STRING_ARRAY';
-Readonly our $TYPE_TIMESTAMP         => 'TYPE_TIMESTAMP';
-Readonly our $TYPE_UINT              => 'TYPE_UINT';
-Readonly our $TYPE_UNKNOWN           => 'TYPE_UNKNOWN';
-Readonly our $TYPE_ZONE_ASSOCIATIONS => 'TYPE_ZONE_ASSOCIATIONS';
+Readonly our $TYPE_BOOL                          => 'TYPE_BOOL';
+Readonly our $TYPE_EXTATTRS                      => 'TYPE_EXTATTRS';
+Readonly our $TYPE_INT                           => 'TYPE_INT';
+Readonly our $TYPE_MEMBERS                       => 'TYPE_MEMBERS';
+Readonly our $TYPE_MS_OPTIONS                    => 'TYPE_MS_OPTIONS';
+Readonly our $TYPE_MS_SERVER                     => 'TYPE_MS_SERVER';
+Readonly our $TYPE_OPTIONS                       => 'TYPE_OPTIONS';
+Readonly our $TYPE_STRING                        => 'TYPE_STRING';
+Readonly our $TYPE_STRING_ARRAY                  => 'TYPE_STRING_ARRAY';
+Readonly our $TYPE_STRUCT_ADDRESSAC              => 'TYPE_STRUCT_ADDRESSAC';
+Readonly our $TYPE_STRUCT_CHANGEDOBJECT          => 'TYPE_STRUCT_CHANGEDOBJECT';
+Readonly our $TYPE_STRUCT_DHCPMEMBER             => 'TYPE_STRUCT_DHCPMEMBER';
+Readonly our $TYPE_STRUCT_DHCPOPTION             => 'TYPE_STRUCT_DHCPOPTION';
+Readonly our $TYPE_STRUCT_DISCOVERYDATA          => 'TYPE_STRUCT_DISCOVERYDATA';
+Readonly our $TYPE_STRUCT_DNSSECKEYPARAMS        => 'TYPE_STRUCT_DNSSECKEYPARAMS';
+Readonly our $TYPE_STRUCT_DNSSECTRUSTEDKEY       => 'TYPE_STRUCT_DNSSECTRUSTEDKEY';
+Readonly our $TYPE_STRUCT_EXCLUSIONRANGE         => 'TYPE_STRUCT_EXCLUSIONRANGE';
+Readonly our $TYPE_STRUCT_EXTSERVER              => 'TYPE_STRUCT_EXTSERVER';
+Readonly our $TYPE_STRUCT_FILTERRULE             => 'TYPE_STRUCT_FILTERRULE';
+Readonly our $TYPE_STRUCT_FORWARDINGMEMBERSERVER => 'TYPE_STRUCT_FORWARDINGMEMBERSERVER';
+Readonly our $TYPE_STRUCT_LOGICFILTERRULE        => 'TYPE_STRUCT_LOGICFILTERRULE';
+Readonly our $TYPE_STRUCT_MEMBERSERVER           => 'TYPE_STRUCT_MEMBERSERVER';
+Readonly our $TYPE_STRUCT_MSDHCPOPTION           => 'TYPE_STRUCT_MSDHCPOPTION';
+Readonly our $TYPE_STRUCT_MSDHCPSERVER           => 'TYPE_STRUCT_MSDHCPSERVER';
+Readonly our $TYPE_STRUCT_SORTLIST               => 'TYPE_STRUCT_SORTLIST';
+Readonly our $TYPE_STRUCT_TSIGAC                 => 'TYPE_STRUCT_TSIGAC';
+Readonly our $TYPE_STRUCT_ZONEASSOCIATION        => 'TYPE_STRUCT_ZONEASSOCIATION';
+Readonly our $TYPE_TIMESTAMP                     => 'TYPE_TIMESTAMP';
+Readonly our $TYPE_UINT                          => 'TYPE_UINT';
+Readonly our $TYPE_UNKNOWN                       => 'TYPE_UNKNOWN';
+Readonly our $TYPE_ZONE_ASSOCIATIONS             => 'TYPE_ZONE_ASSOCIATIONS';
 
 Readonly our $FIELD_REF                                  => 'FIELD_REF';
 Readonly our $FIELD_ACCESS_LIST                          => 'FIELD_ACCESS_LIST';
@@ -167,6 +187,7 @@ Readonly our $FIELD_ENABLE_SNMP_WARNINGS                 => 'FIELD_ENABLE_SNMP_W
 Readonly our $FIELD_END_ADDR                             => 'FIELD_END_ADDR';
 Readonly our $FIELD_ENDS                                 => 'FIELD_ENDS';
 Readonly our $FIELD_EXATTRS                              => 'FIELD_EXATTRS';
+Readonly our $EXTATTR_VALUE                              => 'value';
 Readonly our $FIELD_EXCLUDE                              => 'FIELD_EXCLUDE';
 Readonly our $FIELD_EXECUTE_NOW                          => 'FIELD_EXECUTE_NOW';
 Readonly our $FIELD_EXECUTION_STATUS                     => 'FIELD_EXECUTION_STATUS';
@@ -219,7 +240,6 @@ Readonly our $FIELD_IPV6_IAID                            => 'FIELD_IPV6_IAID';
 Readonly our $FIELD_IPV6_PREFERRED_LIFETIME              => 'FIELD_IPV6_PREFERRED_LIFETIME';
 Readonly our $FIELD_IPV6PREFIX                           => 'FIELD_IPV6PREFIX';
 Readonly our $FIELD_IPV6_PREFIX_BITS                     => 'FIELD_IPV6_PREFIX_BITS';
-Readonly our $FIELD_IPV6PREFIX_BITS                      => 'FIELD_IPV6PREFIX_BITS';
 Readonly our $FIELD_IPV6_START_PREFIX                    => 'FIELD_IPV6_START_PREFIX';
 Readonly our $FIELD_IS_CONFLICT                          => 'FIELD_IS_CONFLICT';
 Readonly our $FIELD_IS_DEFAULT                           => 'FIELD_IS_DEFAULT';
@@ -431,11 +451,10 @@ Readonly our $MODULE_RANGE                => 'Range';
 Readonly our $MODULE_RECORD_AAAA          => 'Record_aaaa';
 Readonly our $MODULE_RECORD_A             => 'Record_a';
 Readonly our $MODULE_RECORD_CNAME         => 'Record_cname';
+Readonly our $MODULE_RECORD_HOST          => 'Record_host';
 Readonly our $MODULE_RECORD_IPV4ADDR      => 'Record_host_ipv4addr';
 Readonly our $MODULE_RECORD_IPV6ADDR      => 'Record_host_ipv6addr';
-Readonly our $MODULE_RECORD_HOST          => 'Record_host';
 Readonly our $MODULE_RECORD_MX            => 'Record_mx';
-Readonly our $MODULE_RECORD               => 'Record';
 Readonly our $MODULE_RECORD_PTR           => 'Record_ptr';
 Readonly our $MODULE_RECORD_SRV           => 'Record_srv';
 Readonly our $MODULE_RECORD_TXT           => 'Record_txt';
@@ -453,6 +472,8 @@ Readonly::Hash our %_TYPE_NAME => (
     $TYPE_EXTATTRS          => $TYPE_EXTATTRS,
     $TYPE_INT               => $TYPE_INT,
     $TYPE_MEMBERS           => $TYPE_MEMBERS,
+    $TYPE_MS_OPTIONS        => $TYPE_MS_OPTIONS,
+    $TYPE_MS_SERVER         => $TYPE_MS_SERVER,
     $TYPE_STRING            => $TYPE_STRING,
     $TYPE_STRING_ARRAY      => $TYPE_STRING_ARRAY,
     $TYPE_TIMESTAMP         => $TYPE_TIMESTAMP,
@@ -632,7 +653,6 @@ Readonly::Hash our %_FIELD_NAME => (
     $FIELD_IPV6_PREFERRED_LIFETIME              => 'ipv6_preferred_lifetime',
     $FIELD_IPV6PREFIX                           => 'ipv6prefix',
     $FIELD_IPV6_PREFIX_BITS                     => 'ipv6_prefix_bits',
-    $FIELD_IPV6PREFIX_BITS                      => 'ipv6prefix_bits',
     $FIELD_IPV6_START_PREFIX                    => 'ipv6_start_prefix',
     $FIELD_IS_CONFLICT                          => 'is_conflict',
     $FIELD_IS_DEFAULT                           => 'is_default',
@@ -974,7 +994,6 @@ Readonly::Hash our %_NAME_FIELD => (
     'ipv6_preferred_lifetime'              => $FIELD_IPV6_PREFERRED_LIFETIME,
     'ipv6prefix'                           => $FIELD_IPV6PREFIX,
     'ipv6_prefix_bits'                     => $FIELD_IPV6_PREFIX_BITS,
-    'ipv6prefix_bits'                      => $FIELD_IPV6PREFIX_BITS,
     'ipv6_start_prefix'                    => $FIELD_IPV6_START_PREFIX,
     'is_conflict'                          => $FIELD_IS_CONFLICT,
     'is_default'                           => $FIELD_IS_DEFAULT,
@@ -1176,8 +1195,8 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_ACCESS_LIST                          => $TYPE_UNKNOWN,
     $FIELD_ADDRESS                              => $TYPE_STRING,
     $FIELD_ADDRESS_TYPE                         => $TYPE_UNKNOWN,
-    $FIELD_AGENT_CIRCUIT_ID                     => $TYPE_UNKNOWN,
-    $FIELD_AGENT_REMOTE_ID                      => $TYPE_UNKNOWN,
+    $FIELD_AGENT_CIRCUIT_ID                     => $TYPE_STRING,
+    $FIELD_AGENT_REMOTE_ID                      => $TYPE_STRING,
     $FIELD_ALIASES                              => $TYPE_UNKNOWN,
     $FIELD_ALLOW_ACTIVE_DIR                     => $TYPE_UNKNOWN,
     $FIELD_ALLOW_GSS_TSIG_FOR_UNDERSCORE_ZONE   => $TYPE_UNKNOWN,
@@ -1186,7 +1205,7 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_ALLOW_TRANSFER                       => $TYPE_UNKNOWN,
     $FIELD_ALLOW_UPDATE                         => $TYPE_UNKNOWN,
     $FIELD_ALLOW_UPDATE_FORWARDING              => $TYPE_UNKNOWN,
-    $FIELD_ALWAYS_UPDATE_DNS                    => $TYPE_UNKNOWN,
+    $FIELD_ALWAYS_UPDATE_DNS                    => $TYPE_BOOL,
     $FIELD_APPROVAL_STATUS                      => $TYPE_UNKNOWN,
     $FIELD_APPROVER                             => $TYPE_UNKNOWN,
     $FIELD_APPROVER_COMMENT                     => $TYPE_UNKNOWN,
@@ -1206,7 +1225,7 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_CANONICAL                            => $TYPE_UNKNOWN,
     $FIELD_CHANGED_OBJECTS                      => $TYPE_UNKNOWN,
     $FIELD_CLIENT_HOSTNAME                      => $TYPE_STRING,
-    $FIELD_CLIENT_IDENTIFIER_PREPEND_ZERO       => $TYPE_UNKNOWN,
+    $FIELD_CLIENT_IDENTIFIER_PREPEND_ZERO       => $TYPE_BOOL,
     $FIELD_CLTT                                 => $TYPE_TIMESTAMP,
     $FIELD_COMMENT                              => $TYPE_STRING,
     $FIELD_CONFIGURE_FOR_DHCP                   => $TYPE_UNKNOWN,
@@ -1219,7 +1238,7 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_DDNS_DOMAINNAME                      => $TYPE_STRING,
     $FIELD_DDNS_GENERATE_HOSTNAME               => $TYPE_STRING,
     $FIELD_DDNS_HOSTNAME                        => $TYPE_STRING,
-    $FIELD_DDNS_SERVER_ALWAYS_UPDATES           => $TYPE_UNKNOWN,
+    $FIELD_DDNS_SERVER_ALWAYS_UPDATES           => $TYPE_BOOL,
     $FIELD_DDNS_TTL                             => $TYPE_UINT,
     $FIELD_DDNS_UPDATE_FIXED_ADDRESSES          => $TYPE_BOOL,
     $FIELD_DDNS_USER_OPTION81                   => $TYPE_BOOL,
@@ -1227,11 +1246,11 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_DELEGATE_TO                          => $TYPE_UNKNOWN,
     $FIELD_DENY_ALL_CLIENTS                     => $TYPE_UNKNOWN,
     $FIELD_DENY_BOOTP                           => $TYPE_BOOL,
-    $FIELD_DHCP_CLIENT_IDENTIFIER               => $TYPE_UNKNOWN,
+    $FIELD_DHCP_CLIENT_IDENTIFIER               => $TYPE_STRING,
     $FIELD_DHCP_STATUS                          => $TYPE_UNKNOWN,
     $FIELD_DISABLE                              => $TYPE_BOOL,
     $FIELD_DISABLE_FORWARDING                   => $TYPE_UNKNOWN,
-    $FIELD_DISCOVERED_DATA                      => $TYPE_STRING,
+    $FIELD_DISCOVERED_DATA                      => $TYPE_STRUCT_DISCOVERYDATA,
     $FIELD_DISPLAY_DOMAIN                       => $TYPE_UNKNOWN,
     $FIELD_DNS64_ENABLED                        => $TYPE_UNKNOWN,
     $FIELD_DNS64_GROUPS                         => $TYPE_UNKNOWN,
@@ -1336,12 +1355,12 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_LOGIC_FILTER_RULES                   => $TYPE_UNKNOWN,
     $FIELD_LOW_WATER_MARK                       => $TYPE_UINT,
     $FIELD_LOW_WATER_MARK_RESET                 => $TYPE_UINT,
-    $FIELD_MAC                                  => $TYPE_UNKNOWN,
+    $FIELD_MAC                                  => $TYPE_STRING,
     $FIELD_MAC_ADDRESS                          => $TYPE_UNKNOWN,
     $FIELD_MAC_FILTER_RULES                     => $TYPE_UNKNOWN,
     $FIELD_MAIL_EXCHANGER                       => $TYPE_UNKNOWN,
     $FIELD_MASK_PREFIX                          => $TYPE_UNKNOWN,
-    $FIELD_MATCH_CLIENT                         => $TYPE_UNKNOWN,
+    $FIELD_MATCH_CLIENT                         => $TYPE_STRING,
     $FIELD_MATCH_CLIENTS                        => $TYPE_UNKNOWN,
     $FIELD_MATCH_DESTINATIONS                   => $TYPE_UNKNOWN,
     $FIELD_MEMBER                               => $TYPE_UNKNOWN,
@@ -1351,14 +1370,14 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_MS_ALLOW_TRANSFER_MODE               => $TYPE_UNKNOWN,
     $FIELD_MS_DDNS_MODE                         => $TYPE_UNKNOWN,
     $FIELD_MS_MANAGED                           => $TYPE_UNKNOWN,
-    $FIELD_MS_OPTIONS                           => $TYPE_UNKNOWN,
+    $FIELD_MS_OPTIONS                           => $TYPE_MS_OPTIONS,
     $FIELD_MS_PRIMARIES                         => $TYPE_UNKNOWN,
     $FIELD_MS_READ_ONLY                         => $TYPE_UNKNOWN,
     $FIELD_MS_SECONDARIES                       => $TYPE_UNKNOWN,
-    $FIELD_MS_SERVER                            => $TYPE_UNKNOWN,
+    $FIELD_MS_SERVER                            => $TYPE_MS_SERVER,
     $FIELD_MS_SYNC_MASTER_NAME                  => $TYPE_UNKNOWN,
     $FIELD_NAC_FILTER_RULES                     => $TYPE_UNKNOWN,
-    $FIELD_NAME                                 => $TYPE_UNKNOWN,
+    $FIELD_NAME                                 => $TYPE_STRING,
     $FIELD_NAMES                                => $TYPE_UNKNOWN,
     $FIELD_NETMASK                              => $TYPE_UINT,
     $FIELD_NETWORK                              => $TYPE_STRING,
@@ -1536,7 +1555,6 @@ Readonly::Hash our %_MODULE_OBJ_NAME => (
     $MODULE_RECORD_IPV6ADDR      => 'record_host_ipv6addr',
     $MODULE_RECORD_HOST          => 'record_host',
     $MODULE_RECORD_MX            => 'record_mx',
-    $MODULE_RECORD               => 'record',
     $MODULE_RECORD_PTR           => 'record_ptr',
     $MODULE_RECORD_SRV           => 'record_srv',
     $MODULE_RECORD_TXT           => 'record_txt',
@@ -1567,14 +1585,13 @@ Readonly::Hash our %_NAME_MODULE_OBJ => (
     'network'              => $MODULE_NETWORK,
     'networkview'          => $MODULE_NETWORKVIEW,
     'range'                => $MODULE_RANGE,
-    'record_aaaa'          => $MODULE_RECORD_AAAA,
     'record_a'             => $MODULE_RECORD_A,
+    'record_aaaa'          => $MODULE_RECORD_AAAA,
     'record_cname'         => $MODULE_RECORD_CNAME,
+    'record_host'          => $MODULE_RECORD_HOST,
     'record_host_ipv4addr' => $MODULE_RECORD_IPV4ADDR,
     'record_host_ipv6addr' => $MODULE_RECORD_IPV6ADDR,
-    'record_host'          => $MODULE_RECORD_HOST,
     'record_mx'            => $MODULE_RECORD_MX,
-    'record'               => $MODULE_RECORD,
     'record_ptr'           => $MODULE_RECORD_PTR,
     'record_srv'           => $MODULE_RECORD_SRV,
     'record_txt'           => $MODULE_RECORD_TXT,
@@ -1734,6 +1751,7 @@ our @EXPORT = qw (
   $FIELD_EXPIRATION_TIME
   $FIELD_EXPLODED_ACCESS_LIST
   $FIELD_EXTATTRS
+  $EXTATTR_VALUE
   $FIELD_EXTERNAL_PRIMARIES
   $FIELD_EXTERNAL_SECONDARIES
   $FIELD_FAILOVER_ASSOCIATION
@@ -1779,7 +1797,6 @@ our @EXPORT = qw (
   $FIELD_IPV6_PREFERRED_LIFETIME
   $FIELD_IPV6PREFIX
   $FIELD_IPV6_PREFIX_BITS
-  $FIELD_IPV6PREFIX_BITS
   $FIELD_IPV6_START_PREFIX
   $FIELD_IS_CONFLICT
   $FIELD_IS_DEFAULT
@@ -1981,9 +1998,29 @@ our @EXPORT = qw (
   $TYPE_EXTATTRS
   $TYPE_INT
   $TYPE_MEMBERS
+  $TYPE_MS_OPTIONS
+  $TYPE_MS_SERVER
   $TYPE_OPTIONS
   $TYPE_STRING
   $TYPE_STRING_ARRAY
+  $TYPE_STRUCT_ADDRESSAC
+  $TYPE_STRUCT_CHANGEDOBJECT
+  $TYPE_STRUCT_DHCPMEMBER
+  $TYPE_STRUCT_DHCPOPTION
+  $TYPE_STRUCT_DISCOVERYDATA
+  $TYPE_STRUCT_DNSSECKEYPARAMS
+  $TYPE_STRUCT_DNSSECTRUSTEDKEY
+  $TYPE_STRUCT_EXCLUSIONRANGE
+  $TYPE_STRUCT_EXTSERVER
+  $TYPE_STRUCT_FILTERRULE
+  $TYPE_STRUCT_FORWARDINGMEMBERSERVER
+  $TYPE_STRUCT_LOGICFILTERRULE
+  $TYPE_STRUCT_MEMBERSERVER
+  $TYPE_STRUCT_MSDHCPOPTION
+  $TYPE_STRUCT_MSDHCPSERVER
+  $TYPE_STRUCT_SORTLIST
+  $TYPE_STRUCT_TSIGAC
+  $TYPE_STRUCT_ZONEASSOCIATION
   $TYPE_TIMESTAMP
   $TYPE_UINT
   $TYPE_UNKNOWN
@@ -2222,6 +2259,34 @@ sub MYNAMELINE {
     else {
         ( ( (caller)[1] ) . ' line:' . ( (caller)[2] ) ) . " ";
     }
+}
+
+# ------------------------------------------------------
+# ------------------------------------------------------
+# ------------------------------------------------------
+if ($DEBUG) {
+    print "DEBUG ON, checking structures....\n";
+
+    # Verify TYPE, and reverse
+    foreach my $f ( sort( keys(%_FIELD_NAME) ) ) {
+        print "Check FIELD: $f\n";
+        if ( !URL_FIELD_EXISTS($f) ) { confess "FIELD CHECK $f FAILED\n"; }
+        if ( !URL_FIELD_TYPE($f) )   { confess "FIELD TYPE CHECK $f FAILED\n"; }
+    }
+    foreach my $f ( sort( keys(%_NAME_FIELD) ) ) {
+        print "Check NAME FIELD: $f\n";
+        if ( !URL_NAME_FIELD_EXISTS($f) ) { confess "NAME FIELD CHECK $f FAILED\n"; }
+    }
+
+    foreach my $m ( sort( keys(%_MODULE_OBJ_NAME) ) ) {
+        print "Check MODULE: $m\n";
+        if ( !URL_MODULE_EXISTS($m) ) { confess "MODULE NAME CHECK $m FAILED\n"; }
+    }
+    foreach my $m ( sort( keys(%_NAME_MODULE_OBJ) ) ) {
+        print "Check NAME MODULE: $m\n";
+        if ( !URL_NAME_MODULE_EXISTS($m) ) { confess "NAME MODULE CHECK $m FAILED\n"; }
+    }
+    print "IT IS ALL OKEY DOKEY....\n";
 }
 
 1;

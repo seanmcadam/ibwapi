@@ -276,6 +276,48 @@ sub get_field {
 }
 
 # ---------------------------------------------------------------------------------
+sub get_extattr {
+    my ( $self, $ref, $attr ) = @_;
+    my $ibr_rec   = undef;
+    my $ret_field = undef;
+
+    PRINT_MYNAMELINE if $DEBUG;
+
+    if ( !defined $ref   || !URL_REF_MODULE_EXISTS($ref) )         { confess "BAD REF: " . $ref; }
+    if ( !defined $attr || $attr eq '' ) { confess "BAD EXTATTR"; }
+
+    if ( defined( $ibr_rec = $self->get($ref) ) ) {
+        $ret_field = $ibr_rec->get_extattr_field($attr);
+    }
+
+    PRINT_MYNAMELINE(" EXIT") if $DEBUG;
+
+    return $ret_field;
+
+}
+
+# ---------------------------------------------------------------------------------
+sub set_field {
+    my ( $self, $ref, $field, $value ) = @_;
+    my $ibr_rec   = undef;
+    my $ret_field = undef;
+
+    PRINT_MYNAMELINE if $DEBUG;
+
+    if ( !defined $ref   || !URL_REF_MODULE_EXISTS($ref) )         { confess "BAD REF: " . $ref; }
+    if ( !defined $field || !$self->_return_field_exists($field) ) { confess "BAD FIELD: " . $field; }
+
+    # Verify TYPE HERE
+
+    if ( defined( $ibr_rec = $self->get($ref) ) ) {
+        $ibr_rec->update_field($field,$value);
+    }
+
+    PRINT_MYNAMELINE(" EXIT") if $DEBUG;
+
+}
+
+# ---------------------------------------------------------------------------------
 sub update {
     my ( $self, $ref, $field_ref ) = @_;
 
