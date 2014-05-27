@@ -30,11 +30,7 @@ Readonly our $_OBJECT_NAME => ( split( '::', __PACKAGE__ ) )[-1];
 our @EXPORT = qw (
 );
 
-Readonly::Hash our %_BASE_FIELDS => (
-    $FIELD_COMMENT => 1,
-);
-
-Readonly::Hash our %_RETURN_FIELDS => (
+Readonly::Hash our %_FIELDS => (
     $FIELD_AGENT_CIRCUIT_ID                    => 1,
     $FIELD_AGENT_REMOTE_ID                     => 1,
     $FIELD_ALWAYS_UPDATE_DNS                   => 1,
@@ -71,6 +67,10 @@ Readonly::Hash our %_RETURN_FIELDS => (
     $FIELD_USE_IGNORE_DHCP_OPTION_LIST_REQUEST => 1,
     $FIELD_USE_NEXTSERVER                      => 1,
     $FIELD_USE_OPTIONS                         => 1,
+);
+
+Readonly::Hash our %_BASE_FIELDS => (
+    $FIELD_COMMENT => 1,
 );
 
 Readonly::Hash our %_REQUIRED_FIELDS => (
@@ -116,22 +116,16 @@ Readonly::Hash our %_SEARCHABLE_FIELDS => (
     },
 );
 
+Readonly::Hash our %_SEARCHONLY_FIELDS => (
+);
+
 # ---------------------------------------------------
 sub new {
     my ( $class, $parm_ref ) = @_;
-
-    PRINT_MYNAMELINE if $DEBUG;
-
-    $parm_ref->{$IB_BASE_FIELDS}       = \%_BASE_FIELDS;
-    $parm_ref->{$IB_RETURN_FIELDS}     = \%_RETURN_FIELDS;
-    $parm_ref->{$IB_READONLY_FIELDS}   = \%_READONLY_FIELDS;
-    $parm_ref->{$IB_SEARCHABLE_FIELDS} = \%_SEARCHABLE_FIELDS;
-
-    my $self = $class->SUPER::new( $_OBJECT_NAME, $parm_ref );
-
-    bless $self, $class;
-
-    $self->create_lwp($parm_ref);
+    my $self;
+    if ( !defined $parm_ref ) { LOG_FATAL(PRINT_MYNAMELINE); }
+    eval $EVAL_NEW_OBJECT_CODE;
+    if ($@) { LOG_FATAL(PRINT_MYNAMELINE); }
 
     $self;
 }

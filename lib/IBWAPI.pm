@@ -66,17 +66,22 @@ Readonly our $_LWP_OBJ  => '_LWP_OBJ';
 Readonly our $_OPTIONS  => 'options';
 Readonly our $_EXTATTRS => 'extattrs';
 
-Readonly our $_IB_RECORDS            => '_IB_RECORDS';
-Readonly our $_IB_BASE_FIELDS        => '_IB_BASE_FIELDS';
-Readonly our $_IB_PARM_NAMES         => '_IB_PARM_NAMES';
-Readonly our $_IB_PARM_REF_TYPES     => '_IB_PARM_REF_TYPES';
-Readonly our $_IB_MAX_RESULTS        => '_IB_MAX_RESULTS';
-Readonly our $_IB_OBJECT_NAME        => '_IB_OBJECT_NAME';
-Readonly our $_IB_READONLY_FIELDS    => '_IB_READONLY_FIELDS';
-Readonly our $_IB_RETURN_FIELDS      => '_IB_RETURN_FIELDS';
-Readonly our $_IB_RETURN_FIELDS_PLUS => '_IB_RETURN_FIELDS_PLUS';
-Readonly our $_IB_SEARCHABLE_FIELDS  => '_IB_SEARCHABLE_FIELDS';
-Readonly our $_IB_URL                => '_IB_URL';
+Readonly our $_IB_RECORDS     => '_IB_RECORDS';
+Readonly our $_IB_BASE_FIELDS => '_IB_BASE_FIELDS';
+
+# Readonly our $_IB_PARM_NAMES      => '_IB_PARM_NAMES';
+Readonly our $_IB_PARM_REF_TYPES  => '_IB_PARM_REF_TYPES';
+Readonly our $_IB_MAX_RESULTS     => '_IB_MAX_RESULTS';
+Readonly our $_IB_OBJECT_NAME     => '_IB_OBJECT_NAME';
+Readonly our $_IB_READONLY_FIELDS => '_IB_READONLY_FIELDS';
+
+Readonly our $_IB_FIELDS => '_IB_FIELDS';
+
+# Readonly our $_IB_RETURN_FIELDS      => '_IB_RETURN_FIELDS';
+# Readonly our $_IB_RETURN_FIELDS_PLUS => '_IB_RETURN_FIELDS_PLUS';
+Readonly our $_IB_SEARCHABLE_FIELDS => '_IB_SEARCHABLE_FIELDS';
+Readonly our $_IB_SEARCHONLY_FIELDS => '_IB_SEARCHONLY_FIELDS';
+Readonly our $_IB_URL               => '_IB_URL';
 
 # ---------------------------
 # EXPORTS
@@ -84,11 +89,11 @@ Readonly our $_IB_URL                => '_IB_URL';
 our @EXPORT = qw (
 );
 
-Readonly::Hash our %_PARM_NAMES => (
-    $IB_MAX_RESULTS        => $_IB_MAX_RESULTS,
-    $IB_RETURN_FIELDS      => $_IB_RETURN_FIELDS,
-    $IB_RETURN_FIELDS_PLUS => $_IB_RETURN_FIELDS_PLUS,
-);
+# Readonly::Hash our %_PARM_NAMES => (
+#     $IB_MAX_RESULTS        => $_IB_MAX_RESULTS,
+#     $IB_RETURN_FIELDS      => $_IB_RETURN_FIELDS,
+#     $IB_RETURN_FIELDS_PLUS => $_IB_RETURN_FIELDS_PLUS,
+# );
 
 Readonly::Hash our %_PARM_REF_TYPES => (
     $IB_MAX_RESULTS        => '',
@@ -105,35 +110,31 @@ sub new {
     my %r;
     my $self = \%h;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     if ( !defined $module_name ) { confess; }
     $h{$_IB_OBJECT_NAME} = $module_name;
     $h{$_IB_RECORDS}     = \%r;
 
+    if ( !defined $parm_ref->{$IB_FIELDS} )            { confess; }
     if ( !defined $parm_ref->{$IB_BASE_FIELDS} )       { confess; }
-    if ( !defined $parm_ref->{$IB_RETURN_FIELDS} )     { confess; }
     if ( !defined $parm_ref->{$IB_READONLY_FIELDS} )   { confess; }
     if ( !defined $parm_ref->{$IB_SEARCHABLE_FIELDS} ) { confess; }
+    if ( !defined $parm_ref->{$IB_SEARCHONLY_FIELDS} ) { confess; }
+
+    $h{$_IB_MAX_RESULTS} = ( defined $parm_ref->{$IB_MAX_RESULTS} ) ? $parm_ref->{$IB_MAX_RESULTS} : $_DEFAULT_MAX_RESULTS;
 
     $h{$_IB_BASE_FIELDS}       = $parm_ref->{$IB_BASE_FIELDS};
-    $h{$_IB_MAX_RESULTS}       = ( defined $parm_ref->{$IB_MAX_RESULTS} ) ? $parm_ref->{$IB_MAX_RESULTS} : $_DEFAULT_MAX_RESULTS;
     $h{$_IB_READONLY_FIELDS}   = $parm_ref->{$IB_READONLY_FIELDS};
     $h{$_IB_SEARCHABLE_FIELDS} = $parm_ref->{$IB_SEARCHABLE_FIELDS};
+    $h{$_IB_SEARCHONLY_FIELDS} = $parm_ref->{$IB_SEARCHONLY_FIELDS};
 
-    $h{$_IB_RETURN_FIELDS}      = $parm_ref->{$IB_RETURN_FIELDS};
-    $h{$_IB_RETURN_FIELDS_PLUS} = $parm_ref->{$IB_RETURN_FIELDS_PLUS};
-
-    #    if ( defined $parm_ref ) {
-    #        if ( 'HASH' ne ref($parm_ref) ) { confess Dumper $parm_ref; }
-    #        foreach my $p ( sort( keys(%$parm_ref) ) ) {
-    #            if ( !defined $_PARM_NAMES{$p} ) { next; }
-    #            if ( $_PARM_REF_TYPES{$p} ne ref( $parm_ref->{$p} ) ) { confess Dumper $parm_ref; }
-    #            $h{ $_PARM_NAMES{$p} } = $parm_ref->{$p};
-    #        }
-    #    }
+    #    $h{$_IB_RETURN_FIELDS}      = $parm_ref->{$IB_RETURN_FIELDS};
+    #    $h{$_IB_RETURN_FIELDS_PLUS} = $parm_ref->{$IB_RETURN_FIELDS_PLUS};
 
     bless $self, $class;
+
+    LOG_EXIT_SUB;
 
     $self;
 }
@@ -145,10 +146,12 @@ sub new {
 sub create_lwp {
     my ( $self, $parm_ref ) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
-
+    LOG_ENTER_SUB;
     if ( defined( $self->{$_LWP_OBJ} ) ) { confess Dumper $self; }
     $self->{$_LWP_OBJ} = IBLWP->new( $self, $parm_ref );
+
+    LOG_EXIT_SUB;
+
 }
 
 # ---------------------------------------------------------------------------------
@@ -158,7 +161,7 @@ sub GET($\$$) {
     my ( $self, $search_field_ref, $return_field_ref ) = @_;
     my $ret_array_ref;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     if ( ref( $self->_lwp ) ne 'IBLWP' ) { confess 'Ref:' . ref( $self->_lwp ); }
 
@@ -168,10 +171,17 @@ sub GET($\$$) {
     $self->_verify_search_parameters($search_field_ref) if ($search_field_ref);
     $self->_verify_return_fields($return_field_ref) if ( defined $return_field_ref );
 
-    $ret_array_ref = $self->_lwp->get( $self->_obj_name, $search_field_ref, $return_field_ref );
+    # $ret_array_ref = $self->_lwp->get( $self->_obj_name, $search_field_ref, $return_field_ref );
+    $ret_array_ref = $self->_lwp->get(
+        {
+            $IBLWP_GET_OBJTYPE         => $self->_obj_name,
+            $IBLWP_GET_SEARCH_REF      => $search_field_ref,
+            $IBLWP_GET_RETURN_PLUS_REF => $return_field_ref,
+        } );
 
-    PRINT_MYNAMELINE( "EXIT:" . Dumper $ret_array_ref) if $DEBUG;
+    LOG_DEBUG3( PRINT_MYNAMELINE( "EXIT:" . Dumper $ret_array_ref) );
 
+    LOG_EXIT_SUB;
     return $ret_array_ref;
 
 }
@@ -181,8 +191,9 @@ sub GET($\$$) {
 # ---------------------------------------------------------------------------------
 sub POST($$) {
     my ( $self, $field_ref ) = @_;
-    PRINT_MYNAMELINE if $DEBUG;
-    confess;
+    LOG_ENTER_SUB;
+
+    LOG_FATAL(PRINT_MYNAMELINE);
 }
 
 # ---------------------------------------------------------------------------------
@@ -190,8 +201,9 @@ sub POST($$) {
 # ---------------------------------------------------------------------------------
 sub PUT($$\$) {
     my ( $self, $ref, $parm_ref ) = @_;
-    PRINT_MYNAMELINE if $DEBUG;
-    confess;
+    LOG_ENTER_SUB;
+
+    LOG_FATAL(PRINT_MYNAMELINE);
 }
 
 # ---------------------------------------------------------------------------------
@@ -199,8 +211,9 @@ sub PUT($$\$) {
 # ---------------------------------------------------------------------------------
 sub DELETE($$) {
     my ( $self, $ref ) = @_;
-    PRINT_MYNAMELINE if $DEBUG;
-    confess;
+    LOG_ENTER_SUB;
+
+    LOG_FATAL(PRINT_MYNAMELINE);
 }
 
 # ---------------------------------------------------------------------------------
@@ -208,7 +221,7 @@ sub get {
     my ( $self, $ref ) = @_;
     my $ibr_rec = undef;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     if ( !defined $ref || !URL_REF_MODULE_EXISTS($ref) ) { confess "BAD REF: " . $ref; }
 
@@ -226,7 +239,7 @@ sub get {
         ($ibr_rec) = $self->_lwp->get($ref);
     }
 
-    PRINT_MYNAMELINE(" EXIT - $ref") if $DEBUG;
+    LOG_EXIT_SUB;
 
     return $ibr_rec;
 
@@ -237,7 +250,7 @@ sub verify_record {
     my ( $self, $ref ) = @_;
     my $ibr_rec = undef;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     if ( defined $ref && !URL_REF_MODULE_EXISTS($ref) ) { confess "BAD REF: " . $ref; }
 
@@ -248,7 +261,7 @@ sub verify_record {
         $ibr_rec = $self->{$_IB_RECORDS}->{$ref};
     }
 
-    PRINT_MYNAMELINE("EXIT") if $DEBUG;
+    LOG_EXIT_SUB;
 
     return $ibr_rec;
 
@@ -260,7 +273,7 @@ sub get_field {
     my $ibr_rec   = undef;
     my $ret_field = undef;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     if ( !defined $ref   || !URL_REF_MODULE_EXISTS($ref) )         { confess "BAD REF: " . $ref; }
     if ( !defined $field || !$self->_return_field_exists($field) ) { confess "BAD FIELD: " . $field; }
@@ -269,7 +282,7 @@ sub get_field {
         $ret_field = $ibr_rec->get_field($field);
     }
 
-    PRINT_MYNAMELINE(" EXIT - $ret_field") if $DEBUG;
+    LOG_EXIT_SUB;
 
     return $ret_field;
 
@@ -281,16 +294,16 @@ sub get_extattr {
     my $ibr_rec   = undef;
     my $ret_field = undef;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
-    if ( !defined $ref   || !URL_REF_MODULE_EXISTS($ref) )         { confess "BAD REF: " . $ref; }
+    if ( !defined $ref || !URL_REF_MODULE_EXISTS($ref) ) { confess "BAD REF: " . $ref; }
     if ( !defined $attr || $attr eq '' ) { confess "BAD EXTATTR"; }
 
     if ( defined( $ibr_rec = $self->get($ref) ) ) {
         $ret_field = $ibr_rec->get_extattr_field($attr);
     }
 
-    PRINT_MYNAMELINE(" EXIT") if $DEBUG;
+    LOG_EXIT_SUB;
 
     return $ret_field;
 
@@ -302,7 +315,7 @@ sub set_field {
     my $ibr_rec   = undef;
     my $ret_field = undef;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     if ( !defined $ref   || !URL_REF_MODULE_EXISTS($ref) )         { confess "BAD REF: " . $ref; }
     if ( !defined $field || !$self->_return_field_exists($field) ) { confess "BAD FIELD: " . $field; }
@@ -310,10 +323,10 @@ sub set_field {
     # Verify TYPE HERE
 
     if ( defined( $ibr_rec = $self->get($ref) ) ) {
-        $ibr_rec->update_field($field,$value);
+        $ibr_rec->update_field( $field, $value );
     }
 
-    PRINT_MYNAMELINE(" EXIT") if $DEBUG;
+    LOG_EXIT_SUB;
 
 }
 
@@ -321,11 +334,12 @@ sub set_field {
 sub update {
     my ( $self, $ref, $field_ref ) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     if ( !defined $ref || !URL_REF_MODULE_EXISTS($ref) ) { confess @_; }
 
-    $self->get($ref)->update_field
+    $self->get($ref)->update_field;
+    LOG_EXIT_SUB;
 
 }
 
@@ -334,8 +348,9 @@ sub update {
 # ---------------------------------------------------------------------------------
 sub flush {
     my ( $self, $ref ) = @_;
+    LOG_ENTER_SUB;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_EXIT_SUB;
 }
 
 # ---------------------------------------------------------------------------------
@@ -343,8 +358,9 @@ sub flush {
 # ---------------------------------------------------------------------------------
 sub delete {
     my ( $self, $ref ) = @_;
+    LOG_ENTER_SUB;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_EXIT_SUB;
 }
 
 # ---------------------------------------------------------------------------------
@@ -354,7 +370,7 @@ sub add_rec {
     my ( $self, $obj ) = @_;
     my $ret = 0;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     if ( !defined $obj || ref($obj) ne $PERL_MODULE_IBRECORD ) { confess MYNAMELINE . "Missing OBJECT\n"; }
     my $ref = $obj->get_ref();
@@ -373,7 +389,7 @@ sub add_rec {
         $ret = 1;
     }
 
-    PRINT_MYNAMELINE("EXIT") if $DEBUG;
+    LOG_EXIT_SUB;
     $ret;
 
 }
@@ -384,12 +400,11 @@ sub add_rec {
 sub _obj_name {
     my ($self) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     defined $self->{$_IB_OBJECT_NAME} || confess @_;
 
-    PRINT_MYNAMELINE( "EXIT " . $self->{$_IB_OBJECT_NAME} ) if $DEBUG;
-
+    LOG_EXIT_SUB;
     $self->{$_IB_OBJECT_NAME};
 }
 
@@ -399,10 +414,11 @@ sub _obj_name {
 sub _lwp {
     my ($self) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     defined $self->{$_LWP_OBJ} || confess Dumper @_;
 
+    LOG_EXIT_SUB;
     return $self->{$_LWP_OBJ};
 }
 
@@ -412,7 +428,7 @@ sub _get_search_parameters {
     my ( $self, $parm_ref ) = @_;
     my $ret = '';
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     foreach my $p ( sort( keys(%$parm_ref) ) ) {
 
@@ -432,6 +448,7 @@ sub _get_search_parameters {
             warn "SEARCH PARM $p NOT FOUND\n";
         }
     }
+    LOG_EXIT_SUB;
     $ret;
 }
 
@@ -442,7 +459,7 @@ sub _get_search_parameters {
 sub _verify_search_parameters {
     my ( $self, $parm_ref ) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     if ( !defined $parm_ref ) { warn MYNAMELINE . " NO PARM_REF defined\n"; return; }
 
@@ -455,6 +472,7 @@ sub _verify_search_parameters {
 
         }
     }
+    LOG_EXIT_SUB;
 }
 
 # ----------------------------------------------------------------------
@@ -464,7 +482,7 @@ sub _verify_search_parameters {
 sub _verify_return_fields {
     my ( $self, $parm_ref ) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     if ( !defined $parm_ref ) { warn MYNAMELINE . " NO PARM_REF defined\n"; return; }
 
@@ -482,7 +500,7 @@ sub _verify_return_fields {
         confess "'$parm_ref' NOT A RETURN FIELD\n" if ( !$self->_return_field_exists($parm_ref) );
     }
 
-    PRINT_MYNAMELINE("EXIT") if $DEBUG;
+    LOG_EXIT_SUB;
 }
 
 # ----------------------------------------------------------------------
@@ -491,11 +509,13 @@ sub _verify_return_fields {
 sub _is_field_searchable {
     my ( $self, $field ) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     confess if ( !defined $self->{$_IB_SEARCHABLE_FIELDS} );
 
-    return $self->_searchable_field_exists($field);
+    my $ret = $self->_searchable_field_exists($field);
+    LOG_EXIT_SUB;
+    return $ret;
 
 }
 
@@ -505,10 +525,14 @@ sub _is_field_searchable {
 sub _return_field_exists {
     my ( $self, $f ) = @_;
 
+    LOG_ENTER_SUB;
+
     defined $f || confess @_;
     URL_FIELD_EXISTS($f) || confess @_;
 
-    $self->_field_exists( $self->{$_IB_RETURN_FIELDS}, $f )
+    my $ret = $self->_field_exists( $self->{$_IB_FIELDS}, $f );
+    LOG_EXIT_SUB;
+    return $ret;
 }
 
 # ----------------------------------------------------------------------
@@ -517,10 +541,14 @@ sub _return_field_exists {
 sub _base_field_exists {
     my ( $self, $f ) = @_;
 
+    LOG_ENTER_SUB;
+
     defined $f || confess @_;
     URL_FIELD_EXISTS($f) || confess @_;
 
-    $self->_field_exists( $self->{$_IB_BASE_FIELDS}, $f )
+    my $ret = $self->_field_exists( $self->{$_IB_BASE_FIELDS}, $f );
+    LOG_EXIT_SUB;
+    return $ret;
 }
 
 # ----------------------------------------------------------------------
@@ -529,12 +557,14 @@ sub _base_field_exists {
 sub _readonly_field_exists {
     my ( $self, $f ) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     defined $f || confess @_;
     URL_FIELD_EXISTS($f) || confess @_;
 
-    $self->_field_exists( $self->{$_IB_BASE_FIELDS}, $f )
+    my $ret = $self->_field_exists( $self->{$_IB_BASE_FIELDS}, $f );
+    LOG_EXIT_SUB;
+    return $ret;
 }
 
 # ----------------------------------------------------------------------
@@ -543,12 +573,14 @@ sub _readonly_field_exists {
 sub _searchable_field_exists {
     my ( $self, $f ) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     defined $f || confess @_;
     URL_FIELD_EXISTS($f) || confess @_;
 
-    $self->_field_exists( $self->{$_IB_SEARCHABLE_FIELDS}, $f )
+    my $ret = $self->_field_exists( $self->{$_IB_SEARCHABLE_FIELDS}, $f );
+    LOG_EXIT_SUB;
+    return $ret;
 }
 
 # ----------------------------------------------------------------------
@@ -557,13 +589,15 @@ sub _searchable_field_exists {
 sub _field_exists {
     my ( $self, $table_ref, $f ) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     defined $table_ref   || confess @_;
     defined $f           || confess @_;
     URL_FIELD_EXISTS($f) || confess @_;
 
-    defined $table_ref->{$f};
+    my $ret = defined $table_ref->{$f};
+    LOG_EXIT_SUB;
+    return $ret;
 
 }
 

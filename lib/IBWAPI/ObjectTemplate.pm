@@ -30,12 +30,12 @@ Readonly our $_OBJECT_NAME => ( split( '::', __PACKAGE__ ) )[-1];
 our @EXPORT = qw (
 );
 
-Readonly::Hash our %_BASE_FIELDS => (
-    $FIELD_COMMENT      => 1,
+Readonly::Hash our %_FIELDS => (
+    $FIELD_COMMENT => 1,
 );
 
-Readonly::Hash our %_RETURN_FIELDS => (
-    $FIELD_COMMENT                             => 1,
+Readonly::Hash our %_BASE_FIELDS => (
+    $FIELD_COMMENT => 1,
 );
 
 Readonly::Hash our %_REQUIRED_FIELDS => (
@@ -60,8 +60,8 @@ sub new {
 
     PRINT_MYNAMELINE if $DEBUG;
 
+    $parm_ref->{$IB_FIELDS}            = \%_FIELDS;
     $parm_ref->{$IB_BASE_FIELDS}       = \%_BASE_FIELDS;
-    $parm_ref->{$IB_RETURN_FIELDS}     = \%_RETURN_FIELDS;
     $parm_ref->{$IB_READONLY_FIELDS}   = \%_READONLY_FIELDS;
     $parm_ref->{$IB_SEARCHABLE_FIELDS} = \%_SEARCHABLE_FIELDS;
 
@@ -69,7 +69,7 @@ sub new {
 
     bless $self, $class;
 
-    $self->create_lwp( $parm_ref );
+    $self->create_lwp($parm_ref);
 
     $self;
 }

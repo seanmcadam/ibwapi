@@ -14,15 +14,29 @@ use HTTP::Request;
 use Readonly;
 use strict;
 
+use base qw( Exporter );
+
 # ---------------------------
 # get ( [REF]|[IBRecord]|[ObjType + param], search/fields, return fields )
 #	Adds or Updates IBRecord(s)
+#
+#	Create or Populates existing IBRecords with returned data
+#	Returns an array of REFs
+#
 # post ( [ObjType + param] )
 #	Adds IBRecord
+#	(Future) Create new record
+#	Returns REF
+#
 # put ( [REF]|[IBRecord] )
 #	flushes IBRecord
+#	(Future) Pushes updated fields back to the server
+#	Returns REF
+#
 # delete ( [REF]|[IBRecord] )
 #	deletes IBRecord
+#	Deleted the record from the server
+#	Returns 1/0
 #
 # get_ref ( REF, [FIELDS] )
 #	Sends request to server for the ref object
@@ -35,13 +49,14 @@ use strict;
 sub get;
 sub is_success;    # Returns HTTP::Response->is_success()
 sub is_error;      # Returns HTTP::Response->is_error()
-sub _parent;
-sub _response;     # Returns HTTP::Response Object
-sub _reset_search_fields;
+
 sub _add_search_fields;
-sub _reset_return_fields;
 sub _add_return_fields;
 sub _add_return_fields_plus;
+sub _parent;       # Returns parent object
+sub _response;     # Returns HTTP::Response Object
+sub _reset_search_fields;
+sub _reset_return_fields;
 sub _get_reset;
 sub _get_url;
 sub _set_objref;
@@ -78,6 +93,12 @@ Readonly our $_IBLWP_SEARCH_FIELDS      => '_IBLWP_SEARCH_FIELDS';
 Readonly our $_IBLWP_RETURN_FIELDS      => '_IBLWP_RETURN_FIELDS';
 Readonly our $_IBLWP_RETURN_FIELDS_PLUS => '_IBLWP_RETURN_FIELDS_PLUS';
 
+Readonly our $IBLWP_GET_RECORD          => 'IBLWP_GET_RECORD';
+Readonly our $IBLWP_GET_OBJTYPE         => 'IBLWP_GET_OBJTYPE';
+Readonly our $IBLWP_GET_SEARCH_REF      => 'IBLWP_GET_SEARCH_REF';
+Readonly our $IBLWP_GET_RETURN_REF      => 'IBLWP_GET_RETURN_REF';
+Readonly our $IBLWP_GET_RETURN_PLUS_REF => 'IBLWP_GET_RETURN_PLUS_REF';
+
 Readonly::Hash our %_NEW_PARM_NAMES => (
     $IB_USERNAME           => $_IBLWP_USERNAME,
     $IB_PASSWORD           => $_IBLWP_PASSWORD,
@@ -99,6 +120,11 @@ Readonly::Hash our %_PARM_NAMES => (
 # EXPORTS
 # ---------------------------
 our @EXPORT = qw (
+  $IBLWP_GET_RECORD
+  $IBLWP_GET_OBJTYPE
+  $IBLWP_GET_SEARCH_REF
+  $IBLWP_GET_RETURN_REF
+  $IBLWP_GET_RETURN_PLUS_REF
 );
 
 # ---------------------------
@@ -109,13 +135,16 @@ sub new() {
     my %h;
     my $self = \%h;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     #
     # Whose my parent?
     #
     if ( !defined($parent_obj) ) { confess Dumper @_; }
+    if ( !defined($parm_ref) )   { confess Dumper @_; }
     if ( ref($parent_obj) eq '' || ( !( ref($parent_obj) =~ /^IBWAPI::/ ) ) ) { confess Dumper @_; }
+    if ( 'HASH' ne ref($parm_ref) ) { confess Dumper $parm_ref; }
+
     $h{$_IBLWP_PARENT_OBJ} = $parent_obj;
 
     if ( !defined( $h{$_JSON_OBJ} = JSON->new() ) )           { confess; }
@@ -138,7 +167,6 @@ sub new() {
     $h{$_LAST_REQUEST} = '';
 
     if ( defined $parm_ref ) {
-        if ( 'HASH' ne ref($parm_ref) ) { confess Dumper $parm_ref; }
         foreach my $p ( sort( keys(%$parm_ref) ) ) {
             if ( !defined $_NEW_PARM_NAMES{$p} ) { next; }
             $h{ $_NEW_PARM_NAMES{$p} } = $parm_ref->{$p};
@@ -152,7 +180,83 @@ sub new() {
       . $_URI;
 
     bless $self, $class;
+
+    LOG_EXIT_SUB;
+
     $self;
+}
+
+# ---------------------------
+# get() return [_ref,_ref,...]
+# And update the parent object IBRecords
+#
+# WAPI OBJ [+parm]
+# IBRecord Obj -> _REF
+# _REF
+#
+# ---------------------------
+sub get {
+    my ( $self, $parm_ref ) = @_;
+
+    LOG_ENTER_SUB;
+
+    if ( !defined $parm_ref ) { confess @_; }
+
+    $self->_get_reset();
+
+    #
+    # Get generic Object record, with optional Search Parameters
+    #
+    if ( defined $parm_ref->{$IBLWP_GET_OBJTYPE} ) {
+        my $type;
+
+        LOG_DEBUG4( "GOT OBJTYPE:" . $parm_ref->{$IBLWP_GET_OBJTYPE} );
+
+        if ( URL_MODULE_EXISTS( $parm_ref->{$IBLWP_GET_OBJTYPE} ) ) {
+            $self->_set_objtype( $parm_ref->{$IBLWP_GET_OBJTYPE} );
+        }
+        elsif ( URL_REF_MODULE_EXISTS( $parm_ref->{$IBLWP_GET_OBJTYPE} ) ) {
+            $self->_set_objtype( URL_REF_MODULE_NAME( $parm_ref->{$IBLWP_GET_OBJTYPE} ) );
+        }
+        else {
+            confess @_;
+        }
+
+        $self->_set_objtype( $parm_ref->{$IBLWP_GET_OBJTYPE} );
+
+        if ( defined $parm_ref->{$IBLWP_GET_SEARCH_REF} ) {
+            $self->_add_search_fields( $parm_ref->{$IBLWP_GET_SEARCH_REF} );
+        }
+    }
+
+    #
+    # Get REF IBRecord
+    #
+    elsif ( defined $parm_ref->{$IBLWP_GET_RECORD} ) {
+
+        if ( defined $parm_ref->{$IBLWP_GET_SEARCH_REF} ) { confess @_; }
+
+        LOG_DEBUG4( "GOT RECORD:" . $parm_ref->{$IBLWP_GET_OBJTYPE}->get_ref() );
+        if ( ref( $parm_ref->{$IBLWP_GET_RECORD} ) ne $PERL_MODULE_IBRECORD ) { confess @_; }
+        $self->_set_objref( $parm_ref->{$IBLWP_GET_RECORD}->get_ref() );
+    }
+    else {
+        confess @_;
+    }
+
+    if ( defined $parm_ref->{$IBLWP_GET_RETURN_REF} ) {
+        $self->_add_return_fields( $parm_ref->{$IBLWP_GET_RETURN_REF} );
+    }
+    if ( defined $parm_ref->{$IBLWP_GET_RETURN_PLUS_REF} ) {
+        $self->_add_return_fields_plus( $parm_ref->{$IBLWP_GET_RETURN_PLUS_REF} );
+    }
+
+    my $ret = $self->_get_url;
+
+    LOG_EXIT_SUB;
+
+    return $ret;
+
 }
 
 # ---------------------------
@@ -161,7 +265,7 @@ sub new() {
 sub _get_reset {
     my ($self) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     $self->{$_HTTP_REQUEST_OBJ}  = undef;
     $self->{$_HTTP_RESPONSE_OBJ} = undef;
@@ -169,6 +273,9 @@ sub _get_reset {
     $self->{$_IBLWP_OBJREF}      = undef;
     $self->_reset_search_fields();
     $self->_reset_return_fields();
+
+    LOG_EXIT_SUB;
+
 }
 
 # ---------------------------
@@ -179,7 +286,7 @@ sub _get_url {
     my @ret           = ();
     my $ret_array_ref = \@ret;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     if ( !( ( defined $self->{$_IBLWP_OBJTYPE} ) ^ ( defined $self->{$_IBLWP_OBJREF} ) ) ) { confess Dumper $self ; }
 
@@ -289,53 +396,9 @@ sub _get_url {
         }
     }
 
-    PRINT_MYNAMELINE( "EXIT:" . Dumper $ret_array_ref) if $DEBUG;
+    LOG_EXIT_SUB;
 
     return $ret_array_ref;
-
-}
-
-# ---------------------------
-# get() return [_ref,_ref,...]
-# And update the parent object IBRecords
-#
-# WAPI OBJ [+parm]
-# IBRecord Obj -> _REF
-# _REF
-#
-# ---------------------------
-sub get {
-    my ( $self, $parm, $parm_ref, $parm2_ref ) = @_;
-
-    PRINT_MYNAMELINE if $DEBUG;
-
-    confess if ( !defined $parm );
-
-    $self->_get_reset();
-
-    if ( ref($parm) eq $PERL_MODULE_IBRECORD ) {
-        PRINT_MYNAMELINE if $DEBUG;
-        $self->_set_objref( $parm->get_ref() );
-        $self->_add_return_fields($parm_ref) if ( defined $parm_ref );
-        if ( defined $parm2_ref ) { confess; }
-    }
-    elsif ( URL_MODULE_EXISTS($parm) ) {
-        PRINT_MYNAMELINE if $DEBUG;
-        $self->_set_objtype($parm);
-        $self->_add_search_fields($parm_ref)       if ( defined $parm_ref );
-        $self->_add_return_fields_plus($parm2_ref) if ( defined $parm2_ref );
-    }
-    elsif ( URL_REF_MODULE_EXISTS($parm) ) {
-        PRINT_MYNAMELINE if $DEBUG;
-        $self->_set_objtype( URL_REF_MODULE_NAME($parm) );
-        $self->_add_search_fields($parm_ref)       if ( defined $parm_ref );
-        $self->_add_return_fields_plus($parm2_ref) if ( defined $parm2_ref );
-    }
-    else {
-        confess "BAD PARAMETER:" . Dumper $parm;
-    }
-
-    return $self->_get_url;
 
 }
 
@@ -345,11 +408,12 @@ sub get {
 sub is_success {
     my ($self) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     if ( defined $self->{$_HTTP_RESPONSE_OBJ} ) {
         return $self->{$_HTTP_RESPONSE_OBJ}->is_success();
     }
+    LOG_EXIT_SUB;
     0;
 }
 
@@ -359,11 +423,12 @@ sub is_success {
 sub is_error {
     my ($self) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     if ( defined $self->{$_HTTP_RESPONSE_OBJ} ) {
         return $self->{$_HTTP_RESPONSE_OBJ}->is_error();
     }
+    LOG_EXIT_SUB;
     0;
 }
 
@@ -372,9 +437,13 @@ sub is_error {
 # ---------------------------
 sub _response {
     my ($self) = @_;
+
+    LOG_ENTER_SUB;
+
     if ( defined $self->{$_HTTP_RESPONSE_OBJ} ) {
         return $self->{$_HTTP_RESPONSE_OBJ};
     }
+    LOG_EXIT_SUB;
     return undef;
 }
 
@@ -383,9 +452,13 @@ sub _response {
 # ---------------------------
 sub _parent {
     my ($self) = @_;
+
+    LOG_ENTER_SUB;
+
     if ( defined $self->{$_IBLWP_PARENT_OBJ} ) {
         return $self->{$_IBLWP_PARENT_OBJ};
     }
+    LOG_EXIT_SUB;
     return undef;
 }
 
@@ -395,11 +468,11 @@ sub _parent {
 sub _set_objref {
     my ( $self, $r ) = @_;
 
-    # PRINT_MYNAMELINE if $DEBUG;
-    print MYNAMELINE . " objref:$r\n" if $DEBUG;
+    LOG_ENTER_SUB;
 
     $self->{$_IBLWP_OBJREF}  = $r;
     $self->{$_IBLWP_OBJTYPE} = undef;
+    LOG_EXIT_SUB;
 }
 
 # ---------------------------
@@ -408,13 +481,11 @@ sub _set_objref {
 sub _set_objtype {
     my ( $self, $t ) = @_;
 
-    # PRINT_MYNAMELINE if $DEBUG;
-    print MYNAMELINE . " objtype:$t\n" if $DEBUG;
-
-    URL_MODULE_EXISTS($t);
+    LOG_ENTER_SUB;
 
     $self->{$_IBLWP_OBJTYPE} = $t;
     $self->{$_IBLWP_OBJREF}  = undef;
+    LOG_EXIT_SUB;
 }
 
 # ---------------------------
@@ -423,9 +494,10 @@ sub _set_objtype {
 sub _reset_search_fields {
     my ($self) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     $self->{$_IBLWP_SEARCH_FIELDS} = undef;
+    LOG_EXIT_SUB;
     $self;
 }
 
@@ -435,7 +507,7 @@ sub _reset_search_fields {
 sub _add_search_fields {
     my ( $self, $f ) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     if ( ref($f) eq 'HASH' ) {
         foreach my $k ( keys(%$f) ) {
@@ -450,6 +522,7 @@ sub _add_search_fields {
     else {
         $self->{$_IBLWP_SEARCH_FIELDS}->{$f} = 1;
     }
+    LOG_EXIT_SUB;
 }
 
 # ---------------------------
@@ -458,10 +531,11 @@ sub _add_search_fields {
 sub _reset_return_fields {
     my ($self) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     $self->{$_IBLWP_RETURN_FIELDS}      = undef;
     $self->{$_IBLWP_RETURN_FIELDS_PLUS} = undef;
+    LOG_EXIT_SUB;
     $self;
 }
 
@@ -471,7 +545,7 @@ sub _reset_return_fields {
 sub _add_return_fields {
     my ( $self, $f ) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     if ( defined $self->{$_IBLWP_RETURN_FIELDS_PLUS} ) {
         $self->{$_IBLWP_RETURN_FIELDS_PLUS} = undef;
@@ -496,6 +570,7 @@ sub _add_return_fields {
         $self->{$_IBLWP_RETURN_FIELDS}->{$f}++;
     }
 
+    LOG_EXIT_SUB;
     $self;
 }
 
@@ -505,7 +580,7 @@ sub _add_return_fields {
 sub _add_return_fields_plus {
     my ( $self, $f ) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     if ( defined $self->{$_IBLWP_RETURN_FIELDS} ) {
         $self->{$_IBLWP_RETURN_FIELDS} = undef;
@@ -529,6 +604,7 @@ sub _add_return_fields_plus {
         $self->{$_IBLWP_RETURN_FIELDS_PLUS}->{$f}++;
     }
 
+    LOG_EXIT_SUB;
     $self;
 
 }

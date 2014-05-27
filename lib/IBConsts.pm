@@ -29,9 +29,40 @@ sub MYNAMELINE;
 sub PRINT_MYNAME;
 sub PRINT_MYLINE;
 sub PRINT_MYNAMELINE;
+sub LOG_ENTER_SUB;
+sub LOG_EXIT_SUB;
+sub SET_LOGGING;
+sub LOG_DEBUG4;
+sub LOG_DEBUG3;
+sub LOG_DEBUG2;
+sub LOG_DEBUG1;
+sub LOG_DEBUG0;
+sub LOG_INFO;
+sub LOG_WARN;
+sub LOG_ERROR;
+sub LOG_FATAL;
 
 Readonly our $_IB_VERSION => '0.95';
-Readonly our $DEBUG       => 1;
+
+Readonly our $LOG_FATAL  => 'LOG_FATAL';
+Readonly our $LOG_ERROR  => 'LOG_ERROR';
+Readonly our $LOG_WARN   => 'LOG_WARN';
+Readonly our $LOG_INFO   => 'LOG_INFO';
+Readonly our $LOG_DEBUG0 => 'LOG_DEBUG0';
+Readonly our $LOG_DEBUG1 => 'LOG_DEBUG1';
+Readonly our $LOG_DEBUG2 => 'LOG_DEBUG2';
+Readonly our $LOG_DEBUG3 => 'LOG_DEBUG3';
+Readonly our $LOG_DEBUG4 => 'LOG_DEBUG4';
+
+Readonly our $_LOG_FATAL  => 0;
+Readonly our $_LOG_ERROR  => $_LOG_FATAL + 1;
+Readonly our $_LOG_WARN   => $_LOG_ERROR + 1;
+Readonly our $_LOG_INFO   => $_LOG_WARN + 1;
+Readonly our $_LOG_DEBUG0 => $_LOG_INFO + 1;
+Readonly our $_LOG_DEBUG1 => $_LOG_DEBUG0 + 1;
+Readonly our $_LOG_DEBUG2 => $_LOG_DEBUG1 + 1;
+Readonly our $_LOG_DEBUG3 => $_LOG_DEBUG2 + 1;
+Readonly our $_LOG_DEBUG4 => $_LOG_DEBUG3 + 1;
 
 Readonly our $PERL_MODULE_IBCONSTS => 'IBConsts';
 Readonly our $PERL_MODULE_IBWAPI   => 'IBWAPI';
@@ -41,6 +72,7 @@ Readonly our $PERL_MODULE_IBLWP    => 'IBLWP';
 # ---------------------------
 Readonly our $_IB_REF => '_ref';
 
+Readonly our $IB_FIELDS             => 'IB_FIELDS';
 Readonly our $IB_USERNAME           => 'IB_USERNAME';
 Readonly our $IB_PASSWORD           => 'IB_PASSWORD';
 Readonly our $IB_HOSTNAME           => 'IB_HOSTNAME';
@@ -51,6 +83,7 @@ Readonly our $IB_RETURN_FIELDS_PLUS => 'IB_RETURN_FIELDS_PLUS';
 Readonly our $IB_RETURN_TYPE        => 'IB_RETURN_TYPE';
 Readonly our $IB_READONLY_FIELDS    => 'IB_READONLY_FIELDS';
 Readonly our $IB_SEARCHABLE_FIELDS  => 'IB_SEARCHABLE_FIELDS';
+Readonly our $IB_SEARCHONLY_FIELDS  => 'IB_SEARCHONLY_FIELDS';
 
 Readonly our $SEARCH_PARM_CASE_INSENSATIVE => 'SEARCH_PARM_CASE_INSENSATIVE';
 Readonly our $SEARCH_PARM_EQUAL            => 'SEARCH_PARM_EQUAL';
@@ -130,6 +163,7 @@ Readonly our $FIELD_CLTT                                 => 'FIELD_CLTT';
 Readonly our $FIELD_COMMENT                              => 'FIELD_COMMENT';
 Readonly our $FIELD_CONFIGURE_FOR_DHCP                   => 'FIELD_CONFIGURE_FOR_DHCP';
 Readonly our $FIELD_CONFIGURE_FOR_DNS                    => 'FIELD_CONFIGURE_FOR_DNS';
+Readonly our $FIELD_CONTAINS_ADDRESS                     => 'FIELD_CONTAINS_ADDRESS';
 Readonly our $FIELD_COPY_XFER_TO_NOTIFY                  => 'FIELD_COPY_XFER_TO_NOTIFY';
 Readonly our $FIELD_CREATE_PTR_FOR_BULK_HOSTS            => 'FIELD_CREATE_PTR_FOR_BULK_HOSTS';
 Readonly our $FIELD_CREATE_PTR_FOR_HOSTS                 => 'FIELD_CREATE_PTR_FOR_HOSTS';
@@ -545,6 +579,7 @@ Readonly::Hash our %_FIELD_NAME => (
     $FIELD_COMMENT                              => 'comment',
     $FIELD_CONFIGURE_FOR_DHCP                   => 'configure_for_dhcp',
     $FIELD_CONFIGURE_FOR_DNS                    => 'configure_for_dns',
+    $FIELD_CONTAINS_ADDRESS                     => 'contains_address',
     $FIELD_COPY_XFER_TO_NOTIFY                  => 'copy_xfer_to_notify',
     $FIELD_CREATE_PTR_FOR_BULK_HOSTS            => 'create_ptr_for_bulk_hosts',
     $FIELD_CREATE_PTR_FOR_HOSTS                 => 'create_ptr_for_hosts',
@@ -1230,6 +1265,7 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_COMMENT                              => $TYPE_STRING,
     $FIELD_CONFIGURE_FOR_DHCP                   => $TYPE_UNKNOWN,
     $FIELD_CONFIGURE_FOR_DNS                    => $TYPE_UNKNOWN,
+    $FIELD_CONTAINS_ADDRESS                     => $TYPE_STRING,
     $FIELD_COPY_XFER_TO_NOTIFY                  => $TYPE_UNKNOWN,
     $FIELD_CREATE_PTR_FOR_BULK_HOSTS            => $TYPE_UNKNOWN,
     $FIELD_CREATE_PTR_FOR_HOSTS                 => $TYPE_UNKNOWN,
@@ -1605,12 +1641,48 @@ Readonly::Hash our %_NAME_MODULE_OBJ => (
     'zone_stub'            => $MODULE_ZONE_STUB,
 );
 
+Readonly our $EVAL_NEW_OBJECT_CODE => '
+    $parm_ref->{$IB_FIELDS}            = \%_FIELDS;
+    $parm_ref->{$IB_BASE_FIELDS}       = \%_BASE_FIELDS;
+    $parm_ref->{$IB_READONLY_FIELDS}   = \%_READONLY_FIELDS;
+    $parm_ref->{$IB_SEARCHABLE_FIELDS} = \%_SEARCHABLE_FIELDS;
+    $parm_ref->{$IB_SEARCHONLY_FIELDS} = \%_SEARCHONLY_FIELDS;
+    $self = $class->SUPER::new( $_OBJECT_NAME, $parm_ref );
+    bless $self, $class;
+    $self->create_lwp($parm_ref);
+';
+
+my $_LOGGING_LEVEL = $_LOG_FATAL;
+my $_SUB_LEVEL     = 0;
+
 #  $FIELD_NAMES
 # ---------------------------
 # EXPORTS
 # ---------------------------
 our @EXPORT = qw (
   $DEBUG
+  $EVAL_NEW_OBJECT_CODE
+  LOG_ENTER_SUB
+  LOG_EXIT_SUB
+  SET_LOGGING
+  LOG_DEBUG4
+  LOG_DEBUG3
+  LOG_DEBUG2
+  LOG_DEBUG1
+  LOG_DEBUG0
+  LOG_INFO
+  LOG_WARN
+  LOG_ERROR
+  LOG_FATAL
+  $LOG_FATAL
+  $LOG_ERROR
+  $LOG_WARN
+  $LOG_INFO
+  $LOG_DEBUG0
+  $LOG_DEBUG1
+  $LOG_DEBUG2
+  $LOG_DEBUG3
+  $LOG_DEBUG4
   URL_PARM_EXISTS;
   URL_FIELD_EXISTS
   URL_NAME_FIELD_EXISTS
@@ -1641,11 +1713,13 @@ our @EXPORT = qw (
   $IB_BASE_FIELDS
   $IB_CRED
   $IB_MAX_RESULTS
+  $IB_FIELDS
   $IB_RETURN_FIELDS
   $IB_RETURN_FIELDS_PLUS
   $IB_RETURN_TYPE
   $IB_READONLY_FIELDS
   $IB_SEARCHABLE_FIELDS
+  $IB_SEARCHONLY_FIELDS
   $IB_USERNAME
   $IB_PASSWORD
   $IB_HOSTNAME
@@ -1688,6 +1762,7 @@ our @EXPORT = qw (
   $FIELD_COMMENT
   $FIELD_CONFIGURE_FOR_DHCP
   $FIELD_CONFIGURE_FOR_DNS
+  $FIELD_CONTAINS_ADDRESS
   $FIELD_COPY_XFER_TO_NOTIFY
   $FIELD_CREATE_PTR_FOR_BULK_HOSTS
   $FIELD_CREATE_PTR_FOR_HOSTS
@@ -2031,8 +2106,6 @@ our @EXPORT = qw (
 sub URL_PARM_EXISTS {
     my ($u) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
-
     if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
     return defined $_PARM_NAME{$u};
 }
@@ -2040,8 +2113,6 @@ sub URL_PARM_EXISTS {
 # ------------------------------------------------------
 sub URL_FIELD_EXISTS {
     my ($u) = @_;
-
-    PRINT_MYNAMELINE if $DEBUG;
 
     if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
     return defined $_FIELD_NAME{$u};
@@ -2051,8 +2122,6 @@ sub URL_FIELD_EXISTS {
 sub URL_NAME_FIELD_EXISTS {
     my ($u) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
-
     if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
     return defined $_NAME_FIELD{$u};
 }
@@ -2061,10 +2130,7 @@ sub URL_NAME_FIELD_EXISTS {
 sub URL_MODULE_EXISTS {
     my ($u) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
-
     if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
-    print( MYNAMELINE . " Module:$u\n" ) if $DEBUG;
 
     return defined $_MODULE_OBJ_NAME{$u};
 }
@@ -2073,10 +2139,7 @@ sub URL_MODULE_EXISTS {
 sub URL_NAME_MODULE_EXISTS {
     my ($u) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
-
     if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
-    print( MYNAMELINE . " Module Name:$u\n" ) if $DEBUG;
 
     return defined $_NAME_MODULE_OBJ{$u};
 }
@@ -2085,10 +2148,7 @@ sub URL_NAME_MODULE_EXISTS {
 sub URL_REF_MODULE_EXISTS {
     my ($u) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
-
     if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
-    print( MYNAMELINE . " Ref:$u\n" ) if $DEBUG;
 
     if ( !defined $u ) { confess MYNAMELINE; }
 
@@ -2099,8 +2159,6 @@ sub URL_REF_MODULE_EXISTS {
 sub URL_SEARCH_EXISTS {
     my ($u) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
-
     if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
     return defined $_SEARCH_NAME{$u};
 }
@@ -2108,8 +2166,6 @@ sub URL_SEARCH_EXISTS {
 # ------------------------------------------------------
 sub URL_PARM_NAME {
     my ($u) = @_;
-
-    PRINT_MYNAMELINE if $DEBUG;
 
     if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
     if ( !defined $_PARM_NAME{$u} ) { confess; }
@@ -2121,8 +2177,6 @@ sub URL_PARM_NAME {
 # ------------------------------------------------------
 sub URL_FIELD_NAME {
     my ($u) = @_;
-
-    PRINT_MYNAMELINE if $DEBUG;
 
     if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
     if ( !defined $_FIELD_NAME{$u} ) { confess; }
@@ -2136,8 +2190,6 @@ sub URL_FIELD_NAME {
 sub URL_FIELD_TYPE {
     my ($u) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
-
     if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
     if ( !defined $_FIELD_NAME{$u} ) { confess "FIELD:$u"; }
     if ( !defined $_FIELD_TYPE{$u} ) { confess "FIELD:$u"; }
@@ -2150,8 +2202,6 @@ sub URL_FIELD_TYPE {
 sub URL_NAME_FIELD {
     my ($u) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
-
     if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
     if ( !defined $_NAME_FIELD{$u} ) { confess "Field Name:'$u' Not found\n"; }
 
@@ -2163,12 +2213,8 @@ sub URL_NAME_FIELD {
 sub URL_MODULE_NAME {
     my ($u) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
-
     if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
     if ( !defined $_MODULE_OBJ_NAME{$u} ) { confess MYNAMELINE . "No Module named: $u"; }
-
-    PRINT_MYNAMELINE( "Return:" . $_MODULE_OBJ_NAME{$u} ) if $DEBUG;
 
     return $_MODULE_OBJ_NAME{$u};
 }
@@ -2176,8 +2222,6 @@ sub URL_MODULE_NAME {
 # ------------------------------------------------------
 sub URL_REF_MODULE_NAME {
     my ($u) = @_;
-
-    PRINT_MYNAMELINE if $DEBUG;
 
     if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
 
@@ -2193,8 +2237,6 @@ sub URL_REF_MODULE_NAME {
 sub URL_NAME_MODULE {
     my ($u) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
-
     if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
     if ( !defined $_NAME_MODULE_OBJ{$u} ) { confess; }
 
@@ -2206,8 +2248,6 @@ sub URL_NAME_MODULE {
 sub URL_SEARCH_NAME {
     my ($u) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
-
     if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
     if ( !defined $_SEARCH_NAME{$u} ) { confess; }
 
@@ -2216,33 +2256,73 @@ sub URL_SEARCH_NAME {
 }
 
 # ------------------------------------------------------
+sub LOG_ENTER_SUB {
+    my ($a) = @_;
+    my $ret = ' ' x $_SUB_LEVEL++;
+
+    if ( defined caller(1) ) {
+        $ret .= ( ( ( caller(1) )[3] ) . ':' . ( ( caller(0) )[2] ) );
+    }
+    else {
+        $ret .= ( ( ( (caller)[1] ) . ':' . ( (caller)[2] ) ) );
+    }
+    $ret .= $a if ( defined $a );
+
+    # if ( $_LOGGING_LEVEL <= $_LOG_DEBUG3 ) { _LOG( "ENTER SUB:", $ret ); }
+    _LOG( "ENTER SUB:", $ret );
+}
+
+# ------------------------------------------------------
+sub LOG_EXIT_SUB {
+    my ($a) = @_;
+    my $ret = ' ' x --$_SUB_LEVEL;
+
+    if ( defined caller(1) ) {
+        $ret .= ( ( ( caller(1) )[3] ) . ':' . ( ( caller(0) )[2] ) );
+    }
+    else {
+        $ret .= ( ( ( (caller)[1] ) . ':' . ( (caller)[2] ) ) );
+    }
+    $ret .= $a if ( defined $a );
+
+    # if ( $_LOGGING_LEVEL <= $_LOG_DEBUG3 ) { _LOG( "EXIT  SUB:", $ret ); }
+    _LOG( "EXIT  SUB:", $ret );
+}
+
+# ------------------------------------------------------
 sub PRINT_MYNAME {
     my ($a) = @_;
-    print( ( caller(1) )[3] );
-    print $a if ( defined $a );
-    print "\n";
+    my $ret = '';
+
+    $ret = ( ( caller(1) )[3] );
+    $ret .= $a if ( defined $a );
+    $ret;
 }
 
 # ------------------------------------------------------
 sub PRINT_MYLINE {
     my ($a) = @_;
-    print( ( caller(1) )[2] );
-    print $a if ( defined $a );
-    print "\n";
+    my $ret = '';
+
+    $ret = ( ( caller(1) )[2] );
+    $ret .= $a if ( defined $a );
+    $ret;
 }
 
 # ------------------------------------------------------
 sub PRINT_MYNAMELINE {
     my ($a) = @_;
+    my $ret = '';
+
     if ( defined caller(1) ) {
-        print( ( ( caller(1) )[3] ) . ' line:' . ( ( caller(0) )[2] ) );
+        $ret = ( ( ( caller(1) )[3] ) . ':' . ( ( caller(0) )[2] ) );
     }
     else {
-        print( ( ( (caller)[1] ) . ' line:' . ( (caller)[2] ) ) );
+        $ret = ( ( ( (caller)[1] ) . ':' . ( (caller)[2] ) ) );
     }
 
-    print " $a" if ( defined $a );
-    print "\n";
+    $ret .= " $a" if ( defined $a );
+    $ret;
 }
 
 # ------------------------------------------------------
@@ -2254,17 +2334,106 @@ sub MYLINE { ( ( caller(1) )[2] ) . ' ' }
 # ------------------------------------------------------
 sub MYNAMELINE {
     if ( defined caller(1) ) {
-        ( ( ( caller(1) )[3] ) . ' line:' . ( ( caller(0) )[2] ) . " " );
+        ( ( ( caller(1) )[3] ) . ':' . ( ( caller(0) )[2] ) . " " );
     }
     else {
-        ( ( (caller)[1] ) . ' line:' . ( (caller)[2] ) ) . " ";
+        ( ( (caller)[1] ) . ':' . ( (caller)[2] ) ) . " ";
     }
 }
 
 # ------------------------------------------------------
 # ------------------------------------------------------
 # ------------------------------------------------------
-if ($DEBUG) {
+sub LOG_DEBUG4 {
+    if ( $_LOGGING_LEVEL <= $_LOG_DEBUG4 ) { _LOG( $LOG_DEBUG4, @_ ); }
+}
+
+# ------------------------------------------------------
+sub LOG_DEBUG3 {
+    if ( $_LOGGING_LEVEL <= $_LOG_DEBUG3 ) { _LOG( $LOG_DEBUG3, @_ ); }
+}
+
+# ------------------------------------------------------
+sub LOG_DEBUG2 {
+    if ( $_LOGGING_LEVEL <= $_LOG_DEBUG2 ) { _LOG( $LOG_DEBUG2, @_ ); }
+}
+
+# ------------------------------------------------------
+sub LOG_DEBUG1 {
+    if ( $_LOGGING_LEVEL <= $_LOG_DEBUG1 ) { _LOG( $LOG_DEBUG1, @_ ); }
+}
+
+# ------------------------------------------------------
+sub LOG_DEBUG0 {
+    if ( $_LOGGING_LEVEL <= $_LOG_DEBUG0 ) { _LOG( $LOG_DEBUG0, @_ ); }
+}
+
+# ------------------------------------------------------
+sub LOG_INFO {
+    if ( $_LOGGING_LEVEL <= $_LOG_INFO ) { _LOG( $LOG_INFO, @_ ); }
+}
+
+# ------------------------------------------------------
+sub LOG_WARN {
+    if ( $_LOGGING_LEVEL <= $_LOG_WARN ) { _LOG( $LOG_WARN, @_ ); }
+}
+
+# ------------------------------------------------------
+sub LOG_ERROR {
+    if ( $_LOGGING_LEVEL <= $_LOG_ERROR ) { _LOG( $LOG_FATAL, @_ ); }
+}
+
+# ------------------------------------------------------
+sub LOG_FATAL {
+    _LOG( $LOG_FATAL, @_ );
+    confess;
+}
+
+# ------------------------------------------------------
+sub _LOG {
+    my ( $level, $msg ) = @_;
+    print "$level " . ( ( defined $msg && $msg ne '' ) ? $msg : '' ) . "\n";
+}
+
+# ------------------------------------------------------
+sub SET_LOGGING {
+    my ($D) = @_;
+    if ( $D eq $LOG_FATAL ) {
+        $_LOGGING_LEVEL = $_LOG_FATAL;
+    }
+    elsif ( $D eq $LOG_ERROR ) {
+        $_LOGGING_LEVEL = $_LOG_ERROR;
+    }
+    elsif ( $D eq $LOG_WARN ) {
+        $_LOGGING_LEVEL = $_LOG_WARN;
+    }
+    elsif ( $D eq $LOG_INFO ) {
+        $_LOGGING_LEVEL = $_LOG_INFO;
+    }
+    elsif ( $D eq $LOG_DEBUG0 ) {
+        $_LOGGING_LEVEL = $_LOG_DEBUG0;
+    }
+    elsif ( $D eq $LOG_DEBUG1 ) {
+        $_LOGGING_LEVEL = $_LOG_DEBUG1;
+    }
+    elsif ( $D eq $LOG_DEBUG2 ) {
+        $_LOGGING_LEVEL = $_LOG_DEBUG2;
+    }
+    elsif ( $D eq $LOG_DEBUG3 ) {
+        $_LOGGING_LEVEL = $_LOG_DEBUG3;
+    }
+    elsif ( $D eq $LOG_DEBUG4 ) {
+        $_LOGGING_LEVEL = $_LOG_DEBUG4;
+    }
+    else {
+        confess @_;
+    }
+}
+
+# ------------------------------------------------------
+# ------------------------------------------------------
+# ------------------------------------------------------
+if (0) {
     print "DEBUG ON, checking structures....\n";
 
     # Verify TYPE, and reverse

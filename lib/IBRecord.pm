@@ -54,7 +54,7 @@ sub new {
     my %d;
     my $self = \%s;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     if ( ( !defined $parent ) || ( !( ref($parent) =~ /IBWAPI::/ ) ) ) { confess Dumper $parent; }
     if ( ( !defined $field_ref ) || ( ref($field_ref) ne 'HASH' ) ) { confess Dumper $field_ref; }
@@ -86,7 +86,9 @@ sub new {
     if ( !defined $s{$_IBR_REF} || !$s{$_IBR_REF} ) { confess MYNAMELINE("NO REF DEFINED"); }
 
     bless $self, $class;
-    PRINT_MYNAMELINE("EXIT") if $DEBUG;
+
+    LOG_EXIT_SUB;
+
     $self;
 }
 
@@ -97,7 +99,7 @@ sub get_field {
     my ( $self, $f, $f2 ) = @_;
     my $ret;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     if ( !defined $f || $f eq '' ) { confess @_; }
     if ( !URL_FIELD_EXISTS($f) ) { confess @_; }
@@ -135,7 +137,7 @@ sub get_field {
         confess "get TYPE: $type not supported\n";
     }
 
-    PRINT_MYNAMELINE("EXIT") if $DEBUG;
+    LOG_EXIT_SUB;
 
     $ret;
 }
@@ -147,13 +149,13 @@ sub get_extattr_field {
     my ( $self, $f ) = @_;
     my $ret;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     if ( !defined $f || $f eq '' ) { confess @_; }
 
-    $ret = $self->get( $FIELD_EXTATTRS, $f );
+    $ret = $self->get_field( $FIELD_EXTATTRS, $f );
 
-    PRINT_MYNAMELINE("EXIT") if $DEBUG;
+    LOG_EXIT_SUB;
 
     $ret;
 }
@@ -164,7 +166,7 @@ sub get_extattr_field {
 sub add_field {
     my ( $self, $f, $v ) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     if ( !URL_FIELD_EXISTS($f) ) { confess @_; }
     if ( ref($v) ne '' ) { confess "Need to check for structs here\n"; }
@@ -204,7 +206,8 @@ sub add_field {
     #$TYPE_STRING_ARRAY
     #$TYPE_UNKNOWN
     #$TYPE_ZONE_ASSOCIATIONS
-    PRINT_MYNAMELINE("EXIT") if $DEBUG;
+
+    LOG_EXIT_SUB;
 
 }
 
@@ -215,7 +218,7 @@ sub update_field {
     my ( $self, $f, $v ) = @_;
     my $dirty = 0;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     if ( !URL_FIELD_EXISTS($f) ) { confess @_; }
     if ( ref($v) ne '' ) { confess "Need to check for structs here\n"; }
@@ -264,7 +267,8 @@ sub update_field {
         $self->{$_IBR_DIRTY_FIELDS}->{$f}++;
     }
 
-    PRINT_MYNAMELINE("EXIT") if $DEBUG;
+    LOG_EXIT_SUB;
+
 }
 
 # ---------------------------
@@ -273,7 +277,7 @@ sub update_field {
 sub reload_record {
     my ( $self, $rec_ref ) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     if ( !defined $rec_ref ) { confess @_; }
 
@@ -353,7 +357,7 @@ sub reload_record {
     #$TYPE_UNKNOWN
     #$TYPE_ZONE_ASSOCIATIONS
 
-    PRINT_MYNAMELINE("EXIT") if $DEBUG;
+    LOG_EXIT_SUB;
 
 }
 
@@ -363,10 +367,11 @@ sub reload_record {
 sub get_ref {
     my ($self) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
-    PRINT_MYNAMELINE("EXIT") if $DEBUG;
     return $self->{$_IBR_REF};
+
+    LOG_EXIT_SUB;
 }
 
 # ---------------------------
@@ -375,10 +380,11 @@ sub get_ref {
 sub is_dirty {
     my ($self) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
-    PRINT_MYNAMELINE("EXIT") if $DEBUG;
     $self->{$_IBR_DIRTY};
+
+    LOG_EXIT_SUB;
 }
 
 # ---------------------------
@@ -387,12 +393,13 @@ sub is_dirty {
 sub flush {
     my ($self) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     if ( $self->is_dirty ) {
         $self->_flush( $self->{$_IBR_REF} );
     }
-    PRINT_MYNAMELINE("EXIT") if $DEBUG;
+
+    LOG_EXIT_SUB;
 }
 
 # ---------------------------
@@ -400,8 +407,14 @@ sub flush {
 # ---------------------------
 sub _lwp {
     my ($self) = @_;
-    PRINT_MYNAMELINE if $DEBUG;
-    $self->{$_IBR_PARENT}->_lwp();
+
+    LOG_ENTER_SUB;
+
+    my $ret = $self->{$_IBR_PARENT}->_lwp();
+
+    LOG_EXIT_SUB;
+
+    return $ret;
 }
 
 # ---------------------------
@@ -411,10 +424,13 @@ sub _lwp {
 sub _get_field {
     my ( $self, $f ) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
-    PRINT_MYNAMELINE("EXIT") if $DEBUG;
-    $self->_lwp->get( $self, $f );
+    my $ret = $self->_lwp->get( $self, $f );
+
+    LOG_EXIT_SUB;
+
+    return $ret;
 
 }
 
@@ -424,7 +440,7 @@ sub _get_field {
 sub _flush {
     my ($self) = @_;
 
-    PRINT_MYNAMELINE if $DEBUG;
+    LOG_ENTER_SUB;
 
     if ( $self->is_dirty() ) {
 
@@ -437,7 +453,9 @@ sub _flush {
         }
 
     }
-    PRINT_MYNAMELINE("EXIT") if $DEBUG;
+
+    LOG_EXIT_SUB;
+
 }
 
 # ---------------------------
@@ -446,6 +464,8 @@ sub _flush {
 sub CONVERT_JSON_ARRAY_TO_IB_FORMAT {
     my ($json_array) = @_;
     my %result = ();
+
+    LOG_ENTER_SUB;
 
     if ( ref($json_array) ne 'ARRAY' ) { confess Dumper @_; }
 
@@ -458,7 +478,8 @@ sub CONVERT_JSON_ARRAY_TO_IB_FORMAT {
         }
     }
 
-    PRINT_MYNAMELINE("EXIT") if $DEBUG;
+    LOG_EXIT_SUB;
+
     \%result;
 }
 
@@ -469,6 +490,8 @@ sub CONVERT_JSON_HASH_TO_IB_FORMAT {
     my ($json_hash) = @_;
     my %result = ();
 
+    LOG_ENTER_SUB;
+
     if ( ref($json_hash) ne 'HASH' ) { confess Dumper @_; }
     if ( !defined $json_hash->{$_IB_REF} ) { confess Dumper @_; }
 
@@ -478,7 +501,8 @@ sub CONVERT_JSON_HASH_TO_IB_FORMAT {
         $r{ URL_NAME_FIELD($r) } = $json_hash->{$r};
     }
 
-    PRINT_MYNAMELINE("EXIT") if $DEBUG;
+    LOG_EXIT_SUB;
+
     \%result;
 }
 
