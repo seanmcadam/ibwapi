@@ -50,11 +50,11 @@ sub get;
 sub is_success;    # Returns HTTP::Response->is_success()
 sub is_error;      # Returns HTTP::Response->is_error()
 
+sub _parent;       # Returns parent object
+sub _response;     # Returns HTTP::Response Object
 sub _add_search_fields;
 sub _add_return_fields;
 sub _add_return_fields_plus;
-sub _parent;       # Returns parent object
-sub _response;     # Returns HTTP::Response Object
 sub _reset_search_fields;
 sub _reset_return_fields;
 sub _get_reset;
@@ -130,7 +130,7 @@ our @EXPORT = qw (
 # ---------------------------
 # new()
 # ---------------------------
-sub new() {
+sub new {
     my ( $class, $parent_obj, $parm_ref ) = @_;
     my %h;
     my $self = \%h;
@@ -140,15 +140,15 @@ sub new() {
     #
     # Whose my parent?
     #
-    if ( !defined($parent_obj) ) { confess Dumper @_; }
-    if ( !defined($parm_ref) )   { confess Dumper @_; }
-    if ( ref($parent_obj) eq '' || ( !( ref($parent_obj) =~ /^IBWAPI::/ ) ) ) { confess Dumper @_; }
-    if ( 'HASH' ne ref($parm_ref) ) { confess Dumper $parm_ref; }
+    defined($parent_obj) || LOG_FATAL;
+    defined($parm_ref)   || LOG_FATAL;
+    ( ref($parent_obj) ne '' && ( ref($parent_obj) =~ /^IBWAPI::/ ) ) || LOG_FATAL " " . ref($parent_obj);
+    ref($parm_ref) eq 'HASH' || LOG_FATAL;
 
     $h{$_IBLWP_PARENT_OBJ} = $parent_obj;
 
-    if ( !defined( $h{$_JSON_OBJ} = JSON->new() ) )           { confess; }
-    if ( !defined( $h{$_UA}       = LWP::UserAgent->new() ) ) { confess; }
+    defined( $h{$_JSON_OBJ} = JSON->new() )           || LOG_FATAL;
+    defined( $h{$_UA}       = LWP::UserAgent->new() ) || LOG_FATAL;
     $h{$_UA}->agent($_UA_AGENT);
     $h{$_HTTP_RESPONSE_OBJ} = undef;
     $h{$_HTTP_REQUEST_OBJ}  = undef;
@@ -187,11 +187,11 @@ sub new() {
 }
 
 # ---------------------------
-# get() return [_ref,_ref,...]
+# get( {params} ) return [_ref,_ref,...]
 # And update the parent object IBRecords
 #
-# WAPI OBJ [+parm]
-# IBRecord Obj -> _REF
+# WAPI OBJ [+search fields] [+return fields]
+# IBRecord Obj [+return fields]
 # _REF
 #
 # ---------------------------
@@ -200,7 +200,7 @@ sub get {
 
     LOG_ENTER_SUB;
 
-    if ( !defined $parm_ref ) { confess @_; }
+    defined $parm_ref || LOG_FATAL;
 
     $self->_get_reset();
 
@@ -210,7 +210,7 @@ sub get {
     if ( defined $parm_ref->{$IBLWP_GET_OBJTYPE} ) {
         my $type;
 
-        LOG_DEBUG4( "GOT OBJTYPE:" . $parm_ref->{$IBLWP_GET_OBJTYPE} );
+        LOG_DEBUG4( " GOT OBJTYPE: " . $parm_ref->{$IBLWP_GET_OBJTYPE} );
 
         if ( URL_MODULE_EXISTS( $parm_ref->{$IBLWP_GET_OBJTYPE} ) ) {
             $self->_set_objtype( $parm_ref->{$IBLWP_GET_OBJTYPE} );
@@ -219,7 +219,7 @@ sub get {
             $self->_set_objtype( URL_REF_MODULE_NAME( $parm_ref->{$IBLWP_GET_OBJTYPE} ) );
         }
         else {
-            confess @_;
+            LOG_FATAL " GOT OBJTYPE: " . $parm_ref->{$IBLWP_GET_OBJTYPE};
         }
 
         $self->_set_objtype( $parm_ref->{$IBLWP_GET_OBJTYPE} );
@@ -230,18 +230,19 @@ sub get {
     }
 
     #
-    # Get REF IBRecord
+    # Get IBRecord ( OBJ, REF )
     #
     elsif ( defined $parm_ref->{$IBLWP_GET_RECORD} ) {
 
-        if ( defined $parm_ref->{$IBLWP_GET_SEARCH_REF} ) { confess @_; }
+        LOG_DEBUG4 " GOT REF: " . ref($parm_ref->{$IBLWP_GET_RECORD});
 
-        LOG_DEBUG4( "GOT RECORD:" . $parm_ref->{$IBLWP_GET_OBJTYPE}->get_ref() );
-        if ( ref( $parm_ref->{$IBLWP_GET_RECORD} ) ne $PERL_MODULE_IBRECORD ) { confess @_; }
+        ref($parm_ref->{$IBLWP_GET_RECORD} ) eq $PERL_MODULE_IBRECORD || LOG_FATAL (" " . ref($parm_ref->{$IBLWP_GET_RECORD}));
+        defined $parm_ref->{$IBLWP_GET_SEARCH_REF} && LOG_FATAL;
+
         $self->_set_objref( $parm_ref->{$IBLWP_GET_RECORD}->get_ref() );
     }
     else {
-        confess @_;
+        LOG_FATAL " NO RECORD TYPE SPECIFIED ";
     }
 
     if ( defined $parm_ref->{$IBLWP_GET_RETURN_REF} ) {
@@ -288,7 +289,7 @@ sub _get_url {
 
     LOG_ENTER_SUB;
 
-    if ( !( ( defined $self->{$_IBLWP_OBJTYPE} ) ^ ( defined $self->{$_IBLWP_OBJREF} ) ) ) { confess Dumper $self ; }
+    ( ( defined $self->{$_IBLWP_OBJTYPE} ) ^ ( defined $self->{$_IBLWP_OBJREF} ) ) || LOG_FATAL;
 
     if ( defined $self->{$_IBLWP_OBJTYPE} ) {
         $self->{$_IBLWP_URL} =
@@ -319,7 +320,7 @@ sub _get_url {
           ;
     }
     else {
-        confess Dumper $self;
+        LOG_FATAL;
     }
 
     if ( defined $self->{$_IBLWP_RETURN_FIELDS} ) {
@@ -350,6 +351,8 @@ sub _get_url {
         }
     }
 
+        LOG_DEBUG4 " SEND URL: " . $self->{$_IBLWP_URL};
+
     $self->{$_HTTP_REQUEST_OBJ} = HTTP::Request->new( GET => $self->{$_IBLWP_URL} );
     $self->{$_HTTP_RESPONSE_OBJ} = $self->{$_UA}->request( $self->{_HTTP_REQUEST_OBJ} );
 
@@ -359,8 +362,8 @@ sub _get_url {
         return 0;
     }
 
-    PRINT_MYNAMELINE( "RETURN CODE " . $self->_response()->code() )       if $DEBUG;
-    PRINT_MYNAMELINE( "RETURN MESSAGE " . $self->_response()->message() ) if $DEBUG;
+    LOG_DEBUG2( "RETURN CODE " . $self->_response()->code() )       if $DEBUG;
+    LOG_DEBUG2( "RETURN MESSAGE " . $self->_response()->message() ) if $DEBUG;
 
     # Is it a JSON Array?
     my $json = decode_json( $self->_response()->content() );
@@ -379,10 +382,8 @@ sub _get_url {
 
     # What the hell is it?
     else {
-        confess "BAD RESPONSE " . Dumper $json;
+        LOG_FATAL "BAD JSON RESPONSE " . Dumper $json;
     }
-
-    print Dumper $record_ref;
 
     foreach my $ref ( keys(%$record_ref) ) {
         push( @$ret_array_ref, $ref );

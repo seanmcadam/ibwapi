@@ -126,7 +126,6 @@ sub new {
     if ( !defined $parm_ref ) { LOG_FATAL(PRINT_MYNAMELINE); }
     eval $EVAL_NEW_OBJECT_CODE;
     if ($@) { LOG_FATAL(PRINT_MYNAMELINE); }
-
     $self;
 }
 

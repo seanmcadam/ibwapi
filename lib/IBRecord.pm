@@ -14,16 +14,22 @@ use base qw( Exporter );
 # ---------------------------
 # PROTOTYPES
 # ---------------------------
-sub get_ref;
-sub get_field;
-sub add_field;
-sub update_field;
-sub reload_record;
-sub is_dirty;
-sub flush;
-sub _get_field;
-sub _flush;
-sub _lwp;
+sub get_ref;          # Return the REF for the record
+sub get_field;        # Return the field value
+sub update_field;     # Add new value or get existing value update, and mark dirty
+sub reload_record;    # Get the record from the server and reload values, make all clean
+sub is_dirty;         # Indicate Dirty Status
+sub flush;            # If Dirty flush the dirty values out
+
+#
+### These call the parent for action
+#
+sub _load_field;                 # Load Field, Mark Filed Loaded
+sub _load_all;                   # Load All Fields, Mark Fields Loaded
+sub _update_value;               # Get Field, Compare Field, update if needed
+sub _update_value_mark_dirty;    # Mark Dirty if value change
+sub _flush;                      # Call the flush action
+
 sub CONVERT_JSON_ARRAY_TO_IB_FORMAT;
 sub CONVERT_JSON_HASH_TO_IB_FORMAT;
 
@@ -35,6 +41,7 @@ Readonly our $_IBR_PARENT       => '_IBR_PARENT';
 Readonly our $_IBR_DIRTY        => '_IBR_DIRTY';
 Readonly our $_IBR_DIRTY_FIELDS => '_IBR_DIRTY_FIELDS';
 Readonly our $_IBR_FIELD_VALUES => '_IBR_FIELD_VALUES';
+Readonly our $_IBR_FIELD_LOADED => '_IBR_FIELD_LOADED';
 
 # ---------------------------
 # EXPORTS
@@ -51,6 +58,7 @@ sub new {
     my ( $class, $parent, $field_ref ) = @_;
     my %s;
     my %v;
+    my %l;
     my %d;
     my $self = \%s;
 
@@ -62,9 +70,10 @@ sub new {
     if ( !defined $field_ref->{$FIELD_REF} ) { confess @_; }
 
     $s{$_IBR_FIELD_VALUES} = \%v;
-    $s{$_IBR_REF}          = undef;
+    $s{$_IBR_FIELD_LOADED} = \%l;
     $s{$_IBR_DIRTY_FIELDS} = \%d;
     $s{$_IBR_DIRTY}        = 0;
+    $s{$_IBR_REF}          = undef;
     $s{$_IBR_PARENT}       = $parent;
 
     #
@@ -77,13 +86,14 @@ sub new {
             next;
         }
 
-        if ( !URL_FIELD_EXISTS($key) ) { confess @_; }
+        URL_FIELD_EXISTS($key) || LOG_FATAL;
         $v{$key} = $field_ref->{$key};
+        $l{$key} = 1;
         $d{$key} = 0;
 
     }
 
-    if ( !defined $s{$_IBR_REF} || !$s{$_IBR_REF} ) { confess MYNAMELINE("NO REF DEFINED"); }
+    ( defined $s{$_IBR_REF} && $s{$_IBR_REF} ne '' ) || LOG_FATAL "NO REF DEFINED";
 
     bless $self, $class;
 
@@ -112,8 +122,8 @@ sub get_field {
     #
     # Field not loaded so go get it, then proceed
     #
-    if ( !defined $self->{$_IBR_FIELD_VALUES}->{$f} ) {
-        $self->_get_field($f);
+    if ( !defined $self->{$_IBR_FIELD_LOADED}->{$f} ) {
+        $self->_load_field($f);
     }
 
     if (
@@ -163,41 +173,126 @@ sub get_extattr_field {
 # ---------------------------
 # add_field
 # ---------------------------
-sub add_field {
+###sub add_field {
+###    my ( $self, $f, $v ) = @_;
+###
+###    LOG_ENTER_SUB;
+###
+###    if ( !URL_FIELD_EXISTS($f) ) { confess @_; }
+###    if ( ref($v) ne '' ) { confess "Need to check for structs here\n"; }
+###
+###    my $type    = URL_FIELD_TYPE($f);
+###    my $current = $self->{$_IBR_FIELD_VALUES}->{$f};
+###
+###    #
+###    # Field exists already
+###    #
+###    if ( defined $self->{$_IBR_FIELD_LOADED}->{$f} ) {
+###        LOG_WARN " Field:$f Exists already\n";
+###    }
+###
+###    if ( $type eq $TYPE_BOOL ) {
+###        if ( $current ^ $v ) {
+###            $self->{$_IBR_FIELD_VALUES}->{$f} = $v;
+###        }
+###    }
+###    elsif ( $type eq $TYPE_INT || $type eq $TYPE_UINT ) {
+###        if ( !( $current == $v ) ) {
+###            $self->{$_IBR_FIELD_VALUES}->{$f} = $v;
+###        }
+###    }
+###    elsif ( $type eq $TYPE_STRING || $type eq $TYPE_TIMESTAMP ) {
+###        if ( $current ne $v ) {
+###            $self->{$_IBR_FIELD_VALUES}->{$f} = $v;
+###        }
+###    }
+###    else {
+###        confess "Updating TYPE: $type Not supported yet\n";
+###    }
+###
+###    #$TYPE_EXTATTRS
+###    #$TYPE_MEMBERS
+###    #$TYPE_OPTIONS
+###    #$TYPE_STRING_ARRAY
+###    #$TYPE_UNKNOWN
+###    #$TYPE_ZONE_ASSOCIATIONS
+###
+###    LOG_EXIT_SUB;
+###
+###}
+
+# ---------------------------
+# update_field (go get it if not loaded yet)
+# ---------------------------
+sub update_field {
     my ( $self, $f, $v ) = @_;
+    my $dirty = 0;
 
     LOG_ENTER_SUB;
 
     if ( !URL_FIELD_EXISTS($f) ) { confess @_; }
-    if ( ref($v) ne '' ) { confess "Need to check for structs here\n"; }
-
-    my $type    = URL_FIELD_TYPE($f);
-    my $current = $self->{$_IBR_FIELD_VALUES}->{$f};
+    ref($v) ne '' || LOG_FATAL "Need to check for structs here";
 
     #
-    # Field exists already
+    # Field not loaded so go get it, then proceed
     #
-    if ( defined $self->{$_IBR_FIELD_VALUES}->{$f} ) {
-        warn MYNAMELINE . " Field:$f Exists already\n";
+    if ( !defined $self->{$_IBR_FIELD_LOADED}->{$f} ) {
+        $self->_load_field($f);
     }
 
-    if ( $type eq $TYPE_BOOL ) {
+    $self->_update_value_mark_dirty( $f, $v );
+
+    LOG_EXIT_SUB;
+
+}
+
+# ---------------------------
+# update_value
+# ---------------------------
+sub _update_value {
+    my ( $self, $f, $v ) = @_;
+    my $dirty = 0;
+
+    LOG_ENTER_SUB;
+
+    if( $f eq $FIELD_REF ) { return; }
+
+    URL_FIELD_EXISTS($f) || LOG_FATAL;
+    ref($v) ne '' && LOG_FATAL "Value is a Struct:" . ref($v);
+
+    ### defined $self->{$_IBR_FIELD_LOADED}->{$f} || LOG_FATAL "Filed no Loaded: $f";
+
+    my $type = URL_FIELD_TYPE($f);
+
+    my $current = $self->{$_IBR_FIELD_VALUES}->{$f};
+
+    if ( !defined $self->{$_IBR_FIELD_VALUES}->{$f} ) {
+        $self->{$_IBR_FIELD_VALUES}->{$f} = $v;
+        $dirty++;
+    }
+    elsif ( $type eq $TYPE_BOOL ) {
         if ( $current ^ $v ) {
             $self->{$_IBR_FIELD_VALUES}->{$f} = $v;
+            $dirty++;
         }
     }
     elsif ( $type eq $TYPE_INT || $type eq $TYPE_UINT ) {
+        $type eq $TYPE_UINT && $v < 0 && LOG_FATAL;
+
         if ( !( $current == $v ) ) {
             $self->{$_IBR_FIELD_VALUES}->{$f} = $v;
+            $dirty++;
         }
     }
     elsif ( $type eq $TYPE_STRING || $type eq $TYPE_TIMESTAMP ) {
+        $type eq $TYPE_TIMESTAMP && !VERIFY_TIMESTAMP($v) && LOG_FATAL;
         if ( $current ne $v ) {
             $self->{$_IBR_FIELD_VALUES}->{$f} = $v;
+            $dirty++;
         }
     }
     else {
-        confess "Updating TYPE: $type Not supported yet\n";
+        LOG_FATAL "Updating TYPE: $type Not supported yet";
     }
 
     #$TYPE_EXTATTRS
@@ -212,63 +307,17 @@ sub add_field {
 }
 
 # ---------------------------
-# update_field (go get it if not loaded yet)
+# update_value
 # ---------------------------
-sub update_field {
+sub _update_value_mark_dirty {
     my ( $self, $f, $v ) = @_;
-    my $dirty = 0;
 
     LOG_ENTER_SUB;
-
-    if ( !URL_FIELD_EXISTS($f) ) { confess @_; }
-    if ( ref($v) ne '' ) { confess "Need to check for structs here\n"; }
-
-    my $type    = URL_FIELD_TYPE($f);
-    my $current = $self->{$_IBR_FIELD_VALUES}->{$f};
-
-    #
-    # Field not loaded so go get it, then proceed
-    #
-    if ( !defined $self->{$_IBR_FIELD_VALUES}->{$f} ) {
-        $self->_get_field($f);
-    }
-
-    if ( $type eq $TYPE_BOOL ) {
-        if ( $current ^ $v ) {
-            $self->{$_IBR_FIELD_VALUES}->{$f} = $v;
-            $dirty++;
-        }
-    }
-    elsif ( $type eq $TYPE_INT || $type eq $TYPE_UINT ) {
-        if ( !( $current == $v ) ) {
-            $self->{$_IBR_FIELD_VALUES}->{$f} = $v;
-            $dirty++;
-        }
-    }
-    elsif ( $type eq $TYPE_STRING || $type eq $TYPE_TIMESTAMP ) {
-        if ( $current ne $v ) {
-            $self->{$_IBR_FIELD_VALUES}->{$f} = $v;
-            $dirty++;
-        }
-    }
-    else {
-        confess "Updating TYPE: $type Not supported yet\n";
-    }
-
-    #$TYPE_EXTATTRS
-    #$TYPE_MEMBERS
-    #$TYPE_OPTIONS
-    #$TYPE_STRING_ARRAY
-    #$TYPE_UNKNOWN
-    #$TYPE_ZONE_ASSOCIATIONS
-
-    if ($dirty) {
-        $self->{$_IBR_DIRTY}->{$f} = $v;
+    if ( $self->_update_value( $f, $v ) ) {
+        $self->{$_IBR_DIRTY}++;
         $self->{$_IBR_DIRTY_FIELDS}->{$f}++;
     }
-
     LOG_EXIT_SUB;
-
 }
 
 # ---------------------------
@@ -281,81 +330,18 @@ sub reload_record {
 
     if ( !defined $rec_ref ) { confess @_; }
 
+    #
+    # Needs work
+    #
     foreach my $f ( keys(%$rec_ref) ) {
-        if ( !URL_FIELD_EXISTS($f) ) { confess Dumper @_; }
-        my $v       = $rec_ref->{$f};
-        my $type    = URL_FIELD_TYPE($f);
-        my $current = $self->{$_IBR_FIELD_VALUES}->{$f};
+        URL_FIELD_EXISTS($f) || LOG_FATAL;
+        my $v = $rec_ref->{$f};
 
-        # $self->{$_IBR_FIELD_VALUES}->{$f} = $rec_ref->{$f};
+        $self->_update_value( $f, $v );
 
-        if ( $type eq $TYPE_BOOL ) {
-            if ( $current ^ $v ) {
-                print MYNAMELINE . " $type Update $f = $v\n" if $DEBUG;
-                $self->{$_IBR_FIELD_VALUES}->{$f} = $v;
-            }
-        }
-        elsif ( $type eq $TYPE_INT || $type eq $TYPE_UINT ) {
-            if ( !( $current == $v ) ) {
-                print MYNAMELINE . " $type Update $f = $v\n" if $DEBUG;
-                $self->{$_IBR_FIELD_VALUES}->{$f} = $v;
-            }
-        }
-        elsif ( $type eq $TYPE_STRING || $type eq $TYPE_TIMESTAMP ) {
-            if ( $current ne $v ) {
-                print MYNAMELINE . " $type Update $f = $v\n" if $DEBUG;
-                $self->{$_IBR_FIELD_VALUES}->{$f} = $v;
-            }
-        }
-        elsif ( $type eq $TYPE_EXTATTRS ) {
-            if ( ref($v) ne 'HASH' ) { confess; }
-            if ( defined $current && ref($current) ne 'HASH' ) { confess; }
-
-            #
-            # Load new values from server
-            #
-            if ( !defined $current ) {
-                $self->{$_IBR_FIELD_VALUES}->{$f} = $v;
-            }
-
-            #
-            # Values from the server were removed (erased)
-            # untested, and unliley
-            #
-            elsif ( !defined $v ) {
-                $self->{$_IBR_FIELD_VALUES}->{$f} = undef;
-            }
-
-            #
-            # Update new values from server
-            #
-            else {
-
-                #
-                # Untested...
-                #
-                foreach my $attr ( sort( keys(%$v) ) ) {
-                    if ( !( ( $self->{$_IBR_FIELD_VALUES}->{$f}->{$attr} eq $v->{$attr} )
-                            || ( $self->{$_IBR_FIELD_VALUES}->{$f}->{$attr} == $v->{$attr} ) ) ) {
-                        $self->{$_IBR_FIELD_VALUES}->{$f}->{$attr} = $v->{$attr};
-                    }
-
-                }
-            }
-
-        }
-        else {
-            confess "Updating TYPE: $type Not supported yet\n";
-        }
-
+        $self->{$_IBR_DIRTY_FIELDS}->{$f} = undef;
+        $self->{$_IBR_FIELD_LOADED}->{$f} = 1;
     }
-
-    #$TYPE_EXTATTRS
-    #$TYPE_MEMBERS
-    #$TYPE_OPTIONS
-    #$TYPE_STRING_ARRAY
-    #$TYPE_UNKNOWN
-    #$TYPE_ZONE_ASSOCIATIONS
 
     LOG_EXIT_SUB;
 
@@ -382,9 +368,9 @@ sub is_dirty {
 
     LOG_ENTER_SUB;
 
-    $self->{$_IBR_DIRTY};
-
     LOG_EXIT_SUB;
+
+    $self->{$_IBR_DIRTY};
 }
 
 # ---------------------------
@@ -403,34 +389,18 @@ sub flush {
 }
 
 # ---------------------------
-# _lwp
-# ---------------------------
-sub _lwp {
-    my ($self) = @_;
-
-    LOG_ENTER_SUB;
-
-    my $ret = $self->{$_IBR_PARENT}->_lwp();
-
-    LOG_EXIT_SUB;
-
-    return $ret;
-}
-
-# ---------------------------
 # _get_field, go to the server and get the field, and return it
 # Returns nothing
 # ---------------------------
-sub _get_field {
+sub _load_field {
     my ( $self, $f ) = @_;
 
     LOG_ENTER_SUB;
 
-    my $ret = $self->_lwp->get( $self, $f );
+    $self->{$_IBR_PARENT}->load_record_field( $self, $f );
+    $self->{$_IBR_FIELD_LOADED}->{$f} = 1;
 
     LOG_EXIT_SUB;
-
-    return $ret;
 
 }
 

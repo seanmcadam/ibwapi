@@ -39,21 +39,11 @@ our @EXPORT = qw (
 # ---------------------------
 sub new {
     my ( $class, $parm_ref ) = @_;
-
-    my $self = $class->SUPER::new();
-
-    PRINT_MYNAMELINE if $DEBUG;
-
-    $self->{$IB_STRUCT_FIELD}            = \%_FIELDS;
-    $self->{$IB_STRUCT_TYPE}             = \%_FIELD_TYPES;
-
-    if ( !defined $parm_ref ) { confess "parameters are required"; }
-    if ( ref($parm_ref) ne 'HASH' ) { confess "bad parameter ref"; }
-
-    bless $self, $class;
-
+    my $self;
+    if ( !defined $parm_ref ) { LOG_FATAL(PRINT_MYNAMELINE); }
+    eval $EVAL_NEW_STRUCT_CODE;
+    if ($@) { LOG_FATAL(PRINT_MYNAMELINE); }
     $self;
 }
-
 
 1;

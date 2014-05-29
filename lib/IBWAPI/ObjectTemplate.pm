@@ -57,20 +57,10 @@ Readonly::Hash our %_SEARCHABLE_FIELDS => (
 # ---------------------------------------------------
 sub new {
     my ( $class, $parm_ref ) = @_;
-
-    PRINT_MYNAMELINE if $DEBUG;
-
-    $parm_ref->{$IB_FIELDS}            = \%_FIELDS;
-    $parm_ref->{$IB_BASE_FIELDS}       = \%_BASE_FIELDS;
-    $parm_ref->{$IB_READONLY_FIELDS}   = \%_READONLY_FIELDS;
-    $parm_ref->{$IB_SEARCHABLE_FIELDS} = \%_SEARCHABLE_FIELDS;
-
-    my $self = $class->SUPER::new( $_OBJECT_NAME, $parm_ref );
-
-    bless $self, $class;
-
-    $self->create_lwp($parm_ref);
-
+    my $self;
+    if ( !defined $parm_ref ) { LOG_FATAL(PRINT_MYNAMELINE); }
+    eval $EVAL_NEW_OBJECT_CODE;
+    if ($@) { LOG_FATAL(PRINT_MYNAMELINE); }
     $self;
 }
 

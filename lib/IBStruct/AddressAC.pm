@@ -24,10 +24,10 @@ our @ISA = qw(IBStruct);
 # ---------------------------
 Readonly our $FIELD_ADDRESSAC_ADDRESS    => 'FIELD_ADDRESSAC_ADDRESS';
 Readonly our $FIELD_ADDRESSAC_PERMISSION => 'FIELD_ADDRESSAC_PERMISSION';
-Readonly our $ALLOW                      => 'ALLOW';
-Readonly our $DENY                       => 'DENY';
+Readonly our $FIELD_ADDRESSAC_ALLOW      => 'ALLOW';
+Readonly our $FIELD_ADDRESSAC_DENY       => 'DENY';
 Readonly our $ANY                        => 'Any';
-Readonly our $_DEFAULT_PERMISSION        => $ALLOW;
+Readonly our $_DEFAULT_PERMISSION        => $FIELD_ADDRESSAC_ALLOW;
 
 Readonly our %_FIELDS => (
     $FIELD_ADDRESSAC_ADDRESS    => $FIELD_ADDRESSAC_ADDRESS,
@@ -51,26 +51,22 @@ our @EXPORT = qw (
 # ---------------------------
 sub new {
     my ( $class, $parm_ref ) = @_;
+    my $self;
+    if ( !defined $parm_ref ) { LOG_FATAL(PRINT_MYNAMELINE); }
+    eval $EVAL_NEW_STRUCT_CODE;
+    if ($@) { LOG_FATAL(PRINT_MYNAMELINE); }
 
-    my $self = $class->SUPER::new();
-
-    PRINT_MYNAMELINE if $DEBUG;
-
-    $self->{$IB_STRUCT_FIELD}            = \%_FIELDS;
-    $self->{$IB_STRUCT_TYPE}             = \%_FIELD_TYPES;
     $self->{$FIELD_ADDRESSAC_ADDRESS}    = '';
     $self->{$FIELD_ADDRESSAC_PERMISSION} = $_DEFAULT_PERMISSION;
 
-    if ( !defined $parm_ref ) { confess "parameters are required"; }
-    if ( ref($parm_ref) ne 'HASH' ) { confess "bad parameter ref"; }
-    if ( !defined $parm_ref->{$FIELD_ADDRESSAC_ADDRESS} )            { confess "Address is required"; }
-    if ( !_VERIFY_ADDRESS( $parm_ref->{$FIELD_ADDRESSAC_ADDRESS} ) ) { confess "Address is required"; }
+    defined $parm_ref->{$FIELD_ADDRESSAC_ADDRESS} || LOG_FATAL;
+    _VERIFY_ADDRESS( $parm_ref->{$FIELD_ADDRESSAC_ADDRESS} ) || LOG_FATAL;
 
     $self->{$FIELD_ADDRESSAC_ADDRESS} = $parm_ref->{$FIELD_ADDRESSAC_ADDRESS};
     if ( defined $parm_ref->{$FIELD_ADDRESSAC_PERMISSION} ) {
-        if ( !( $parm_ref->{$FIELD_ADDRESSAC_PERMISSION} eq $ALLOW
-                || $parm_ref->{$FIELD_ADDRESSAC_PERMISSION} eq $DENY ) ) {
-            confess "BAD Permission " . $parm_ref->{$FIELD_ADDRESSAC_PERMISSION};
+        if ( !( $parm_ref->{$FIELD_ADDRESSAC_PERMISSION} eq $FIELD_ADDRESSAC_ALLOW
+                || $parm_ref->{$FIELD_ADDRESSAC_PERMISSION} eq $FIELD_ADDRESSAC_DENY ) ) {
+            LOG_FATAL "BAD Permission " . $parm_ref->{$FIELD_ADDRESSAC_PERMISSION};
         }
 
         $self->{$FIELD_ADDRESSAC_PERMISSION} = $parm_ref->{$FIELD_ADDRESSAC_PERMISSION};
@@ -79,6 +75,30 @@ sub new {
     bless $self, $class;
 
     $self;
+}
+
+# ---------------------------
+sub FIELD_ADDRESSAC_ADDRESS {
+    my ( $self, $a ) = @_;
+
+    if ( defined $a ) {
+        _VERIFY_ADDRESS($a) || LOG_FATAL;
+        $self->{$FIELD_ADDRESSAC_ADDRESS} = $a;
+    }
+
+    $self->{$FIELD_ADDRESSAC_ADDRESS};
+}
+
+# ---------------------------
+sub FIELD_ADDRESSAC_PERMISSION {
+    my ( $self, $p ) = @_;
+
+    if ( defined $p ) {
+        ( $p eq $FIELD_ADDRESSAC_ALLOW || $p eq $FIELD_ADDRESSAC_DENY ) || LOG_FATAL;
+        $self->{$FIELD_ADDRESSAC_PERMISSION} = $p;
+    }
+
+    $self->{$FIELD_ADDRESSAC_PERMISSION};
 }
 
 # ---------------------------

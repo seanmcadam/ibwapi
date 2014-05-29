@@ -23,6 +23,7 @@ sub URL_MODULE_NAME;
 sub URL_NAME_MODULE;
 sub URL_REF_NAME_MODULE;
 sub URL_SEARCH_NAME;
+sub VERIFY_TIMESTAMP;
 sub MYNAME;
 sub MYLINE;
 sub MYNAMELINE;
@@ -93,6 +94,7 @@ Readonly our $SEARCH_PARM_LT               => 'SEARCH_PARM_LT';
 Readonly our $SEARCH_PARM_REGEX            => 'SEARCH_PARM_REGEX';
 
 Readonly our $TYPE_BOOL                          => 'TYPE_BOOL';
+Readonly our $TYPE_BINDING_STATE                 => 'TYPE_BINDING_STATE';
 Readonly our $TYPE_EXTATTRS                      => 'TYPE_EXTATTRS';
 Readonly our $TYPE_INT                           => 'TYPE_INT';
 Readonly our $TYPE_MEMBERS                       => 'TYPE_MEMBERS';
@@ -123,6 +125,17 @@ Readonly our $TYPE_TIMESTAMP                     => 'TYPE_TIMESTAMP';
 Readonly our $TYPE_UINT                          => 'TYPE_UINT';
 Readonly our $TYPE_UNKNOWN                       => 'TYPE_UNKNOWN';
 Readonly our $TYPE_ZONE_ASSOCIATIONS             => 'TYPE_ZONE_ASSOCIATIONS';
+
+Readonly our $BINDING_STATE_ABANDONDED => 'ABANDONED';
+Readonly our $BINDING_STATE_ACTIVE     => 'ACTIVE';
+Readonly our $BINDING_STATE_BACKUP     => 'BACKUP';
+Readonly our $BINDING_STATE_DECLINED   => 'DECLINED';
+Readonly our $BINDING_STATE_EXPIRED    => 'EXPIRED';
+Readonly our $BINDING_STATE_FREE       => 'FREE';
+Readonly our $BINDING_STATE_OFFERED    => 'OFFERED';
+Readonly our $BINDING_STATE_RELEASED   => 'RELEASED';
+Readonly our $BINDING_STATE_RESET      => 'RESET';
+Readonly our $BINDING_STATE_STATIC     => 'STATIC';
 
 Readonly our $FIELD_REF                                  => 'FIELD_REF';
 Readonly our $FIELD_ACCESS_LIST                          => 'FIELD_ACCESS_LIST';
@@ -1249,7 +1262,7 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_AUTO_CREATE_REVERSEZONE              => $TYPE_BOOL,
     $FIELD_AUTOMATIC_RESTART                    => $TYPE_UNKNOWN,
     $FIELD_BILLING_CLASS                        => $TYPE_STRING,
-    $FIELD_BINDING_STATE                        => $TYPE_STRING,
+    $FIELD_BINDING_STATE                        => $TYPE_BINDING_STATE,
     $FIELD_BLACKLIST_ACTION                     => $TYPE_UNKNOWN,
     $FIELD_BLACKLIST_LOG_QUERY                  => $TYPE_UNKNOWN,
     $FIELD_BLACKLIST_REDIRECT_ADDRESSES         => $TYPE_UNKNOWN,
@@ -1641,7 +1654,22 @@ Readonly::Hash our %_NAME_MODULE_OBJ => (
     'zone_stub'            => $MODULE_ZONE_STUB,
 );
 
+Readonly our $EVAL_NEW_STRUCT_CODE => '
+    LOG_ENTER_SUB;
+    my $self = $class->SUPER::new();
+    $self->{$IB_STRUCT_FIELD} = \%_FIELDS;
+    $self->{$IB_STRUCT_TYPE}  = \%_FIELD_TYPES;
+
+    if ( !defined $parm_ref ) { confess "parameters are required"; }
+    if ( ref($parm_ref) ne "HASH" ) { confess "bad parameter ref"; }
+
+    bless $self, $class;
+    LOG_EXIT_SUB;
+';
+
+
 Readonly our $EVAL_NEW_OBJECT_CODE => '
+    LOG_ENTER_SUB;
     $parm_ref->{$IB_FIELDS}            = \%_FIELDS;
     $parm_ref->{$IB_BASE_FIELDS}       = \%_BASE_FIELDS;
     $parm_ref->{$IB_READONLY_FIELDS}   = \%_READONLY_FIELDS;
@@ -1650,6 +1678,7 @@ Readonly our $EVAL_NEW_OBJECT_CODE => '
     $self = $class->SUPER::new( $_OBJECT_NAME, $parm_ref );
     bless $self, $class;
     $self->create_lwp($parm_ref);
+    LOG_EXIT_SUB;
 ';
 
 my $_LOGGING_LEVEL = $_LOG_FATAL;
@@ -1662,6 +1691,7 @@ my $_SUB_LEVEL     = 0;
 our @EXPORT = qw (
   $DEBUG
   $EVAL_NEW_OBJECT_CODE
+  $EVAL_NEW_STRUCT_CODE
   LOG_ENTER_SUB
   LOG_EXIT_SUB
   SET_LOGGING
@@ -1698,6 +1728,7 @@ our @EXPORT = qw (
   URL_REF_MODULE_NAME
   URL_NAME_MODULE
   URL_SEARCH_NAME
+  VERIFY_TIMESTAMP
   MYNAME
   MYLINE
   MYNAMELINE
@@ -1723,6 +1754,16 @@ our @EXPORT = qw (
   $IB_USERNAME
   $IB_PASSWORD
   $IB_HOSTNAME
+  $BINDING_STATE_ABANDONDED
+  $BINDING_STATE_ACTIVE
+  $BINDING_STATE_BACKUP
+  $BINDING_STATE_DECLINED
+  $BINDING_STATE_EXPIRED
+  $BINDING_STATE_FREE
+  $BINDING_STATE_OFFERED
+  $BINDING_STATE_RELEASED
+  $BINDING_STATE_RESET
+  $BINDING_STATE_STATIC
   $FIELD_REF
   $FIELD_ACCESS_LIST
   $FIELD_ADDRESS
@@ -2106,7 +2147,8 @@ our @EXPORT = qw (
 sub URL_PARM_EXISTS {
     my ($u) = @_;
 
-    if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
+    ( !defined $u || $u eq '' || ref($u) ne '' ) && LOG_FATAL;
+
     return defined $_PARM_NAME{$u};
 }
 
@@ -2114,7 +2156,8 @@ sub URL_PARM_EXISTS {
 sub URL_FIELD_EXISTS {
     my ($u) = @_;
 
-    if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
+    ( !defined $u || $u eq '' || ref($u) ne '' ) && LOG_FATAL;
+
     return defined $_FIELD_NAME{$u};
 }
 
@@ -2122,7 +2165,8 @@ sub URL_FIELD_EXISTS {
 sub URL_NAME_FIELD_EXISTS {
     my ($u) = @_;
 
-    if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
+    ( !defined $u || $u eq '' || ref($u) ne '' ) && LOG_FATAL;
+
     return defined $_NAME_FIELD{$u};
 }
 
@@ -2130,7 +2174,7 @@ sub URL_NAME_FIELD_EXISTS {
 sub URL_MODULE_EXISTS {
     my ($u) = @_;
 
-    if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
+    ( !defined $u || $u eq '' || ref($u) ne '' ) && LOG_FATAL;
 
     return defined $_MODULE_OBJ_NAME{$u};
 }
@@ -2139,7 +2183,8 @@ sub URL_MODULE_EXISTS {
 sub URL_NAME_MODULE_EXISTS {
     my ($u) = @_;
 
-    if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
+    defined $u || LOG_FATAL;
+    $u ne '' || LOG_FATAL " " . @_;
 
     return defined $_NAME_MODULE_OBJ{$u};
 }
@@ -2147,19 +2192,24 @@ sub URL_NAME_MODULE_EXISTS {
 # ------------------------------------------------------
 sub URL_REF_MODULE_EXISTS {
     my ($u) = @_;
+    my $name;
 
-    if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
+    defined $u || LOG_FATAL;
+    $u ne '' || LOG_FATAL " " . @_;
 
-    if ( !defined $u ) { confess MYNAMELINE; }
-
-    URL_NAME_MODULE_EXISTS( ( split( /\//, $u ) )[0] );
+    if( defined ( $name = ( split( /\//, $u ) )[0] )) {
+    		return URL_NAME_MODULE_EXISTS( $name );
+	}
+	else {
+		return 0;
+	}
 }
 
 # ------------------------------------------------------
 sub URL_SEARCH_EXISTS {
     my ($u) = @_;
 
-    if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
+    ( !defined $u || $u eq '' || ref($u) ne '' ) && LOG_FATAL;
     return defined $_SEARCH_NAME{$u};
 }
 
@@ -2167,7 +2217,7 @@ sub URL_SEARCH_EXISTS {
 sub URL_PARM_NAME {
     my ($u) = @_;
 
-    if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
+    ( !defined $u || $u eq '' || ref($u) ne '' ) && LOG_FATAL;
     if ( !defined $_PARM_NAME{$u} ) { confess; }
 
     return $_PARM_NAME{$u};
@@ -2178,7 +2228,7 @@ sub URL_PARM_NAME {
 sub URL_FIELD_NAME {
     my ($u) = @_;
 
-    if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
+    ( !defined $u || $u eq '' || ref($u) ne '' ) && LOG_FATAL;
     if ( !defined $_FIELD_NAME{$u} ) { confess; }
     if ( !defined $_FIELD_TYPE{$u} ) { confess; }
 
@@ -2190,7 +2240,7 @@ sub URL_FIELD_NAME {
 sub URL_FIELD_TYPE {
     my ($u) = @_;
 
-    if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
+    ( !defined $u || $u eq '' || ref($u) ne '' ) && LOG_FATAL;
     if ( !defined $_FIELD_NAME{$u} ) { confess "FIELD:$u"; }
     if ( !defined $_FIELD_TYPE{$u} ) { confess "FIELD:$u"; }
 
@@ -2202,7 +2252,7 @@ sub URL_FIELD_TYPE {
 sub URL_NAME_FIELD {
     my ($u) = @_;
 
-    if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
+    ( !defined $u || $u eq '' || ref($u) ne '' ) && LOG_FATAL;
     if ( !defined $_NAME_FIELD{$u} ) { confess "Field Name:'$u' Not found\n"; }
 
     return $_NAME_FIELD{$u};
@@ -2213,7 +2263,7 @@ sub URL_NAME_FIELD {
 sub URL_MODULE_NAME {
     my ($u) = @_;
 
-    if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
+    ( !defined $u || $u eq '' || ref($u) ne '' ) && LOG_FATAL;
     if ( !defined $_MODULE_OBJ_NAME{$u} ) { confess MYNAMELINE . "No Module named: $u"; }
 
     return $_MODULE_OBJ_NAME{$u};
@@ -2223,7 +2273,7 @@ sub URL_MODULE_NAME {
 sub URL_REF_MODULE_NAME {
     my ($u) = @_;
 
-    if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
+    ( !defined $u || $u eq '' || ref($u) ne '' ) && LOG_FATAL;
 
     # my $module = URL_MODULE_NAME( ( split( /\//, $u ) )[0] );
     my $module = ( split( /\//, $u ) )[0];
@@ -2237,7 +2287,7 @@ sub URL_REF_MODULE_NAME {
 sub URL_NAME_MODULE {
     my ($u) = @_;
 
-    if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
+    ( !defined $u || $u eq '' || ref($u) ne '' ) && LOG_FATAL;
     if ( !defined $_NAME_MODULE_OBJ{$u} ) { confess; }
 
     return $_NAME_MODULE_OBJ{$u};
@@ -2248,10 +2298,23 @@ sub URL_NAME_MODULE {
 sub URL_SEARCH_NAME {
     my ($u) = @_;
 
-    if ( !defined $u || $u eq '' || ref($u) ne '' ) { confess MYNAMELINE . " BAD PARAM " . Dumper @_; }
+    ( !defined $u || $u eq '' || ref($u) ne '' ) && LOG_FATAL;
     if ( !defined $_SEARCH_NAME{$u} ) { confess; }
 
     return $_SEARCH_NAME{$u};
+
+}
+
+# ------------------------------------------------------
+sub VERIFY_TIMESTAMP {
+    my ($t) = @_;
+    my $ret = 0;
+
+    ( !defined $t || $t eq '' || ref($t) ne '' ) && LOG_FATAL;
+
+    LOG_DEBUG2 "TIMESTAMP '$t'";
+
+    $ret;
 
 }
 
@@ -2268,7 +2331,6 @@ sub LOG_ENTER_SUB {
     }
     $ret .= $a if ( defined $a );
 
-    # if ( $_LOGGING_LEVEL <= $_LOG_DEBUG3 ) { _LOG( "ENTER SUB:", $ret ); }
     _LOG( "ENTER SUB:", $ret );
 }
 
@@ -2285,7 +2347,6 @@ sub LOG_EXIT_SUB {
     }
     $ret .= $a if ( defined $a );
 
-    # if ( $_LOGGING_LEVEL <= $_LOG_DEBUG3 ) { _LOG( "EXIT  SUB:", $ret ); }
     _LOG( "EXIT  SUB:", $ret );
 }
 
@@ -2385,7 +2446,16 @@ sub LOG_ERROR {
 
 # ------------------------------------------------------
 sub LOG_FATAL {
-    _LOG( $LOG_FATAL, @_ );
+    my ($a) = @_;
+    my $ret;
+    if ( defined caller(1) ) {
+        $ret .= ( ( ( caller(1) )[3] ) . ':' . ( ( caller(0) )[2] ) );
+    }
+    else {
+        $ret .= ( ( ( (caller)[1] ) . ':' . ( (caller)[2] ) ) );
+    }
+    $ret .= " $a" if ( defined $a );
+    _LOG( $LOG_FATAL, $ret );
     confess;
 }
 
