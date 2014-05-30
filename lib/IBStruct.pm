@@ -16,20 +16,21 @@ use strict;
 # ---------------------------
 # PROTOTYPES
 # ---------------------------
+sub get_field;
 sub _verify_field_exists;
 
 # ---------------------------
 # READONLY VARIABLES
 # ---------------------------
-Readonly our $IB_STRUCT_FIELD => 'IB_STRUCT_FIELD';
-Readonly our $IB_STRUCT_TYPE  => 'IB_STRUCT_TYPE';
+Readonly our $IBS_FIELD => 'IBS_FIELD';
+Readonly our $IBS_TYPE  => 'IBS_TYPE';
 
 # ---------------------------
 # EXPORTS
 # ---------------------------
 our @EXPORT = qw (
-  $IB_STRUCT_FIELD
-  $IB_STRUCT_TYPE
+  $IBS_FIELD
+  $IBS_TYPE
 );
 
 # ---------------------------
@@ -42,8 +43,13 @@ sub new {
 
     PRINT_MYNAMELINE if $DEBUG;
 
-    $h{$IB_STRUCT_FIELD} = undef;
-    $h{$IB_STRUCT_TYPE}  = undef;
+    defined $parm_ref->{$IB_STRUCT_FIELDS} || LOG_FATAL;
+    defined $parm_ref->{$IB_STRUCT_TYPES}  || LOG_FATAL;
+
+# ???
+
+    $h{$IBS_FIELD} = undef;
+    $h{$IBS_TYPE}  = undef;
 
     bless $self, $class;
 
@@ -51,12 +57,12 @@ sub new {
 }
 
 # ---------------------------
-sub _verify_filed_exists {
+sub _verify_field_exists {
     my ( $self, $f ) = @_;
 
     if ( !defined $f ) { confess; }
 
-    if ( !defined $self->{$IB_STRUCT_FIELD}->{$f} ) { confess; }
+    if ( !defined $self->{$IBS_FIELD}->{$f} ) { confess; }
 
     1;
 

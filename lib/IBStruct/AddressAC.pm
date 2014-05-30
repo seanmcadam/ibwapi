@@ -52,9 +52,10 @@ our @EXPORT = qw (
 sub new {
     my ( $class, $parm_ref ) = @_;
     my $self;
-    if ( !defined $parm_ref ) { LOG_FATAL(PRINT_MYNAMELINE); }
-    eval $EVAL_NEW_STRUCT_CODE;
-    if ($@) { LOG_FATAL(PRINT_MYNAMELINE); }
+    LOG_ENTER_SUB;
+    defined $parm_ref || LOG_FATAL;
+    eval $EVAL_NEW_OBJECT_CODE;
+    if ($@) { LOG_FATAL "EVAL:" . $@; }
 
     $self->{$FIELD_ADDRESSAC_ADDRESS}    = '';
     $self->{$FIELD_ADDRESSAC_PERMISSION} = $_DEFAULT_PERMISSION;
@@ -72,8 +73,7 @@ sub new {
         $self->{$FIELD_ADDRESSAC_PERMISSION} = $parm_ref->{$FIELD_ADDRESSAC_PERMISSION};
     }
 
-    bless $self, $class;
-
+    LOG_EXIT_SUB;
     $self;
 }
 

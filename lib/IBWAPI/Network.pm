@@ -107,11 +107,6 @@ Readonly::Hash our %_READONLY_FIELDS => (
     $FIELD_NETWORK_CONTAINER => 1,
 );
 
-Readonly::Hash our %_SEARCHONLY_FIELDS => (
-    $FIELD_CONTAINS_ADDRESS => 1,
-    $FIELD_MEMBER           => 1,
-);
-
 Readonly::Hash our %_SEARCHABLE_FIELDS => (
     $FIELD_COMMENT => {
         $SEARCH_PARM_EQUAL            => 1,
@@ -141,13 +136,20 @@ Readonly::Hash our %_SEARCHABLE_FIELDS => (
 
 );
 
+Readonly::Hash our %_SEARCHONLY_FIELDS => (
+    $FIELD_CONTAINS_ADDRESS => 1,
+    $FIELD_MEMBER           => 1,
+);
+
 # ---------------------------------------------------
 sub new {
     my ( $class, $parm_ref ) = @_;
     my $self;
-    if ( !defined $parm_ref ) { LOG_FATAL(PRINT_MYNAMELINE); }
+    LOG_ENTER_SUB;
+    defined $parm_ref || LOG_FATAL;
     eval $EVAL_NEW_OBJECT_CODE;
-    if ($@) { LOG_FATAL(PRINT_MYNAMELINE); }
+    if ($@) { LOG_FATAL $@; }
+    LOG_EXIT_SUB;
     $self;
 }
 

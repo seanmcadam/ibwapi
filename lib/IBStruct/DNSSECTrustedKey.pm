@@ -40,9 +40,11 @@ our @EXPORT = qw (
 sub new {
     my ( $class, $parm_ref ) = @_;
     my $self;
-    if ( !defined $parm_ref ) { LOG_FATAL(PRINT_MYNAMELINE); }
-    eval $EVAL_NEW_STRUCT_CODE;
-    if ($@) { LOG_FATAL(PRINT_MYNAMELINE); }
+    LOG_ENTER_SUB;
+    defined $parm_ref || LOG_FATAL;
+    eval $EVAL_NEW_OBJECT_CODE;
+    if ($@) { LOG_FATAL "EVAL:" . $@; }
+    LOG_EXIT_SUB;
     $self;
 
 }

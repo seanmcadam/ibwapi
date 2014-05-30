@@ -234,9 +234,9 @@ sub get {
     #
     elsif ( defined $parm_ref->{$IBLWP_GET_RECORD} ) {
 
-        LOG_DEBUG4 " GOT REF: " . ref($parm_ref->{$IBLWP_GET_RECORD});
+        LOG_DEBUG4 " GOT REF: " . ref( $parm_ref->{$IBLWP_GET_RECORD} );
 
-        ref($parm_ref->{$IBLWP_GET_RECORD} ) eq $PERL_MODULE_IBRECORD || LOG_FATAL (" " . ref($parm_ref->{$IBLWP_GET_RECORD}));
+        ref( $parm_ref->{$IBLWP_GET_RECORD} ) eq $PERL_MODULE_IBRECORD || LOG_FATAL( " " . ref( $parm_ref->{$IBLWP_GET_RECORD} ) );
         defined $parm_ref->{$IBLWP_GET_SEARCH_REF} && LOG_FATAL;
 
         $self->_set_objref( $parm_ref->{$IBLWP_GET_RECORD}->get_ref() );
@@ -351,49 +351,53 @@ sub _get_url {
         }
     }
 
-        LOG_DEBUG4 " SEND URL: " . $self->{$_IBLWP_URL};
+    LOG_DEBUG4 " SEND URL: " . $self->{$_IBLWP_URL};
 
     $self->{$_HTTP_REQUEST_OBJ} = HTTP::Request->new( GET => $self->{$_IBLWP_URL} );
     $self->{$_HTTP_RESPONSE_OBJ} = $self->{$_UA}->request( $self->{_HTTP_REQUEST_OBJ} );
 
     # Is the response good?
-    if ( !$self->is_success() ) {
-        PRINT_MYNAMELINE("NO SUCCESS - return 0") if $DEBUG;
-        return 0;
-    }
+    if ( $self->is_success() ) {
 
-    LOG_DEBUG2( "RETURN CODE " . $self->_response()->code() )       if $DEBUG;
-    LOG_DEBUG2( "RETURN MESSAGE " . $self->_response()->message() ) if $DEBUG;
+        LOG_DEBUG2( "RETURN CODE " . $self->_response()->code() );
+        LOG_DEBUG2( "RETURN MESSAGE " . $self->_response()->message() );
 
-    # Is it a JSON Array?
-    my $json = decode_json( $self->_response()->content() );
+        # Is it a JSON Array?
+        my $json = decode_json( $self->_response()->content() );
 
-    my $record_ref;
+        LOG_DEBUG4( "RETURN JSON " . Dumper $json );
+        my $record_ref;
 
-    # Is this an array?
-    if ( ref($json) eq 'ARRAY' ) {
-        $record_ref = CONVERT_JSON_ARRAY_TO_IB_FORMAT($json);
-    }
-
-    # Is this a hash (single value)?
-    elsif ( ref($json) eq 'HASH' ) {
-        $record_ref = CONVERT_JSON_HASH_TO_IB_FORMAT($json);
-    }
-
-    # What the hell is it?
-    else {
-        LOG_FATAL "BAD JSON RESPONSE " . Dumper $json;
-    }
-
-    foreach my $ref ( keys(%$record_ref) ) {
-        push( @$ret_array_ref, $ref );
-        my $ibrec;
-        if ( defined( $ibrec = $self->_parent->verify_record($ref) ) ) {
-            $ibrec->reload_record( $record_ref->{$ref} );
+        # Is this an array?
+        if ( ref($json) eq 'ARRAY' ) {
+            $record_ref = CONVERT_JSON_ARRAY_TO_IB_FORMAT($json);
         }
+
+        # Is this a hash (single value)?
+        elsif ( ref($json) eq 'HASH' ) {
+            $record_ref = CONVERT_JSON_HASH_TO_IB_FORMAT($json);
+        }
+
+        # What the hell is it?
         else {
-            $ibrec = IBRecord->new( $self->_parent, $record_ref->{$ref} );
-            $self->_parent->add_rec($ibrec);
+            LOG_FATAL "BAD JSON RESPONSE " . Dumper $json;
+        }
+
+        foreach my $ref ( keys(%$record_ref) ) {
+            LOG_DEBUG4( "REF " . $ref );
+
+            push( @$ret_array_ref, $ref );
+
+            LOG_DEBUG4 Dumper $record_ref->{$ref} ;
+
+            my $ibrec;
+            if ( defined( $ibrec = $self->_parent->verify_record($ref) ) ) {
+                $ibrec->reload_record( $record_ref->{$ref} );
+            }
+            else {
+                $ibrec = IBRecord->new( $self->_parent, $record_ref->{$ref} );
+                $self->_parent->add_ib_record($ibrec);
+            }
         }
     }
 
@@ -408,14 +412,15 @@ sub _get_url {
 # ---------------------------
 sub is_success {
     my ($self) = @_;
+    my $ret = 0;
 
     LOG_ENTER_SUB;
 
     if ( defined $self->{$_HTTP_RESPONSE_OBJ} ) {
-        return $self->{$_HTTP_RESPONSE_OBJ}->is_success();
+        $ret = $self->{$_HTTP_RESPONSE_OBJ}->is_success();
     }
     LOG_EXIT_SUB;
-    0;
+    $ret;
 }
 
 # ---------------------------
@@ -423,14 +428,16 @@ sub is_success {
 # ---------------------------
 sub is_error {
     my ($self) = @_;
+    my $ret = 0;
 
     LOG_ENTER_SUB;
 
     if ( defined $self->{$_HTTP_RESPONSE_OBJ} ) {
-        return $self->{$_HTTP_RESPONSE_OBJ}->is_error();
+        $ret = $self->{$_HTTP_RESPONSE_OBJ}->is_error();
     }
+
     LOG_EXIT_SUB;
-    0;
+    $ret;
 }
 
 # ---------------------------
@@ -438,14 +445,16 @@ sub is_error {
 # ---------------------------
 sub _response {
     my ($self) = @_;
+    my $ret = undef;
 
     LOG_ENTER_SUB;
 
     if ( defined $self->{$_HTTP_RESPONSE_OBJ} ) {
-        return $self->{$_HTTP_RESPONSE_OBJ};
+        $ret = $self->{$_HTTP_RESPONSE_OBJ};
     }
+
     LOG_EXIT_SUB;
-    return undef;
+    $ret;
 }
 
 # ---------------------------
@@ -453,14 +462,15 @@ sub _response {
 # ---------------------------
 sub _parent {
     my ($self) = @_;
+    my $ret = undef;
 
     LOG_ENTER_SUB;
 
     if ( defined $self->{$_IBLWP_PARENT_OBJ} ) {
-        return $self->{$_IBLWP_PARENT_OBJ};
+        $ret = $self->{$_IBLWP_PARENT_OBJ};
     }
     LOG_EXIT_SUB;
-    return undef;
+    $ret;
 }
 
 # ---------------------------

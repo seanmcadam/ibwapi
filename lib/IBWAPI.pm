@@ -28,35 +28,36 @@ use strict;
 # DELETE: ( REF )
 #	Returns T/F
 #
-# get_record: ( REF )
-# get_field:  ( IBRECORD, $Field_name )
+# get_ib_record: ( REF )
+# get_field:  ( REF, FIELD_NAME, [EXATTR_NAME] )
 # ---------------------------
 
 # ---------------------------
 # PROTOTYPES
 # ---------------------------
-#sub GET;
-sub GET($\$$);
-sub POST($$);
-sub PUT($$\$);
-sub DELETE($$);
-sub get;
-sub add_rec;
-sub update;
-sub flush;
-sub delete;
-sub _field_exists;
+sub GET;
+sub POST;
+sub PUT;
+sub DELETE;
+sub get_ib_record;
+sub add_ib_record;
+sub load_record_field;
+sub verify_record;
+sub get_field;
+sub get_extattr;
+sub set_field;
+sub is_field_searchable;
+sub is_field_readonly;
+sub _obj_name;
+sub _lwp;
+sub _get_search_parameters;
+sub _verify_search_parameters;
+sub _verify_return_fields;
+sub _return_field_exists;
 sub _base_field_exists;
 sub _readonly_field_exists;
 sub _searchable_field_exists;
-
-#sub create_lwp {
-#sub _obj_name {
-#sub _lwp {
-#sub _get_search_parameters {
-#sub _verify_search_parameters {
-#sub _verify_return_fields {
-#sub _is_field_searchable {
+sub _field_exists;
 
 #
 # ---------------------------
@@ -65,7 +66,6 @@ sub _searchable_field_exists;
 Readonly our $_DEFAULT_MAX_RESULTS  => 5000;
 Readonly our $_LWP_OBJ              => '_LWP_OBJ';
 Readonly our $_OPTIONS              => 'options';
-Readonly our $_EXTATTRS             => 'extattrs';
 Readonly our $_IB_RECORDS           => '_IB_RECORDS';
 Readonly our $_IB_BASE_FIELDS       => '_IB_BASE_FIELDS';
 Readonly our $_IB_PARM_REF_TYPES    => '_IB_PARM_REF_TYPES';
@@ -101,6 +101,8 @@ sub new {
     LOG_ENTER_SUB;
 
     defined $module_name || LOG_FATAL;
+    # URL_REF_MODULE_EXISTS( $module_name ) || LOG_FATAL "Module Name: '$module_name'";
+
     $h{$_IB_OBJECT_NAME} = $module_name;
     $h{$_IB_RECORDS}     = \%r;
 
@@ -141,23 +143,23 @@ sub create_lwp {
 }
 
 # ---------------------------------------------------------------------------------
-# Returns an Array of REFs
+# Gets and Returns an Array of REFs
 # ---------------------------------------------------------------------------------
-sub GET($\$$) {
+sub GET {
     my ( $self, $search_field_ref, $return_field_ref ) = @_;
     my $ret_array_ref;
 
     LOG_ENTER_SUB;
 
     ref( $self->_lwp ) eq $PERL_MODULE_IBLWP || LOG_FATAL;
-    defined $search_field_ref && ( ref( $search_field_ref ) eq 'HASH' || LOG_FATAL );
-    defined $return_field_ref && ( ref( $return_field_ref ) eq 'ARRAY' || LOG_FATAL );
+    defined $search_field_ref && ( ref($search_field_ref) eq 'HASH'  || LOG_FATAL );
+    defined $return_field_ref && ( ref($return_field_ref) eq 'ARRAY' || LOG_FATAL );
 
     #
     # Verify parameters (Searchable fields)
     #
-    $self->_verify_search_parameters($search_field_ref) if ( defined $search_field_ref);
-    $self->_verify_return_fields($return_field_ref) if ( defined $return_field_ref );
+    $self->_verify_search_parameters($search_field_ref) if ( defined $search_field_ref );
+    $self->_verify_return_fields($return_field_ref)     if ( defined $return_field_ref );
 
     $ret_array_ref = $self->_lwp->get(
         {
@@ -174,37 +176,65 @@ sub GET($\$$) {
 }
 
 # ---------------------------------------------------------------------------------
-# Creates a new Record
+# Creates a new Record return Ref
 # ---------------------------------------------------------------------------------
 sub POST($$) {
     my ( $self, $field_ref ) = @_;
-    LOG_ENTER_SUB;
+    my $ret = undef;
 
-    LOG_FATAL PRINT_MYNAMELINE ;
+    LOG_ENTER_SUB;
+    ref( $self->_lwp ) eq $PERL_MODULE_IBLWP || LOG_FATAL;
+
+    LOG_FATAL PRINT_MYNAMELINE;
+    LOG_EXIT_SUB;
+    $ret;
 }
 
 # ---------------------------------------------------------------------------------
-# Updated Existing Record
+# Updated Existing Record Ref (if Dirty)
 # ---------------------------------------------------------------------------------
-sub PUT($$\$) {
-    my ( $self, $ref, $parm_ref ) = @_;
-    LOG_ENTER_SUB;
+sub PUT {
+    my ( $self, $ref ) = @_;
+    my $ib_rec = undef;
+    my $ret    = 0;
 
-    LOG_FATAL PRINT_MYNAMELINE ;
+    LOG_ENTER_SUB;
+    ref( $self->_lwp ) eq $PERL_MODULE_IBLWP || LOG_FATAL;
+
+    URL_REF_MODULE_EXISTS($ref) || LOG_FATAL "BAD REF: $ref";
+
+    $ib_rec = $self->get_ib_record($ref);
+
+    defined $ib_rec || LOG_FATAL "No record for REF: $ref";
+
+    if ( $ib_rec->is_dirty ) {
+         $ib_rec->flush();
+         $ret = 1;
+    }
+    else {
+        LOG_WARN "IB REC Not Dirty: $ref";
+    }
+
+    LOG_EXIT_SUB;
+    $ret;
 }
 
 # ---------------------------------------------------------------------------------
-# Deletes an Existing Record
+# Deletes an Existing Record Ref
 # ---------------------------------------------------------------------------------
-sub DELETE($$) {
+sub DELETE {
     my ( $self, $ref ) = @_;
     LOG_ENTER_SUB;
+    ref( $self->_lwp ) eq $PERL_MODULE_IBLWP || LOG_FATAL;
 
-    LOG_FATAL PRINT_MYNAMELINE ;
+    LOG_FATAL PRINT_MYNAMELINE;
+    LOG_EXIT_SUB;
 }
 
 # ---------------------------------------------------------------------------------
-sub get_record {
+#
+# ---------------------------------------------------------------------------------
+sub get_ib_record {
     my ( $self, $ref ) = @_;
     my $ibr_rec = undef;
 
@@ -247,7 +277,7 @@ sub load_record_field {
         $ibr = $ref;
     }
     if ( URL_REF_MODULE_EXISTS($ref) ) {
-        $ibr = $self->get_record($ref);
+        $ibr = $self->get_ib_record($ref);
     }
 
     my $ret = $self->_lwp->get(
@@ -284,7 +314,7 @@ sub verify_record {
 
 # ---------------------------------------------------------------------------------
 sub get_field {
-    my ( $self, $ref, $field ) = @_;
+    my ( $self, $ref, $field, $extattr ) = @_;
     my $ibr_rec   = undef;
     my $ret_field = undef;
 
@@ -293,7 +323,7 @@ sub get_field {
     ( defined $ref && URL_REF_MODULE_EXISTS($ref) ) || LOG_FATAL;
     $self->_return_field_exists($field) || LOG_FATAL;
 
-    if ( defined( $ibr_rec = $self->get_record($ref) ) ) {
+    if ( defined( $ibr_rec = $self->get_ib_record($ref) ) ) {
         $ret_field = $ibr_rec->get_field($field);
     }
 
@@ -312,9 +342,9 @@ sub get_extattr {
     LOG_ENTER_SUB;
 
     ( defined $ref && URL_REF_MODULE_EXISTS($ref) ) || LOG_FATAL;
-    ( defined $attr && $attr eq '' ) || LOG_FATAL;
+    ( defined $attr && $attr ne '' ) || LOG_FATAL;
 
-    if ( defined( $ibr_rec = $self->get($ref) ) ) {
+    if ( defined( $ibr_rec = $self->get_ib_record($ref) ) ) {
         $ret_field = $ibr_rec->get_extattr_field($attr);
     }
 
@@ -346,42 +376,9 @@ sub set_field {
 }
 
 # ---------------------------------------------------------------------------------
-sub update {
-    my ( $self, $ref, $field_ref ) = @_;
-
-    LOG_ENTER_SUB;
-
-    ( defined $ref && URL_REF_MODULE_EXISTS($ref) ) || LOG_FATAL;
-
-    $self->get($ref)->update_field;
-    LOG_EXIT_SUB;
-
-}
-
-# ---------------------------------------------------------------------------------
-# Call the IB_RECORD flush function for the given _ref
-# ---------------------------------------------------------------------------------
-sub flush {
-    my ( $self, $ref ) = @_;
-    LOG_ENTER_SUB;
-    LOG_FATAL;
-    LOG_EXIT_SUB;
-}
-
-# ---------------------------------------------------------------------------------
-# Call the IB_RECORD delete function for the given _ref
-# ---------------------------------------------------------------------------------
-sub delete {
-    my ( $self, $ref ) = @_;
-    LOG_ENTER_SUB;
-    LOG_FATAL;
-    LOG_EXIT_SUB;
-}
-
-# ---------------------------------------------------------------------------------
 # Add an IBRecord to the _IB_RECORD HASH
 # ---------------------------------------------------------------------------------
-sub add_rec {
+sub add_ib_record {
     my ( $self, $obj ) = @_;
     my $ret = 0;
 
@@ -397,15 +394,42 @@ sub add_rec {
     ( $obj_name eq $self->_obj_name ) || LOG_FATAL;
 
     if ( defined $self->{$_IB_RECORDS}->{$ref} ) {
-        warn "Adding the same object: '$ref'\n";
+        LOG_FATAL "Adding the same object: '$ref'\n";
     }
     else {
         $self->{$_IB_RECORDS}->{$ref} = $obj;
         $ret = 1;
+        LOG_INFO "Adding the new ib record: '$ref'\n";
     }
 
     LOG_EXIT_SUB;
     $ret;
+
+}
+
+# ----------------------------------------------------------------------
+# Returns T/F
+# ----------------------------------------------------------------------
+sub is_field_readonly {
+    my ( $self, $field ) = @_;
+
+    LOG_ENTER_SUB;
+    my $ret = $self->_readonly_field_exists($field);
+    LOG_EXIT_SUB;
+    return $ret;
+
+}
+
+# ----------------------------------------------------------------------
+# Returns T/F
+# ----------------------------------------------------------------------
+sub is_field_searchable {
+    my ( $self, $field ) = @_;
+
+    LOG_ENTER_SUB;
+    my $ret = $self->_searchable_field_exists($field);
+    LOG_EXIT_SUB;
+    return $ret;
 
 }
 
@@ -449,7 +473,7 @@ sub _get_search_parameters {
 
         # print "SEARCHING PARM $p\n";
         if ( URL_FIELD_EXISTS($p) ) {
-            $self->_is_field_searchable($p) || LOG_FATAL "FIELD '$p' NOT SEARCHABLE FOR " . $self->{$_IB_OBJECT_NAME};
+            $self->is_field_searchable($p) || LOG_FATAL "FIELD '$p' NOT SEARCHABLE FOR " . $self->{$_IB_OBJECT_NAME};
             ref( $parm_ref->{$p} ) eq 'ARRAY' || LOG_FATAL;
             defined $parm_ref->{$p}->[0]              || LOG_FATAL;
             defined $parm_ref->{$p}->[1]              || LOG_FATAL;
@@ -483,7 +507,7 @@ sub _verify_search_parameters {
 
     foreach my $p ( sort( keys(%$parm_ref) ) ) {
         if ( URL_FIELD_EXISTS($p) ) {
-            ( $self->_is_field_searchable($p) ) || LOG_FATAL;
+            ( $self->is_field_searchable($p) ) || LOG_FATAL;
             ( ref( $parm_ref->{$p} ) eq 'ARRAY' ) || LOG_WARN;
 
             # Verify Type HERE
@@ -519,19 +543,6 @@ sub _verify_return_fields {
     }
 
     LOG_EXIT_SUB;
-}
-
-# ----------------------------------------------------------------------
-# Returns T/F
-# ----------------------------------------------------------------------
-sub _is_field_searchable {
-    my ( $self, $field ) = @_;
-
-    LOG_ENTER_SUB;
-    my $ret = $self->_searchable_field_exists($field);
-    LOG_EXIT_SUB;
-    return $ret;
-
 }
 
 # ----------------------------------------------------------------------
@@ -574,10 +585,10 @@ sub _readonly_field_exists {
 
     LOG_ENTER_SUB;
 
-    defined $f || LOG_FATAL;
-    URL_FIELD_EXISTS($f) || LOG_FATAL;
+    defined $f || LOG_FATAL PRINT_MYNAMELINE;
+    URL_FIELD_EXISTS($f) || LOG_FATAL PRINT_MYNAMELINE;
 
-    my $ret = $self->_field_exists( $self->{$_IB_BASE_FIELDS}, $f );
+    my $ret = $self->_field_exists( $self->{$_IB_READONLY_FIELDS}, $f );
     LOG_EXIT_SUB;
     return $ret;
 }
@@ -590,8 +601,8 @@ sub _searchable_field_exists {
 
     LOG_ENTER_SUB;
 
-    defined $f || LOG_FATAL;
-    URL_FIELD_EXISTS($f) || LOG_FATAL;
+    defined $f || LOG_FATAL PRINT_MYNAMELINE;
+    URL_FIELD_EXISTS($f) || LOG_FATAL PRINT_MYNAMELINE;
 
     my $ret = $self->_field_exists( $self->{$_IB_SEARCHABLE_FIELDS}, $f );
     LOG_EXIT_SUB;

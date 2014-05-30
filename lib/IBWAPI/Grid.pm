@@ -52,10 +52,13 @@ Readonly::Hash our %_SEARCHONLY_FIELDS => (
 sub new {
     my ( $class, $parm_ref ) = @_;
     my $self;
-    if ( !defined $parm_ref ) { LOG_FATAL(PRINT_MYNAMELINE); }
+    LOG_ENTER_SUB;
+    defined $parm_ref || LOG_FATAL;
     eval $EVAL_NEW_OBJECT_CODE;
-    if ($@) { LOG_FATAL(PRINT_MYNAMELINE); }
+    if ($@) { LOG_FATAL $@; }
+    LOG_EXIT_SUB;
     $self;
+
 }
 
 1;

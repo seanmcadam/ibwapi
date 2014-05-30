@@ -45,15 +45,17 @@ sub LOG_FATAL;
 
 Readonly our $_IB_VERSION => '0.95';
 
-Readonly our $LOG_FATAL  => 'LOG_FATAL';
-Readonly our $LOG_ERROR  => 'LOG_ERROR';
-Readonly our $LOG_WARN   => 'LOG_WARN';
-Readonly our $LOG_INFO   => 'LOG_INFO';
+Readonly our $LOG_FATAL  => ' LOG_FATAL';
+Readonly our $LOG_ERROR  => ' LOG_ERROR';
+Readonly our $LOG_WARN   => '  LOG_WARN';
+Readonly our $LOG_INFO   => '  LOG_INFO';
 Readonly our $LOG_DEBUG0 => 'LOG_DEBUG0';
 Readonly our $LOG_DEBUG1 => 'LOG_DEBUG1';
 Readonly our $LOG_DEBUG2 => 'LOG_DEBUG2';
 Readonly our $LOG_DEBUG3 => 'LOG_DEBUG3';
 Readonly our $LOG_DEBUG4 => 'LOG_DEBUG4';
+Readonly our $LOG_ENTER  => ' SUB ENTER';
+Readonly our $LOG_EXIT   => ' SUB  EXIT';
 
 Readonly our $_LOG_FATAL  => 0;
 Readonly our $_LOG_ERROR  => $_LOG_FATAL + 1;
@@ -65,20 +67,42 @@ Readonly our $_LOG_DEBUG2 => $_LOG_DEBUG1 + 1;
 Readonly our $_LOG_DEBUG3 => $_LOG_DEBUG2 + 1;
 Readonly our $_LOG_DEBUG4 => $_LOG_DEBUG3 + 1;
 
+Readonly our $_LOG_SUB_ROUTINE_LEVEL => $_LOG_DEBUG3;
+
+Readonly::Hash our %_LOG_LEVEL => (
+    $LOG_FATAL  => $_LOG_FATAL,
+    $LOG_ERROR  => $_LOG_ERROR,
+    $LOG_WARN   => $_LOG_WARN,
+    $LOG_INFO   => $_LOG_INFO,
+    $LOG_DEBUG0 => $_LOG_DEBUG0,
+    $LOG_DEBUG1 => $_LOG_DEBUG1,
+    $LOG_DEBUG2 => $_LOG_DEBUG2,
+    $LOG_DEBUG3 => $_LOG_DEBUG3,
+    $LOG_ENTER  => $_LOG_SUB_ROUTINE_LEVEL,
+    $LOG_EXIT   => $_LOG_SUB_ROUTINE_LEVEL,
+    $LOG_DEBUG4 => $_LOG_DEBUG4,
+);
+
+Readonly our $PERL_MODULE_EXTATTR  => 'IBStruct::ExtensibleAttributes';
 Readonly our $PERL_MODULE_IBCONSTS => 'IBConsts';
-Readonly our $PERL_MODULE_IBWAPI   => 'IBWAPI';
-Readonly our $PERL_MODULE_IBRECORD => 'IBRecord';
 Readonly our $PERL_MODULE_IBLWP    => 'IBLWP';
+Readonly our $PERL_MODULE_IBRECORD => 'IBRecord';
+Readonly our $PERL_MODULE_IBWAPI   => 'IBWAPI';
+Readonly our $PERL_MODULE_JSON_BOOLEAN  => 'JSON::XS::Boolean';
 
 # ---------------------------
 Readonly our $_IB_REF => '_ref';
 
 Readonly our $IB_FIELDS             => 'IB_FIELDS';
+Readonly our $IB_TRUE               => 'IB_TRUE';
+Readonly our $IB_FALSE              => 'IB_FALSE';
 Readonly our $IB_USERNAME           => 'IB_USERNAME';
 Readonly our $IB_PASSWORD           => 'IB_PASSWORD';
 Readonly our $IB_HOSTNAME           => 'IB_HOSTNAME';
 Readonly our $IB_BASE_FIELDS        => 'IB_BASE_FIELDS';
 Readonly our $IB_MAX_RESULTS        => 'IB_MAX_RESULTS';
+Readonly our $IB_STRUCT_FIELDS      => 'IB_STRUCT_FIELDS';
+Readonly our $IB_STRUCT_TYPES       => 'IB_STRUCT_TYPES';
 Readonly our $IB_RETURN_FIELDS      => 'IB_RETURN_FIELDS';
 Readonly our $IB_RETURN_FIELDS_PLUS => 'IB_RETURN_FIELDS_PLUS';
 Readonly our $IB_RETURN_TYPE        => 'IB_RETURN_TYPE';
@@ -137,103 +161,104 @@ Readonly our $BINDING_STATE_RELEASED   => 'RELEASED';
 Readonly our $BINDING_STATE_RESET      => 'RESET';
 Readonly our $BINDING_STATE_STATIC     => 'STATIC';
 
-Readonly our $FIELD_REF                                  => 'FIELD_REF';
-Readonly our $FIELD_ACCESS_LIST                          => 'FIELD_ACCESS_LIST';
-Readonly our $FIELD_ADDRESS                              => 'FIELD_ADDRESS';
-Readonly our $FIELD_ADDRESS_TYPE                         => 'FIELD_ADDRESS_TYPE';
-Readonly our $FIELD_AGENT_CIRCUIT_ID                     => 'FIELD_AGENT_CIRCUIT_ID';
-Readonly our $FIELD_AGENT_REMOTE_ID                      => 'FIELD_AGENT_REMOTE_ID';
-Readonly our $FIELD_ALIASES                              => 'FIELD_ALIASES';
-Readonly our $FIELD_ALLOW_ACTIVE_DIR                     => 'FIELD_ALLOW_ACTIVE_DIR';
-Readonly our $FIELD_ALLOW_GSS_TSIG_FOR_UNDERSCORE_ZONE   => 'FIELD_ALLOW_GSS_TSIG_FOR_UNDERSCORE_ZONE';
-Readonly our $FIELD_ALLOW_GSS_TSIG_ZONE_UPDATES          => 'FIELD_ALLOW_GSS_TSIG_ZONE_UPDATES';
-Readonly our $FIELD_ALLOW_QUERY                          => 'FIELD_ALLOW_QUERY';
-Readonly our $FIELD_ALLOW_TRANSFER                       => 'FIELD_ALLOW_TRANSFER';
-Readonly our $FIELD_ALLOW_UPDATE                         => 'FIELD_ALLOW_UPDATE';
-Readonly our $FIELD_ALLOW_UPDATE_FORWARDING              => 'FIELD_ALLOW_UPDATE_FORWARDING';
-Readonly our $FIELD_ALWAYS_UPDATE_DNS                    => 'FIELD_ALWAYS_UPDATE_DNS';
-Readonly our $FIELD_APPROVAL_STATUS                      => 'FIELD_APPROVAL_STATUS';
-Readonly our $FIELD_APPROVER                             => 'FIELD_APPROVER';
-Readonly our $FIELD_APPROVER_COMMENT                     => 'FIELD_APPROVER_COMMENT';
-Readonly our $FIELD_AUTHENTICATION_TIME                  => 'FIELD_AUTHENTICATION_TIME';
-Readonly our $FIELD_AUTHORITY                            => 'FIELD_AUTHORITY';
-Readonly our $FIELD_AUTO_CREATE_REVERSEZONE              => 'FIELD_AUTO_CREATE_REVERSEZONE';
-Readonly our $FIELD_AUTOMATIC_RESTART                    => 'FIELD_AUTOMATIC_RESTART';
-Readonly our $FIELD_BILLING_CLASS                        => 'FIELD_BILLING_CLASS';
-Readonly our $FIELD_BINDING_STATE                        => 'FIELD_BINDING_STATE';
-Readonly our $FIELD_BLACKLIST_ACTION                     => 'FIELD_BLACKLIST_ACTION';
-Readonly our $FIELD_BLACKLIST_LOG_QUERY                  => 'FIELD_BLACKLIST_LOG_QUERY';
-Readonly our $FIELD_BLACKLIST_REDIRECT_ADDRESSES         => 'FIELD_BLACKLIST_REDIRECT_ADDRESSES';
-Readonly our $FIELD_BLACKLIST_REDIRECT_TTL               => 'FIELD_BLACKLIST_REDIRECT_TTL';
-Readonly our $FIELD_BLACKLIST_RULESETS                   => 'FIELD_BLACKLIST_RULESETS';
-Readonly our $FIELD_BOOTFILE                             => 'FIELD_BOOTFILE';
-Readonly our $FIELD_BOOTSERVER                           => 'FIELD_BOOTSERVER';
-Readonly our $FIELD_CANONICAL                            => 'FIELD_CANONICAL';
-Readonly our $FIELD_CHANGED_OBJECTS                      => 'FIELD_CHANGED_OBJECTS';
-Readonly our $FIELD_CLIENT_HOSTNAME                      => 'FIELD_CLIENT_HOSTNAME';
-Readonly our $FIELD_CLIENT_IDENTIFIER_PREPEND_ZERO       => 'FIELD_CLIENT_IDENTIFIER_PREPEND_ZERO';
-Readonly our $FIELD_CLTT                                 => 'FIELD_CLTT';
-Readonly our $FIELD_COMMENT                              => 'FIELD_COMMENT';
-Readonly our $FIELD_CONFIGURE_FOR_DHCP                   => 'FIELD_CONFIGURE_FOR_DHCP';
-Readonly our $FIELD_CONFIGURE_FOR_DNS                    => 'FIELD_CONFIGURE_FOR_DNS';
-Readonly our $FIELD_CONTAINS_ADDRESS                     => 'FIELD_CONTAINS_ADDRESS';
-Readonly our $FIELD_COPY_XFER_TO_NOTIFY                  => 'FIELD_COPY_XFER_TO_NOTIFY';
-Readonly our $FIELD_CREATE_PTR_FOR_BULK_HOSTS            => 'FIELD_CREATE_PTR_FOR_BULK_HOSTS';
-Readonly our $FIELD_CREATE_PTR_FOR_HOSTS                 => 'FIELD_CREATE_PTR_FOR_HOSTS';
-Readonly our $FIELD_CREATE_UNDERSCORE_ZONES              => 'FIELD_CREATE_UNDERSCORE_ZONES';
-Readonly our $FIELD_CUSTOM_ROOT_NAME_SERVERS             => 'FIELD_CUSTOM_ROOT_NAME_SERVERS';
-Readonly our $FIELD_DDNS_DOMAINNAME                      => 'FIELD_DDNS_DOMAINNAME';
-Readonly our $FIELD_DDNS_GENERATE_HOSTNAME               => 'FIELD_DDNS_GENERATE_HOSTNAME';
-Readonly our $FIELD_DDNS_HOSTNAME                        => 'FIELD_DDNS_HOSTNAME';
-Readonly our $FIELD_DDNS_SERVER_ALWAYS_UPDATES           => 'FIELD_DDNS_SERVER_ALWAYS_UPDATES';
-Readonly our $FIELD_DDNS_TTL                             => 'FIELD_DDNS_TTL';
-Readonly our $FIELD_DDNS_UPDATE_FIXED_ADDRESSES          => 'FIELD_DDNS_UPDATE_FIXED_ADDRESSES';
-Readonly our $FIELD_DDNS_USER_OPTION81                   => 'FIELD_DDNS_USER_OPTION81';
-Readonly our $FIELD_DELEGATED_TTL                        => 'FIELD_DELEGATED_TTL';
-Readonly our $FIELD_DELEGATE_TO                          => 'FIELD_DELEGATE_TO';
-Readonly our $FIELD_DENY_ALL_CLIENTS                     => 'FIELD_DENY_ALL_CLIENTS';
-Readonly our $FIELD_DENY_BOOTP                           => 'FIELD_DENY_BOOTP';
-Readonly our $FIELD_DHCP_CLIENT_IDENTIFIER               => 'FIELD_DHCP_CLIENT_IDENTIFIER';
-Readonly our $FIELD_DHCP_STATUS                          => 'FIELD_DHCP_STATUS';
-Readonly our $FIELD_DISABLE                              => 'FIELD_DISABLE';
-Readonly our $FIELD_DISABLE_FORWARDING                   => 'FIELD_DISABLE_FORWARDING';
-Readonly our $FIELD_DISCOVERED_DATA                      => 'FIELD_DISCOVERED_DATA';
-Readonly our $FIELD_DISPLAY_DOMAIN                       => 'FIELD_DISPLAY_DOMAIN';
-Readonly our $FIELD_DNS64_ENABLED                        => 'FIELD_DNS64_ENABLED';
-Readonly our $FIELD_DNS64_GROUPS                         => 'FIELD_DNS64_GROUPS';
-Readonly our $FIELD_DNS_ALIASES                          => 'FIELD_DNS_ALIASES';
-Readonly our $FIELD_DNS_CANONICAL                        => 'FIELD_DNS_CANONICAL';
-Readonly our $FIELD_DNS_FQDN                             => 'FIELD_DNS_FQDN';
-Readonly our $FIELD_DNS_MAIL_EXCHANGER                   => 'FIELD_DNS_MAIL_EXCHANGER';
-Readonly our $FIELD_DNS_NAME                             => 'FIELD_DNS_NAME';
-Readonly our $FIELD_DNS_PTRDNAME                         => 'FIELD_DNS_PTRDNAME';
-Readonly our $FIELD_DNSSEC_ENABLED                       => 'FIELD_DNSSEC_ENABLED';
-Readonly our $FIELD_DNSSEC_EXPIRED_SIGNATURES_ENABLED    => 'FIELD_DNSSEC_EXPIRED_SIGNATURES_ENABLED';
-Readonly our $FIELD_DNSSEC_KEY_PARAMS                    => 'FIELD_DNSSEC_KEY_PARAMS';
-Readonly our $FIELD_DNSSEC_TRUSTED_KEYS                  => 'FIELD_DNSSEC_TRUSTED_KEYS';
-Readonly our $FIELD_DNSSEC_VALIDATION_ENABLED            => 'FIELD_DNSSEC_VALIDATION_ENABLED';
-Readonly our $FIELD_DNS_SOA_EMAIL                        => 'FIELD_DNS_SOA_EMAIL';
-Readonly our $FIELD_DNS_SOA_MNAME                        => 'FIELD_DNS_SOA_MNAME';
-Readonly our $FIELD_DNS_STATUS                           => 'FIELD_DNS_STATUS';
-Readonly our $FIELD_DNS_TARGET                           => 'FIELD_DNS_TARGET';
-Readonly our $FIELD_DO_HOST_ABSTRACTION                  => 'FIELD_DO_HOST_ABSTRACTION';
-Readonly our $FIELD_DOMAIN_NAME                          => 'FIELD_DOMAIN_NAME';
-Readonly our $FIELD_DOMAIN_NAME_SERVERS                  => 'FIELD_DOMAIN_NAME_SERVERS';
-Readonly our $FIELD_DUID                                 => 'FIELD_DUID';
-Readonly our $FIELD_EFFECTIVE_CHECK_NAMES_POLICY         => 'FIELD_EFFECTIVE_CHECK_NAMES_POLICY';
-Readonly our $FIELD_EFFECTIVE_RECORD_NAME_POLICY         => 'FIELD_EFFECTIVE_RECORD_NAME_POLICY';
-Readonly our $FIELD_EMAIL_LIST                           => 'FIELD_EMAIL_LIST';
-Readonly our $FIELD_ENABLE_BLACKLIST                     => 'FIELD_ENABLE_BLACKLIST';
-Readonly our $FIELD_ENABLE_DDNS                          => 'FIELD_ENABLE_DDNS';
-Readonly our $FIELD_ENABLE_DHCP_THRESHOLDS               => 'FIELD_ENABLE_DHCP_THRESHOLDS';
-Readonly our $FIELD_ENABLE_EMAIL_WARNINGS                => 'FIELD_ENABLE_EMAIL_WARNINGS';
-Readonly our $FIELD_ENABLE_IFMAP_PUBLISHING              => 'FIELD_ENABLE_IFMAP_PUBLISHING';
-Readonly our $FIELD_ENABLE_PXE_LEASE_TIME                => 'FIELD_ENABLE_PXE_LEASE_TIME';
-Readonly our $FIELD_ENABLE_RFC2317_EXCLUSION             => 'FIELD_ENABLE_RFC2317_EXCLUSION';
-Readonly our $FIELD_ENABLE_SNMP_WARNINGS                 => 'FIELD_ENABLE_SNMP_WARNINGS';
-Readonly our $FIELD_END_ADDR                             => 'FIELD_END_ADDR';
-Readonly our $FIELD_ENDS                                 => 'FIELD_ENDS';
-Readonly our $FIELD_EXATTRS                              => 'FIELD_EXATTRS';
+Readonly our $FIELD_REF                                => 'FIELD_REF';
+Readonly our $FIELD_ACCESS_LIST                        => 'FIELD_ACCESS_LIST';
+Readonly our $FIELD_ADDRESS                            => 'FIELD_ADDRESS';
+Readonly our $FIELD_ADDRESS_TYPE                       => 'FIELD_ADDRESS_TYPE';
+Readonly our $FIELD_AGENT_CIRCUIT_ID                   => 'FIELD_AGENT_CIRCUIT_ID';
+Readonly our $FIELD_AGENT_REMOTE_ID                    => 'FIELD_AGENT_REMOTE_ID';
+Readonly our $FIELD_ALIASES                            => 'FIELD_ALIASES';
+Readonly our $FIELD_ALLOW_ACTIVE_DIR                   => 'FIELD_ALLOW_ACTIVE_DIR';
+Readonly our $FIELD_ALLOW_GSS_TSIG_FOR_UNDERSCORE_ZONE => 'FIELD_ALLOW_GSS_TSIG_FOR_UNDERSCORE_ZONE';
+Readonly our $FIELD_ALLOW_GSS_TSIG_ZONE_UPDATES        => 'FIELD_ALLOW_GSS_TSIG_ZONE_UPDATES';
+Readonly our $FIELD_ALLOW_QUERY                        => 'FIELD_ALLOW_QUERY';
+Readonly our $FIELD_ALLOW_TRANSFER                     => 'FIELD_ALLOW_TRANSFER';
+Readonly our $FIELD_ALLOW_UPDATE                       => 'FIELD_ALLOW_UPDATE';
+Readonly our $FIELD_ALLOW_UPDATE_FORWARDING            => 'FIELD_ALLOW_UPDATE_FORWARDING';
+Readonly our $FIELD_ALWAYS_UPDATE_DNS                  => 'FIELD_ALWAYS_UPDATE_DNS';
+Readonly our $FIELD_APPROVAL_STATUS                    => 'FIELD_APPROVAL_STATUS';
+Readonly our $FIELD_APPROVER                           => 'FIELD_APPROVER';
+Readonly our $FIELD_APPROVER_COMMENT                   => 'FIELD_APPROVER_COMMENT';
+Readonly our $FIELD_AUTHENTICATION_TIME                => 'FIELD_AUTHENTICATION_TIME';
+Readonly our $FIELD_AUTHORITY                          => 'FIELD_AUTHORITY';
+Readonly our $FIELD_AUTO_CREATE_REVERSEZONE            => 'FIELD_AUTO_CREATE_REVERSEZONE';
+Readonly our $FIELD_AUTOMATIC_RESTART                  => 'FIELD_AUTOMATIC_RESTART';
+Readonly our $FIELD_BILLING_CLASS                      => 'FIELD_BILLING_CLASS';
+Readonly our $FIELD_BINDING_STATE                      => 'FIELD_BINDING_STATE';
+Readonly our $FIELD_BLACKLIST_ACTION                   => 'FIELD_BLACKLIST_ACTION';
+Readonly our $FIELD_BLACKLIST_LOG_QUERY                => 'FIELD_BLACKLIST_LOG_QUERY';
+Readonly our $FIELD_BLACKLIST_REDIRECT_ADDRESSES       => 'FIELD_BLACKLIST_REDIRECT_ADDRESSES';
+Readonly our $FIELD_BLACKLIST_REDIRECT_TTL             => 'FIELD_BLACKLIST_REDIRECT_TTL';
+Readonly our $FIELD_BLACKLIST_RULESETS                 => 'FIELD_BLACKLIST_RULESETS';
+Readonly our $FIELD_BOOTFILE                           => 'FIELD_BOOTFILE';
+Readonly our $FIELD_BOOTSERVER                         => 'FIELD_BOOTSERVER';
+Readonly our $FIELD_CANONICAL                          => 'FIELD_CANONICAL';
+Readonly our $FIELD_CHANGED_OBJECTS                    => 'FIELD_CHANGED_OBJECTS';
+Readonly our $FIELD_CLIENT_HOSTNAME                    => 'FIELD_CLIENT_HOSTNAME';
+Readonly our $FIELD_CLIENT_IDENTIFIER_PREPEND_ZERO     => 'FIELD_CLIENT_IDENTIFIER_PREPEND_ZERO';
+Readonly our $FIELD_CLTT                               => 'FIELD_CLTT';
+Readonly our $FIELD_COMMENT                            => 'FIELD_COMMENT';
+Readonly our $FIELD_CONFIGURE_FOR_DHCP                 => 'FIELD_CONFIGURE_FOR_DHCP';
+Readonly our $FIELD_CONFIGURE_FOR_DNS                  => 'FIELD_CONFIGURE_FOR_DNS';
+Readonly our $FIELD_CONTAINS_ADDRESS                   => 'FIELD_CONTAINS_ADDRESS';
+Readonly our $FIELD_COPY_XFER_TO_NOTIFY                => 'FIELD_COPY_XFER_TO_NOTIFY';
+Readonly our $FIELD_CREATE_PTR_FOR_BULK_HOSTS          => 'FIELD_CREATE_PTR_FOR_BULK_HOSTS';
+Readonly our $FIELD_CREATE_PTR_FOR_HOSTS               => 'FIELD_CREATE_PTR_FOR_HOSTS';
+Readonly our $FIELD_CREATE_UNDERSCORE_ZONES            => 'FIELD_CREATE_UNDERSCORE_ZONES';
+Readonly our $FIELD_CUSTOM_ROOT_NAME_SERVERS           => 'FIELD_CUSTOM_ROOT_NAME_SERVERS';
+Readonly our $FIELD_DDNS_DOMAINNAME                    => 'FIELD_DDNS_DOMAINNAME';
+Readonly our $FIELD_DDNS_GENERATE_HOSTNAME             => 'FIELD_DDNS_GENERATE_HOSTNAME';
+Readonly our $FIELD_DDNS_HOSTNAME                      => 'FIELD_DDNS_HOSTNAME';
+Readonly our $FIELD_DDNS_SERVER_ALWAYS_UPDATES         => 'FIELD_DDNS_SERVER_ALWAYS_UPDATES';
+Readonly our $FIELD_DDNS_TTL                           => 'FIELD_DDNS_TTL';
+Readonly our $FIELD_DDNS_UPDATE_FIXED_ADDRESSES        => 'FIELD_DDNS_UPDATE_FIXED_ADDRESSES';
+Readonly our $FIELD_DDNS_USER_OPTION81                 => 'FIELD_DDNS_USER_OPTION81';
+Readonly our $FIELD_DELEGATED_TTL                      => 'FIELD_DELEGATED_TTL';
+Readonly our $FIELD_DELEGATE_TO                        => 'FIELD_DELEGATE_TO';
+Readonly our $FIELD_DENY_ALL_CLIENTS                   => 'FIELD_DENY_ALL_CLIENTS';
+Readonly our $FIELD_DENY_BOOTP                         => 'FIELD_DENY_BOOTP';
+Readonly our $FIELD_DHCP_CLIENT_IDENTIFIER             => 'FIELD_DHCP_CLIENT_IDENTIFIER';
+Readonly our $FIELD_DHCP_STATUS                        => 'FIELD_DHCP_STATUS';
+Readonly our $FIELD_DISABLE                            => 'FIELD_DISABLE';
+Readonly our $FIELD_DISABLE_FORWARDING                 => 'FIELD_DISABLE_FORWARDING';
+Readonly our $FIELD_DISCOVERED_DATA                    => 'FIELD_DISCOVERED_DATA';
+Readonly our $FIELD_DISPLAY_DOMAIN                     => 'FIELD_DISPLAY_DOMAIN';
+Readonly our $FIELD_DNS64_ENABLED                      => 'FIELD_DNS64_ENABLED';
+Readonly our $FIELD_DNS64_GROUPS                       => 'FIELD_DNS64_GROUPS';
+Readonly our $FIELD_DNS_ALIASES                        => 'FIELD_DNS_ALIASES';
+Readonly our $FIELD_DNS_CANONICAL                      => 'FIELD_DNS_CANONICAL';
+Readonly our $FIELD_DNS_FQDN                           => 'FIELD_DNS_FQDN';
+Readonly our $FIELD_DNS_MAIL_EXCHANGER                 => 'FIELD_DNS_MAIL_EXCHANGER';
+Readonly our $FIELD_DNS_NAME                           => 'FIELD_DNS_NAME';
+Readonly our $FIELD_DNS_PTRDNAME                       => 'FIELD_DNS_PTRDNAME';
+Readonly our $FIELD_DNSSEC_ENABLED                     => 'FIELD_DNSSEC_ENABLED';
+Readonly our $FIELD_DNSSEC_EXPIRED_SIGNATURES_ENABLED  => 'FIELD_DNSSEC_EXPIRED_SIGNATURES_ENABLED';
+Readonly our $FIELD_DNSSEC_KEY_PARAMS                  => 'FIELD_DNSSEC_KEY_PARAMS';
+Readonly our $FIELD_DNSSEC_TRUSTED_KEYS                => 'FIELD_DNSSEC_TRUSTED_KEYS';
+Readonly our $FIELD_DNSSEC_VALIDATION_ENABLED          => 'FIELD_DNSSEC_VALIDATION_ENABLED';
+Readonly our $FIELD_DNS_SOA_EMAIL                      => 'FIELD_DNS_SOA_EMAIL';
+Readonly our $FIELD_DNS_SOA_MNAME                      => 'FIELD_DNS_SOA_MNAME';
+Readonly our $FIELD_DNS_STATUS                         => 'FIELD_DNS_STATUS';
+Readonly our $FIELD_DNS_TARGET                         => 'FIELD_DNS_TARGET';
+Readonly our $FIELD_DO_HOST_ABSTRACTION                => 'FIELD_DO_HOST_ABSTRACTION';
+Readonly our $FIELD_DOMAIN_NAME                        => 'FIELD_DOMAIN_NAME';
+Readonly our $FIELD_DOMAIN_NAME_SERVERS                => 'FIELD_DOMAIN_NAME_SERVERS';
+Readonly our $FIELD_DUID                               => 'FIELD_DUID';
+Readonly our $FIELD_EFFECTIVE_CHECK_NAMES_POLICY       => 'FIELD_EFFECTIVE_CHECK_NAMES_POLICY';
+Readonly our $FIELD_EFFECTIVE_RECORD_NAME_POLICY       => 'FIELD_EFFECTIVE_RECORD_NAME_POLICY';
+Readonly our $FIELD_EMAIL_LIST                         => 'FIELD_EMAIL_LIST';
+Readonly our $FIELD_ENABLE_BLACKLIST                   => 'FIELD_ENABLE_BLACKLIST';
+Readonly our $FIELD_ENABLE_DDNS                        => 'FIELD_ENABLE_DDNS';
+Readonly our $FIELD_ENABLE_DHCP_THRESHOLDS             => 'FIELD_ENABLE_DHCP_THRESHOLDS';
+Readonly our $FIELD_ENABLE_EMAIL_WARNINGS              => 'FIELD_ENABLE_EMAIL_WARNINGS';
+Readonly our $FIELD_ENABLE_IFMAP_PUBLISHING            => 'FIELD_ENABLE_IFMAP_PUBLISHING';
+Readonly our $FIELD_ENABLE_PXE_LEASE_TIME              => 'FIELD_ENABLE_PXE_LEASE_TIME';
+Readonly our $FIELD_ENABLE_RFC2317_EXCLUSION           => 'FIELD_ENABLE_RFC2317_EXCLUSION';
+Readonly our $FIELD_ENABLE_SNMP_WARNINGS               => 'FIELD_ENABLE_SNMP_WARNINGS';
+Readonly our $FIELD_END_ADDR                           => 'FIELD_END_ADDR';
+Readonly our $FIELD_ENDS                               => 'FIELD_ENDS';
+
+# Readonly our $FIELD_EXATTRS                              => 'FIELD_EXATTRS';
 Readonly our $EXTATTR_VALUE                              => 'value';
 Readonly our $FIELD_EXCLUDE                              => 'FIELD_EXCLUDE';
 Readonly our $FIELD_EXECUTE_NOW                          => 'FIELD_EXECUTE_NOW';
@@ -479,14 +504,17 @@ Readonly our $FIELD_ZONE_ASSOCIATIONS                    => 'FIELD_ZONE_ASSOCIAT
 Readonly our $FIELD_ZONE_FORMAT                          => 'FIELD_ZONE_FORMAT';
 Readonly our $FIELD_ZONE_NOT_QUERIED_ENABLED_TIME        => 'FIELD_ZONE_NOT_QUERIED_ENABLED_TIME';
 
+#
+# These match the file names of the perl modules
+#
 Readonly our $MODULE_FIXEDADDRESS         => 'Fixedaddress';
 Readonly our $MODULE_GRID                 => 'Grid';
-Readonly our $MODULE_IPV4ADDRESS          => 'Ipv4address';
-Readonly our $MODULE_IPV6ADDRESS          => 'Ipv6address';
-Readonly our $MODULE_IPV6FIXEDADDRESS     => 'Ipv6fixedaddress';
-Readonly our $MODULE_IPV6NETWORKCONTAINER => 'Ipv6networkcontainer';
-Readonly our $MODULE_IPV6NETWORK          => 'Ipv6network';
-Readonly our $MODULE_IPV6RANGE            => 'Ipv6range';
+Readonly our $MODULE_IPV4ADDRESS          => 'IPv4Address';
+Readonly our $MODULE_IPV6ADDRESS          => 'IPv6Address';
+Readonly our $MODULE_IPV6FIXEDADDRESS     => 'IPv6Fixedaddress';
+Readonly our $MODULE_IPV6NETWORKCONTAINER => 'IPv6Networkcontainer';
+Readonly our $MODULE_IPV6NETWORK          => 'IPv6Network';
+Readonly our $MODULE_IPV6RANGE            => 'IPv6Range';
 Readonly our $MODULE_LEASE                => 'Lease';
 Readonly our $MODULE_MACFILTERADDRESS     => 'Macfilteraddress';
 Readonly our $MODULE_MEMBER               => 'Member';
@@ -1388,7 +1416,7 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_IPV6PREFIX                           => $TYPE_UNKNOWN,
     $FIELD_IPV6_PREFIX_BITS                     => $TYPE_UINT,
     $FIELD_IPV6_START_PREFIX                    => $TYPE_UNKNOWN,
-    $FIELD_IS_CONFLICT                          => $TYPE_UNKNOWN,
+    $FIELD_IS_CONFLICT                          => $TYPE_BOOL,
     $FIELD_IS_DEFAULT                           => $TYPE_UNKNOWN,
     $FIELD_IS_DNSSEC_ENABLED                    => $TYPE_UNKNOWN,
     $FIELD_IS_DNSSEC_SIGNED                     => $TYPE_UNKNOWN,
@@ -1398,14 +1426,14 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_LAME_TTL                             => $TYPE_UNKNOWN,
     $FIELD_LAST_QUERIED                         => $TYPE_UNKNOWN,
     $FIELD_LEASE_SCAVENGE_TIME                  => $TYPE_INT,
-    $FIELD_LEASE_STATE                          => $TYPE_UNKNOWN,
+    $FIELD_LEASE_STATE                          => $TYPE_STRING,
     $FIELD_LOCKED                               => $TYPE_UNKNOWN,
     $FIELD_LOCKED_BY                            => $TYPE_UNKNOWN,
     $FIELD_LOGIC_FILTER_RULES                   => $TYPE_UNKNOWN,
     $FIELD_LOW_WATER_MARK                       => $TYPE_UINT,
     $FIELD_LOW_WATER_MARK_RESET                 => $TYPE_UINT,
     $FIELD_MAC                                  => $TYPE_STRING,
-    $FIELD_MAC_ADDRESS                          => $TYPE_UNKNOWN,
+    $FIELD_MAC_ADDRESS                          => $TYPE_STRING,
     $FIELD_MAC_FILTER_RULES                     => $TYPE_UNKNOWN,
     $FIELD_MAIL_EXCHANGER                       => $TYPE_UNKNOWN,
     $FIELD_MASK_PREFIX                          => $TYPE_UNKNOWN,
@@ -1427,7 +1455,7 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_MS_SYNC_MASTER_NAME                  => $TYPE_UNKNOWN,
     $FIELD_NAC_FILTER_RULES                     => $TYPE_UNKNOWN,
     $FIELD_NAME                                 => $TYPE_STRING,
-    $FIELD_NAMES                                => $TYPE_UNKNOWN,
+    $FIELD_NAMES                                => $TYPE_STRING_ARRAY,
     $FIELD_NETMASK                              => $TYPE_UINT,
     $FIELD_NETWORK                              => $TYPE_STRING,
     $FIELD_NETWORK_ASSOCIATIONS                 => $TYPE_UNKNOWN,
@@ -1445,7 +1473,7 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_NXDOMAIN_REDIRECT_ADDRESSES          => $TYPE_UNKNOWN,
     $FIELD_NXDOMAIN_REDIRECT_TTL                => $TYPE_UNKNOWN,
     $FIELD_NXDOMAIN_RULESETS                    => $TYPE_UNKNOWN,
-    $FIELD_OBJECTS                              => $TYPE_UNKNOWN,
+    $FIELD_OBJECTS                              => $TYPE_STRING,
     $FIELD_ON_COMMIT                            => $TYPE_STRING,
     $FIELD_ON_EXPIRY                            => $TYPE_STRING,
     $FIELD_ON_RELEASE                           => $TYPE_STRING,
@@ -1491,7 +1519,7 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_SRGS                                 => $TYPE_UNKNOWN,
     $FIELD_START_ADDR                           => $TYPE_UNKNOWN,
     $FIELD_STARTS                               => $TYPE_TIMESTAMP,
-    $FIELD_STATUS                               => $TYPE_UNKNOWN,
+    $FIELD_STATUS                               => $TYPE_STRING,
     $FIELD_STUB_FROM                            => $TYPE_UNKNOWN,
     $FIELD_STUB_MEMBERS                         => $TYPE_UNKNOWN,
     $FIELD_STUB_MSSERVERS                       => $TYPE_UNKNOWN,
@@ -1506,12 +1534,13 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_TSFP                                 => $TYPE_TIMESTAMP,
     $FIELD_TSTP                                 => $TYPE_TIMESTAMP,
     $FIELD_TTL                                  => $TYPE_UNKNOWN,
-    $FIELD_TYPES                                => $TYPE_UNKNOWN,
+    $FIELD_TYPES                                => $TYPE_STRING_ARRAY,
     $FIELD_UID                                  => $TYPE_STRING,
     $FIELD_UNKNOWN_CLIENTS                      => $TYPE_UNKNOWN,
     $FIELD_UPDATE_DNS_ON_LEASE_RENEWAL          => $TYPE_BOOL,
     $FIELD_UPDATE_FORWARDING                    => $TYPE_BOOL,
-    $FIELD_USAGE                                => $TYPE_BOOL,
+#    $FIELD_USAGE                                => $TYPE_BOOL,
+    $FIELD_USAGE                                => $TYPE_STRING_ARRAY,
     $FIELD_USE_ALLOW_ACTIVE_DIR                 => $TYPE_BOOL,
     $FIELD_USE_ALLOW_QUERY                      => $TYPE_BOOL,
     $FIELD_USE_ALLOW_TRANSFER                   => $TYPE_BOOL,
@@ -1655,21 +1684,15 @@ Readonly::Hash our %_NAME_MODULE_OBJ => (
 );
 
 Readonly our $EVAL_NEW_STRUCT_CODE => '
-    LOG_ENTER_SUB;
-    my $self = $class->SUPER::new();
-    $self->{$IB_STRUCT_FIELD} = \%_FIELDS;
-    $self->{$IB_STRUCT_TYPE}  = \%_FIELD_TYPES;
-
-    if ( !defined $parm_ref ) { confess "parameters are required"; }
-    if ( ref($parm_ref) ne "HASH" ) { confess "bad parameter ref"; }
-
+    defined $parm_ref || LOG_FATAL "parameters are required";
+    ref($parm_ref) eq "HASH" || LOG_FATAL "bad parameter ref";
+    $parm_ref->{$IB_STRUCT_FIELDS} = \%_FIELDS;
+    $parm_ref->{$IB_STRUCT_TYPES}  = \%_FIELD_TYPES;
+    my $self = $class->SUPER::new( $parm_ref );
     bless $self, $class;
-    LOG_EXIT_SUB;
 ';
 
-
 Readonly our $EVAL_NEW_OBJECT_CODE => '
-    LOG_ENTER_SUB;
     $parm_ref->{$IB_FIELDS}            = \%_FIELDS;
     $parm_ref->{$IB_BASE_FIELDS}       = \%_BASE_FIELDS;
     $parm_ref->{$IB_READONLY_FIELDS}   = \%_READONLY_FIELDS;
@@ -1678,7 +1701,6 @@ Readonly our $EVAL_NEW_OBJECT_CODE => '
     $self = $class->SUPER::new( $_OBJECT_NAME, $parm_ref );
     bless $self, $class;
     $self->create_lwp($parm_ref);
-    LOG_EXIT_SUB;
 ';
 
 my $_LOGGING_LEVEL = $_LOG_FATAL;
@@ -1737,14 +1759,20 @@ our @EXPORT = qw (
   PRINT_MYNAMELINE
   $_IB_VERSION
   $_IB_REF
+  $PERL_MODULE_EXTATTR
   $PERL_MODULE_IBCONSTS
-  $PERL_MODULE_IBWAPI
-  $PERL_MODULE_IBRECORD
   $PERL_MODULE_IBLWP
+  $PERL_MODULE_IBRECORD
+  $PERL_MODULE_IBWAPI
+  $PERL_MODULE_JSON_BOOLEAN
   $IB_BASE_FIELDS
   $IB_CRED
   $IB_MAX_RESULTS
   $IB_FIELDS
+  $IB_TRUE
+  $IB_FALSE
+$IB_STRUCT_FIELDS
+$IB_STRUCT_TYPES
   $IB_RETURN_FIELDS
   $IB_RETURN_FIELDS_PLUS
   $IB_RETURN_TYPE
@@ -2197,12 +2225,12 @@ sub URL_REF_MODULE_EXISTS {
     defined $u || LOG_FATAL;
     $u ne '' || LOG_FATAL " " . @_;
 
-    if( defined ( $name = ( split( /\//, $u ) )[0] )) {
-    		return URL_NAME_MODULE_EXISTS( $name );
-	}
-	else {
-		return 0;
-	}
+    if ( defined( $name = ( split( /\//, $u ) )[0] ) ) {
+        return URL_NAME_MODULE_EXISTS($name);
+    }
+    else {
+        return 0;
+    }
 }
 
 # ------------------------------------------------------
@@ -2319,38 +2347,6 @@ sub VERIFY_TIMESTAMP {
 }
 
 # ------------------------------------------------------
-sub LOG_ENTER_SUB {
-    my ($a) = @_;
-    my $ret = ' ' x $_SUB_LEVEL++;
-
-    if ( defined caller(1) ) {
-        $ret .= ( ( ( caller(1) )[3] ) . ':' . ( ( caller(0) )[2] ) );
-    }
-    else {
-        $ret .= ( ( ( (caller)[1] ) . ':' . ( (caller)[2] ) ) );
-    }
-    $ret .= $a if ( defined $a );
-
-    _LOG( "ENTER SUB:", $ret );
-}
-
-# ------------------------------------------------------
-sub LOG_EXIT_SUB {
-    my ($a) = @_;
-    my $ret = ' ' x --$_SUB_LEVEL;
-
-    if ( defined caller(1) ) {
-        $ret .= ( ( ( caller(1) )[3] ) . ':' . ( ( caller(0) )[2] ) );
-    }
-    else {
-        $ret .= ( ( ( (caller)[1] ) . ':' . ( (caller)[2] ) ) );
-    }
-    $ret .= $a if ( defined $a );
-
-    _LOG( "EXIT  SUB:", $ret );
-}
-
-# ------------------------------------------------------
 sub PRINT_MYNAME {
     my ($a) = @_;
     my $ret = '';
@@ -2404,100 +2400,127 @@ sub MYNAMELINE {
 
 # ------------------------------------------------------
 # ------------------------------------------------------
+sub LOG_ENTER_SUB {
+    if ( $_LOGGING_LEVEL >= $_LOG_DEBUG3 ) { _LOG( $LOG_ENTER, @_ ); }
+}
+
+# ------------------------------------------------------
+sub LOG_EXIT_SUB {
+    if ( $_LOGGING_LEVEL >= $_LOG_DEBUG3 ) { _LOG( $LOG_EXIT, @_ ); }
+}
+
+# ------------------------------------------------------
+# DEBUG4 Used for Dumper output (Heavy Duty Debugging)
 # ------------------------------------------------------
 sub LOG_DEBUG4 {
-    if ( $_LOGGING_LEVEL <= $_LOG_DEBUG4 ) { _LOG( $LOG_DEBUG4, @_ ); }
+    if ( $_LOGGING_LEVEL >= $_LOG_DEBUG4 ) { _LOG( $LOG_DEBUG4, @_ ); }
 }
 
+# ------------------------------------------------------
+# DEBUG3 Logs all subroutines (Large amounts of output)
 # ------------------------------------------------------
 sub LOG_DEBUG3 {
-    if ( $_LOGGING_LEVEL <= $_LOG_DEBUG3 ) { _LOG( $LOG_DEBUG3, @_ ); }
+    if ( $_LOGGING_LEVEL >= $_LOG_DEBUG3 ) { _LOG( $LOG_DEBUG3, @_ ); }
 }
 
+# ------------------------------------------------------
+# DEBUG2
 # ------------------------------------------------------
 sub LOG_DEBUG2 {
-    if ( $_LOGGING_LEVEL <= $_LOG_DEBUG2 ) { _LOG( $LOG_DEBUG2, @_ ); }
+    if ( $_LOGGING_LEVEL >= $_LOG_DEBUG2 ) { _LOG( $LOG_DEBUG2, @_ ); }
 }
 
+# ------------------------------------------------------
+# DEBUG1
 # ------------------------------------------------------
 sub LOG_DEBUG1 {
-    if ( $_LOGGING_LEVEL <= $_LOG_DEBUG1 ) { _LOG( $LOG_DEBUG1, @_ ); }
+    if ( $_LOGGING_LEVEL >= $_LOG_DEBUG1 ) { _LOG( $LOG_DEBUG1, @_ ); }
 }
 
+# ------------------------------------------------------
+# DEBUG0
 # ------------------------------------------------------
 sub LOG_DEBUG0 {
-    if ( $_LOGGING_LEVEL <= $_LOG_DEBUG0 ) { _LOG( $LOG_DEBUG0, @_ ); }
+    if ( $_LOGGING_LEVEL >= $_LOG_DEBUG0 ) { _LOG( $LOG_DEBUG0, @_ ); }
 }
 
+# ------------------------------------------------------
+# INFO
 # ------------------------------------------------------
 sub LOG_INFO {
-    if ( $_LOGGING_LEVEL <= $_LOG_INFO ) { _LOG( $LOG_INFO, @_ ); }
+    if ( $_LOGGING_LEVEL >= $_LOG_INFO ) { _LOG( $LOG_INFO, @_ ); }
 }
 
+# ------------------------------------------------------
+# WARNING
 # ------------------------------------------------------
 sub LOG_WARN {
-    if ( $_LOGGING_LEVEL <= $_LOG_WARN ) { _LOG( $LOG_WARN, @_ ); }
+    if ( $_LOGGING_LEVEL >= $_LOG_WARN ) { _LOG( $LOG_WARN, @_ ); }
 }
 
+# ------------------------------------------------------
+# ERROR
 # ------------------------------------------------------
 sub LOG_ERROR {
-    if ( $_LOGGING_LEVEL <= $_LOG_ERROR ) { _LOG( $LOG_FATAL, @_ ); }
+    if ( $_LOGGING_LEVEL >= $_LOG_ERROR ) { _LOG( $LOG_ERROR, @_ ); }
 }
 
 # ------------------------------------------------------
+# FATAL - Kills the program in its tracks
+# ------------------------------------------------------
 sub LOG_FATAL {
-    my ($a) = @_;
-    my $ret;
-    if ( defined caller(1) ) {
-        $ret .= ( ( ( caller(1) )[3] ) . ':' . ( ( caller(0) )[2] ) );
-    }
-    else {
-        $ret .= ( ( ( (caller)[1] ) . ':' . ( (caller)[2] ) ) );
-    }
-    $ret .= " $a" if ( defined $a );
-    _LOG( $LOG_FATAL, $ret );
+    _LOG( $LOG_FATAL, @_ );
     confess;
 }
 
 # ------------------------------------------------------
 sub _LOG {
     my ( $level, $msg ) = @_;
-    print "$level " . ( ( defined $msg && $msg ne '' ) ? $msg : '' ) . "\n";
+    my $caller = '';
+    my $spaces = '';
+
+    defined $_LOG_LEVEL{$level} || confess "LEVEL NOT DEFINED: '$level'";
+
+    if ( $_LOG_LEVEL{$level} <= $_LOGGING_LEVEL  || !$_LOG_LEVEL{$level} ) {
+
+        if ( $level eq $LOG_ENTER ) {
+            $spaces = '>' x $_SUB_LEVEL++;
+        }
+        elsif ( $level eq $LOG_EXIT ) {
+            $spaces = '<' x --$_SUB_LEVEL;
+        }
+        else {
+            $spaces = ' ' x $_SUB_LEVEL;
+        }
+        $spaces .= '|';
+
+        if ( defined caller(2) ) {
+	    if( (caller(2))[3] eq '(eval)' ) {
+            	$caller = '{' .( ( ( caller(3) )[3] ) . ':' . ( ( caller(2) )[2] ) ) . '}';
+		}
+	    else {
+            	$caller = ( ( ( caller(2) )[3] ) . ':' . ( ( caller(1) )[2] ) );
+		}
+        }
+        else {
+            $caller = ( ( ( (caller)[1] ) . ':' . ( (caller)[2] ) ) );
+        }
+
+        # $msg = $spaces . ( ( caller(1) )[3] ) . ':' . ( ( caller(1) )[2] ) . ' ' . (( defined $msg ) ? $msg : '' );
+        # $msg = $spaces . ( ( caller(2) )[3] ) . ':' . ( ( caller(2) )[2] ) . ' ' . (( defined $msg ) ? $msg : '' );
+        # $msg = $spaces . ( ( caller(3) )[3] ) . ':' . ( ( caller(3) )[2] ) . ' ' . (( defined $msg ) ? $msg : '' );
+    }
+
+    print "$level " . $spaces . $caller . ' ' . ( ( defined $msg && $msg ne '' ) ? $msg : '' ) . "\n";
 }
 
 # ------------------------------------------------------
 sub SET_LOGGING {
     my ($D) = @_;
-    if ( $D eq $LOG_FATAL ) {
-        $_LOGGING_LEVEL = $_LOG_FATAL;
-    }
-    elsif ( $D eq $LOG_ERROR ) {
-        $_LOGGING_LEVEL = $_LOG_ERROR;
-    }
-    elsif ( $D eq $LOG_WARN ) {
-        $_LOGGING_LEVEL = $_LOG_WARN;
-    }
-    elsif ( $D eq $LOG_INFO ) {
-        $_LOGGING_LEVEL = $_LOG_INFO;
-    }
-    elsif ( $D eq $LOG_DEBUG0 ) {
-        $_LOGGING_LEVEL = $_LOG_DEBUG0;
-    }
-    elsif ( $D eq $LOG_DEBUG1 ) {
-        $_LOGGING_LEVEL = $_LOG_DEBUG1;
-    }
-    elsif ( $D eq $LOG_DEBUG2 ) {
-        $_LOGGING_LEVEL = $_LOG_DEBUG2;
-    }
-    elsif ( $D eq $LOG_DEBUG3 ) {
-        $_LOGGING_LEVEL = $_LOG_DEBUG3;
-    }
-    elsif ( $D eq $LOG_DEBUG4 ) {
-        $_LOGGING_LEVEL = $_LOG_DEBUG4;
-    }
-    else {
-        confess @_;
-    }
+
+    defined $_LOG_LEVEL{$D} || confess "LEVEL NOT DEFINED: '$D'";
+    $_LOGGING_LEVEL = $_LOG_LEVEL{$D};
+
 }
 
 # ------------------------------------------------------

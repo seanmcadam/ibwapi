@@ -4,6 +4,7 @@ package IBRecord;
 use FindBin;
 use lib "$FindBin::Bin";
 use IBConsts;
+use IBStruct::ExtensibleAttributes;
 use Data::Dumper;
 use Carp;
 use Readonly;
@@ -26,7 +27,7 @@ sub flush;            # If Dirty flush the dirty values out
 #
 sub _load_field;                 # Load Field, Mark Filed Loaded
 sub _load_all;                   # Load All Fields, Mark Fields Loaded
-sub _update_value;               # Get Field, Compare Field, update if needed
+sub _create_or_update_value;     # Get Field, Compare Field, update if needed
 sub _update_value_mark_dirty;    # Mark Dirty if value change
 sub _flush;                      # Call the flush action
 
@@ -64,10 +65,11 @@ sub new {
 
     LOG_ENTER_SUB;
 
-    if ( ( !defined $parent ) || ( !( ref($parent) =~ /IBWAPI::/ ) ) ) { confess Dumper $parent; }
-    if ( ( !defined $field_ref ) || ( ref($field_ref) ne 'HASH' ) ) { confess Dumper $field_ref; }
-
-    if ( !defined $field_ref->{$FIELD_REF} ) { confess @_; }
+    defined $parent || LOG_FATAL;
+    ref($parent) =~ /IBWAPI::/ || LOG_FATAL;
+    defined $field_ref || LOG_FATAL;
+    ref($field_ref) eq 'HASH' || LOG_FATAL;
+    defined $field_ref->{$FIELD_REF} || LOG_FATAL;
 
     $s{$_IBR_FIELD_VALUES} = \%v;
     $s{$_IBR_FIELD_LOADED} = \%l;
@@ -75,6 +77,8 @@ sub new {
     $s{$_IBR_DIRTY}        = 0;
     $s{$_IBR_REF}          = undef;
     $s{$_IBR_PARENT}       = $parent;
+
+    bless $self, $class;
 
     #
     # Load the object filed values
@@ -87,15 +91,15 @@ sub new {
         }
 
         URL_FIELD_EXISTS($key) || LOG_FATAL;
-        $v{$key} = $field_ref->{$key};
+
+        $self->_create_or_update_value( $key, $field_ref->{$key} );
+
         $l{$key} = 1;
         $d{$key} = 0;
 
     }
 
     ( defined $s{$_IBR_REF} && $s{$_IBR_REF} ne '' ) || LOG_FATAL "NO REF DEFINED";
-
-    bless $self, $class;
 
     LOG_EXIT_SUB;
 
@@ -109,25 +113,24 @@ sub get_field {
     my ( $self, $f, $f2 ) = @_;
     my $ret;
 
-    LOG_ENTER_SUB;
+    LOG_ENTER_SUB "($f)";
 
-    if ( !defined $f || $f eq '' ) { confess @_; }
-    if ( !URL_FIELD_EXISTS($f) ) { confess @_; }
+    ( defined $f && $f ne '' ) || LOG_FATAL;
+    URL_FIELD_EXISTS($f) || LOG_FATAL;
+
     my $type = URL_FIELD_TYPE($f);
-
-    if ( $type eq $TYPE_EXTATTRS && ( !defined $f2 || $f2 eq '' ) ) {
-        confess "Second Parameter required for EXTATTRS get requests\n";
-    }
 
     #
     # Field not loaded so go get it, then proceed
     #
-    if ( !defined $self->{$_IBR_FIELD_LOADED}->{$f} ) {
+    if ( !defined $self->{$_IBR_FIELD_LOADED}->{$f} || $self->{$_IBR_FIELD_LOADED}->{$f} ) {
+        LOG_DEBUG4 Dumper $self->{$_IBR_FIELD_LOADED};
         $self->_load_field($f);
     }
 
     if (
         ( $type eq $TYPE_STRING )
+        || ( $type eq $TYPE_STRING_ARRAY )
         || ( $type eq $TYPE_BOOL )
         || ( $type eq $TYPE_INT )
         || ( $type eq $TYPE_TIMESTAMP )
@@ -136,15 +139,22 @@ sub get_field {
         $ret = $self->{$_IBR_FIELD_VALUES}->{$f};
     }
     elsif ( $type eq $TYPE_EXTATTRS ) {
-        if ( defined $self->{$_IBR_FIELD_VALUES}->{$FIELD_EXTATTRS}->{$f} ) {
-            if ( !defined $self->{$_IBR_FIELD_VALUES}->{$FIELD_EXTATTRS}->{$f}->{$EXTATTR_VALUE} ) {
-                confess "NO EXTATTR VLAUE for " . Dumper $self->{$_IBR_FIELD_VALUES}->{$FIELD_EXTATTRS}->{$f};
-            }
-            $ret = $self->{$_IBR_FIELD_VALUES}->{$FIELD_EXTATTRS}->{$f}->{$EXTATTR_VALUE};
-        }
+        ref( $self->{$_IBR_FIELD_VALUES}->{$f} ) eq $PERL_MODULE_EXTATTR 
+		|| LOG_FATAL "REF:" . Dumper( $self->{$_IBR_FIELD_VALUES}->{$f} );
+        ( defined $f2 && $f2 ne '' ) || LOG_FATAL Dumper $f2;
+
+        $ret = $self->{$_IBR_FIELD_VALUES}->{$f}->get_field($f2);
+    }
+    #
+    # IBStruct
+    #
+    elsif ( ref( $self->{$_IBR_FIELD_VALUES}->{$f} ) ne '' ) {
+        ( defined $f2 && $f2 eq '' ) || LOG_FATAL;
+
+        $ret = $self->{$_IBR_FIELD_VALUES}->{$f}->get_field($f2);
     }
     else {
-        confess "get TYPE: $type not supported\n";
+        LOG_FATAL "get TYPE: $type not supported\n";
     }
 
     LOG_EXIT_SUB;
@@ -161,7 +171,7 @@ sub get_extattr_field {
 
     LOG_ENTER_SUB;
 
-    if ( !defined $f || $f eq '' ) { confess @_; }
+    ( defined $f && $f ne '' ) || LOG_FATAL;
 
     $ret = $self->get_field( $FIELD_EXTATTRS, $f );
 
@@ -169,57 +179,6 @@ sub get_extattr_field {
 
     $ret;
 }
-
-# ---------------------------
-# add_field
-# ---------------------------
-###sub add_field {
-###    my ( $self, $f, $v ) = @_;
-###
-###    LOG_ENTER_SUB;
-###
-###    if ( !URL_FIELD_EXISTS($f) ) { confess @_; }
-###    if ( ref($v) ne '' ) { confess "Need to check for structs here\n"; }
-###
-###    my $type    = URL_FIELD_TYPE($f);
-###    my $current = $self->{$_IBR_FIELD_VALUES}->{$f};
-###
-###    #
-###    # Field exists already
-###    #
-###    if ( defined $self->{$_IBR_FIELD_LOADED}->{$f} ) {
-###        LOG_WARN " Field:$f Exists already\n";
-###    }
-###
-###    if ( $type eq $TYPE_BOOL ) {
-###        if ( $current ^ $v ) {
-###            $self->{$_IBR_FIELD_VALUES}->{$f} = $v;
-###        }
-###    }
-###    elsif ( $type eq $TYPE_INT || $type eq $TYPE_UINT ) {
-###        if ( !( $current == $v ) ) {
-###            $self->{$_IBR_FIELD_VALUES}->{$f} = $v;
-###        }
-###    }
-###    elsif ( $type eq $TYPE_STRING || $type eq $TYPE_TIMESTAMP ) {
-###        if ( $current ne $v ) {
-###            $self->{$_IBR_FIELD_VALUES}->{$f} = $v;
-###        }
-###    }
-###    else {
-###        confess "Updating TYPE: $type Not supported yet\n";
-###    }
-###
-###    #$TYPE_EXTATTRS
-###    #$TYPE_MEMBERS
-###    #$TYPE_OPTIONS
-###    #$TYPE_STRING_ARRAY
-###    #$TYPE_UNKNOWN
-###    #$TYPE_ZONE_ASSOCIATIONS
-###
-###    LOG_EXIT_SUB;
-###
-###}
 
 # ---------------------------
 # update_field (go get it if not loaded yet)
@@ -230,8 +189,10 @@ sub update_field {
 
     LOG_ENTER_SUB;
 
-    if ( !URL_FIELD_EXISTS($f) ) { confess @_; }
+    URL_FIELD_EXISTS($f) || LOG_FATAL;
     ref($v) ne '' || LOG_FATAL "Need to check for structs here";
+
+    $self->_parent->is_field_readonly($f) && LOG_FATAL "READONLY FIELD $f";
 
     #
     # Field not loaded so go get it, then proceed
@@ -249,50 +210,78 @@ sub update_field {
 # ---------------------------
 # update_value
 # ---------------------------
-sub _update_value {
+sub _create_or_update_value {
     my ( $self, $f, $v ) = @_;
     my $dirty = 0;
 
     LOG_ENTER_SUB;
 
-    if( $f eq $FIELD_REF ) { return; }
+    if ( $f ne $FIELD_REF ) {
 
-    URL_FIELD_EXISTS($f) || LOG_FATAL;
-    ref($v) ne '' && LOG_FATAL "Value is a Struct:" . ref($v);
+        URL_FIELD_EXISTS($f) || LOG_FATAL;
 
-    ### defined $self->{$_IBR_FIELD_LOADED}->{$f} || LOG_FATAL "Filed no Loaded: $f";
+        my $type = URL_FIELD_TYPE($f);
 
-    my $type = URL_FIELD_TYPE($f);
+        my $current = $self->{$_IBR_FIELD_VALUES}->{$f};
 
-    my $current = $self->{$_IBR_FIELD_VALUES}->{$f};
+        LOG_DEBUG4 "FIELD:$f";
+        LOG_DEBUG4 "TYPE:$type";
+        LOG_DEBUG4 "VALUE:" . Dumper $v;
+        LOG_DEBUG4 "CURRENT:" . Dumper $current;
 
-    if ( !defined $self->{$_IBR_FIELD_VALUES}->{$f} ) {
-        $self->{$_IBR_FIELD_VALUES}->{$f} = $v;
-        $dirty++;
-    }
-    elsif ( $type eq $TYPE_BOOL ) {
-        if ( $current ^ $v ) {
-            $self->{$_IBR_FIELD_VALUES}->{$f} = $v;
+	#
+	# INT and UINT
+	#
+        if ( $type eq $TYPE_INT || $type eq $TYPE_UINT ) {
+            $type eq $TYPE_UINT && $v < 0 && LOG_FATAL;
+
+            if ( !( $current == $v ) ) {
+                $self->{$_IBR_FIELD_VALUES}->{$f} = $v;
+                $dirty++;
+            }
+        }
+	#
+	# STRING and TIMESTAMP
+	#
+        elsif ( $type eq $TYPE_STRING || $type eq $TYPE_TIMESTAMP ) {
+            $type eq $TYPE_TIMESTAMP && !VERIFY_TIMESTAMP($v) && LOG_FATAL;
+            if ( $current ne $v ) {
+                $self->{$_IBR_FIELD_VALUES}->{$f} = $v;
+                $dirty++;
+            }
+        }
+	#
+	# STRING_ARRAY
+	#
+        elsif ( $type eq $TYPE_STRING_ARRAY ) {
+            if ( $current ne $v ) {
+                $self->{$_IBR_FIELD_VALUES}->{$f} = $v;
+                $dirty++;
+            }
+        }
+	#
+	# EXTATTRS
+	#
+        elsif ( $type eq $TYPE_EXTATTRS ) {
+            $self->{$_IBR_FIELD_VALUES}->{$f} = IBStruct::ExtensibleAttributes->new($v);
             $dirty++;
         }
-    }
-    elsif ( $type eq $TYPE_INT || $type eq $TYPE_UINT ) {
-        $type eq $TYPE_UINT && $v < 0 && LOG_FATAL;
-
-        if ( !( $current == $v ) ) {
-            $self->{$_IBR_FIELD_VALUES}->{$f} = $v;
-            $dirty++;
+	#
+	# BOOL
+	#
+        elsif ( $type eq $TYPE_BOOL ) {
+            ref($v) eq $PERL_MODULE_JSON_BOOLEAN || LOG_FATAL "REF:" . ref($v) . ' ne ' . $PERL_MODULE_JSON_BOOLEAN;
+            if ( !defined $current || $current eq ( $v ? $IB_TRUE : $IB_FALSE ) ) {
+                $self->{$_IBR_FIELD_VALUES}->{$f} = ( $v ? $IB_TRUE : $IB_FALSE );
+                $dirty++;
+            }
         }
-    }
-    elsif ( $type eq $TYPE_STRING || $type eq $TYPE_TIMESTAMP ) {
-        $type eq $TYPE_TIMESTAMP && !VERIFY_TIMESTAMP($v) && LOG_FATAL;
-        if ( $current ne $v ) {
-            $self->{$_IBR_FIELD_VALUES}->{$f} = $v;
-            $dirty++;
+	#
+	# OH NO!
+	#
+        else {
+            LOG_FATAL "Updating TYPE: $type Not supported yet";
         }
-    }
-    else {
-        LOG_FATAL "Updating TYPE: $type Not supported yet";
     }
 
     #$TYPE_EXTATTRS
@@ -313,7 +302,7 @@ sub _update_value_mark_dirty {
     my ( $self, $f, $v ) = @_;
 
     LOG_ENTER_SUB;
-    if ( $self->_update_value( $f, $v ) ) {
+    if ( $self->_create_or_update_value( $f, $v ) ) {
         $self->{$_IBR_DIRTY}++;
         $self->{$_IBR_DIRTY_FIELDS}->{$f}++;
     }
@@ -328,7 +317,7 @@ sub reload_record {
 
     LOG_ENTER_SUB;
 
-    if ( !defined $rec_ref ) { confess @_; }
+    defined $rec_ref || LOG_FATAL;
 
     #
     # Needs work
@@ -337,7 +326,9 @@ sub reload_record {
         URL_FIELD_EXISTS($f) || LOG_FATAL;
         my $v = $rec_ref->{$f};
 
-        $self->_update_value( $f, $v );
+        LOG_DEBUG4 MYNAMELINE . "$f: $v";
+
+        $self->_create_or_update_value( $f, $v );
 
         $self->{$_IBR_DIRTY_FIELDS}->{$f} = undef;
         $self->{$_IBR_FIELD_LOADED}->{$f} = 1;
@@ -352,12 +343,15 @@ sub reload_record {
 # ---------------------------
 sub get_ref {
     my ($self) = @_;
+    my $ret;
 
     LOG_ENTER_SUB;
 
-    return $self->{$_IBR_REF};
+    $ret = $self->{$_IBR_REF};
 
     LOG_EXIT_SUB;
+
+    $ret;
 }
 
 # ---------------------------
@@ -397,10 +391,27 @@ sub _load_field {
 
     LOG_ENTER_SUB;
 
-    $self->{$_IBR_PARENT}->load_record_field( $self, $f );
+    $self->_parent->load_record_field( $self, $f );
     $self->{$_IBR_FIELD_LOADED}->{$f} = 1;
 
     LOG_EXIT_SUB;
+
+}
+
+# ---------------------------
+# _parent
+# ---------------------------
+sub _parent {
+    my ($self) = @_;
+    my $ret;
+
+    LOG_ENTER_SUB;
+
+    $ret = $self->{$_IBR_PARENT};
+
+    LOG_EXIT_SUB;
+
+    $ret;
 
 }
 
@@ -437,16 +448,19 @@ sub CONVERT_JSON_ARRAY_TO_IB_FORMAT {
 
     LOG_ENTER_SUB;
 
-    if ( ref($json_array) ne 'ARRAY' ) { confess Dumper @_; }
+    ref($json_array) eq 'ARRAY' || LOG_FATAL;
 
     foreach my $rec (@$json_array) {
-        if ( !defined $rec->{$_IB_REF} ) { confess Dumper @_; }
+        defined $rec->{$_IB_REF} || LOG_FATAL;
+
         my %r = ();
         $result{ $rec->{$_IB_REF} } = \%r;
         foreach my $r ( keys(%$rec) ) {
             $r{ URL_NAME_FIELD($r) } = $rec->{$r};
         }
     }
+
+    LOG_DEBUG4 Dumper \%result;
 
     LOG_EXIT_SUB;
 
@@ -462,14 +476,16 @@ sub CONVERT_JSON_HASH_TO_IB_FORMAT {
 
     LOG_ENTER_SUB;
 
-    if ( ref($json_hash) ne 'HASH' ) { confess Dumper @_; }
-    if ( !defined $json_hash->{$_IB_REF} ) { confess Dumper @_; }
+    ref($json_hash) eq 'HASH' || LOG_FATAL;
+    defined $json_hash->{$_IB_REF} || LOG_FATAL;
 
     my %r = ();
     $result{ $json_hash->{$_IB_REF} } = \%r;
     foreach my $r ( keys(%$json_hash) ) {
         $r{ URL_NAME_FIELD($r) } = $json_hash->{$r};
     }
+
+    LOG_DEBUG4 Dumper \%result;
 
     LOG_EXIT_SUB;
 
