@@ -83,12 +83,12 @@ Readonly::Hash our %_LOG_LEVEL => (
     $LOG_DEBUG4 => $_LOG_DEBUG4,
 );
 
-Readonly our $PERL_MODULE_EXTATTR  => 'IBStruct::ExtensibleAttributes';
-Readonly our $PERL_MODULE_IBCONSTS => 'IBConsts';
-Readonly our $PERL_MODULE_IBLWP    => 'IBLWP';
-Readonly our $PERL_MODULE_IBRECORD => 'IBRecord';
-Readonly our $PERL_MODULE_IBWAPI   => 'IBWAPI';
-Readonly our $PERL_MODULE_JSON_BOOLEAN  => 'JSON::XS::Boolean';
+Readonly our $PERL_MODULE_EXTATTR      => 'IBStruct::ExtensibleAttributes';
+Readonly our $PERL_MODULE_IBCONSTS     => 'IBConsts';
+Readonly our $PERL_MODULE_IBLWP        => 'IBLWP';
+Readonly our $PERL_MODULE_IBRECORD     => 'IBRecord';
+Readonly our $PERL_MODULE_IBWAPI       => 'IBWAPI';
+Readonly our $PERL_MODULE_JSON_BOOLEAN => 'JSON::XS::Boolean';
 
 # ---------------------------
 Readonly our $_IB_REF => '_ref';
@@ -207,6 +207,7 @@ Readonly our $FIELD_CREATE_PTR_FOR_HOSTS               => 'FIELD_CREATE_PTR_FOR_
 Readonly our $FIELD_CREATE_UNDERSCORE_ZONES            => 'FIELD_CREATE_UNDERSCORE_ZONES';
 Readonly our $FIELD_CUSTOM_ROOT_NAME_SERVERS           => 'FIELD_CUSTOM_ROOT_NAME_SERVERS';
 Readonly our $FIELD_DDNS_DOMAINNAME                    => 'FIELD_DDNS_DOMAINNAME';
+Readonly our $FIELD_DDNS_ENABLE_OPTION_FQDN            => 'FIELD_DDNS_ENABLE_OPTION_FQDN';
 Readonly our $FIELD_DDNS_GENERATE_HOSTNAME             => 'FIELD_DDNS_GENERATE_HOSTNAME';
 Readonly our $FIELD_DDNS_HOSTNAME                      => 'FIELD_DDNS_HOSTNAME';
 Readonly our $FIELD_DDNS_SERVER_ALWAYS_UPDATES         => 'FIELD_DDNS_SERVER_ALWAYS_UPDATES';
@@ -257,8 +258,7 @@ Readonly our $FIELD_ENABLE_RFC2317_EXCLUSION           => 'FIELD_ENABLE_RFC2317_
 Readonly our $FIELD_ENABLE_SNMP_WARNINGS               => 'FIELD_ENABLE_SNMP_WARNINGS';
 Readonly our $FIELD_END_ADDR                           => 'FIELD_END_ADDR';
 Readonly our $FIELD_ENDS                               => 'FIELD_ENDS';
-
-# Readonly our $FIELD_EXATTRS                              => 'FIELD_EXATTRS';
+Readonly our $FIELD_EXATTRS                              => 'FIELD_EXATTRS';
 Readonly our $EXTATTR_VALUE                              => 'value';
 Readonly our $FIELD_EXCLUDE                              => 'FIELD_EXCLUDE';
 Readonly our $FIELD_EXECUTE_NOW                          => 'FIELD_EXECUTE_NOW';
@@ -304,14 +304,16 @@ Readonly our $FIELD_IMPORT_FROM                          => 'FIELD_IMPORT_FROM';
 Readonly our $FIELD_IP_ADDRESS                           => 'FIELD_IP_ADDRESS';
 Readonly our $FIELD_IPV4ADDR                             => 'FIELD_IPV4ADDR';
 Readonly our $FIELD_IPV4ADDRS                            => 'FIELD_IPV4ADDRS';
+Readonly our $FIELD_IPV4_ADDRESS                            => 'FIELD_IPV4_ADDRESS';
 Readonly our $FIELD_IPV6ADDR                             => 'FIELD_IPV6ADDR';
 Readonly our $FIELD_IPV6ADDRS                            => 'FIELD_IPV6ADDRS';
+Readonly our $FIELD_IPV6_ADDRESS                            => 'FIELD_IPV6_ADDRESS';
 Readonly our $FIELD_IPV6_DUID                            => 'FIELD_IPV6_DUID';
 Readonly our $FIELD_IPV6_END_PREFIX                      => 'FIELD_IPV6_END_PREFIX';
 Readonly our $FIELD_IPV6_IAID                            => 'FIELD_IPV6_IAID';
 Readonly our $FIELD_IPV6_PREFERRED_LIFETIME              => 'FIELD_IPV6_PREFERRED_LIFETIME';
-Readonly our $FIELD_IPV6PREFIX                           => 'FIELD_IPV6PREFIX';
-Readonly our $FIELD_IPV6_PREFIX_BITS                     => 'FIELD_IPV6_PREFIX_BITS';
+Readonly our $FIELD_IPV6_PREFIX                           => 'FIELD_IPV6_PREFIX';
+Readonly our $FIELD_IPV6_PREFIX_BITS                      => 'FIELD_IPV6_PREFIX_BITS';
 Readonly our $FIELD_IPV6_START_PREFIX                    => 'FIELD_IPV6_START_PREFIX';
 Readonly our $FIELD_IS_CONFLICT                          => 'FIELD_IS_CONFLICT';
 Readonly our $FIELD_IS_DEFAULT                           => 'FIELD_IS_DEFAULT';
@@ -402,6 +404,7 @@ Readonly our $FIELD_SERVED_BY                            => 'FIELD_SERVED_BY';
 Readonly our $FIELD_SERVER_ASSOCIATION_TYPE              => 'FIELD_SERVER_ASSOCIATION_TYPE';
 Readonly our $FIELD_SERVER_HOST_NAME                     => 'FIELD_SERVER_HOST_NAME';
 Readonly our $FIELD_SET_SOA_SERIAL_NUMBER                => 'FIELD_SET_SOA_SERIAL_NUMBER';
+Readonly our $FIELD_SHARED_NETWORK_NAME                  => 'FIELD_SHARED_NETWORK_NAME';
 Readonly our $FIELD_SOA_DEFAULT_TTL                      => 'FIELD_SOA_DEFAULT_TTL';
 Readonly our $FIELD_SOA_EMAIL                            => 'FIELD_SOA_EMAIL';
 Readonly our $FIELD_SOA_EXPIRE                           => 'FIELD_SOA_EXPIRE';
@@ -449,6 +452,7 @@ Readonly our $FIELD_USE_BOOTSERVER                       => 'FIELD_USE_BOOTSERVE
 Readonly our $FIELD_USE_CHECK_NAMES_POLICY               => 'FIELD_USE_CHECK_NAMES_POLICY';
 Readonly our $FIELD_USE_COPY_XFER_TO_NOTIFY              => 'FIELD_USE_COPY_XFER_TO_NOTIFY';
 Readonly our $FIELD_USE_DDNS_DOMAINNAME                  => 'FIELD_USE_DDNS_DOMAINNAME';
+Readonly our $FIELD_USE_DDNS_ENABLE_OPTION_FQDN          => 'FIELD_USE_DDNS_ENABLE_OPTION_FQDN';
 Readonly our $FIELD_USE_DDNS_GENERATE_HOSTNAME           => 'FIELD_USE_DDNS_GENERATE_HOSTNAME';
 Readonly our $FIELD_USE_DDNS_TTL                         => 'FIELD_USE_DDNS_TTL';
 Readonly our $FIELD_USE_DDNS_UPDATE_FIXED_ADDRESSES      => 'FIELD_USE_DDNS_UPDATE_FIXED_ADDRESSES';
@@ -484,7 +488,6 @@ Readonly our $FIELD_USE_PXE_LEASE_TIME                   => 'FIELD_USE_PXE_LEASE
 Readonly our $FIELD_USE_RECORD_NAME_POLICY               => 'FIELD_USE_RECORD_NAME_POLICY';
 Readonly our $FIELD_USE_RECURSION                        => 'FIELD_USE_RECURSION';
 Readonly our $FIELD_USE_RECYCLE_LEASES                   => 'FIELD_USE_RECYCLE_LEASES';
-Readonly our $FIELD_USERNAME                             => 'FIELD_USERNAME';
 Readonly our $FIELD_USE_ROOT_NAME_SERVER                 => 'FIELD_USE_ROOT_NAME_SERVER';
 Readonly our $FIELD_USE_SOA_EMAIL                        => 'FIELD_USE_SOA_EMAIL';
 Readonly our $FIELD_USE_SOA_MNAME                        => 'FIELD_USE_SOA_MNAME';
@@ -494,6 +497,7 @@ Readonly our $FIELD_USE_UNKNOWN_CLIENTS                  => 'FIELD_USE_UNKNOWN_C
 Readonly our $FIELD_USE_UPDATE_DNS_ON_LEASE_RENEWAL      => 'FIELD_USE_UPDATE_DNS_ON_LEASE_RENEWAL';
 Readonly our $FIELD_USE_VALID_LIFETIME                   => 'FIELD_USE_VALID_LIFETIME';
 Readonly our $FIELD_USE_ZONE_ASSOCIATIONS                => 'FIELD_USE_ZONE_ASSOCIATIONS';
+Readonly our $FIELD_USERNAME                             => 'FIELD_USERNAME';
 Readonly our $FIELD_USING_SRG_ASSOCIATIONS               => 'FIELD_USING_SRG_ASSOCIATIONS';
 Readonly our $FIELD_VALID_LIFETIME                       => 'FIELD_VALID_LIFETIME';
 Readonly our $FIELD_VARIABLE                             => 'FIELD_VARIABLE';
@@ -721,14 +725,16 @@ Readonly::Hash our %_FIELD_NAME => (
     $FIELD_IP_ADDRESS                           => 'ip_address',
     $FIELD_IPV4ADDR                             => 'ipv4addr',
     $FIELD_IPV4ADDRS                            => 'ipv4addrs',
+    $FIELD_IPV4_ADDRESS                            => 'ipv4_address',
     $FIELD_IPV6ADDR                             => 'ipv6addr',
     $FIELD_IPV6ADDRS                            => 'ipv6addrs',
+    $FIELD_IPV6_ADDRESS                            => 'ipv6_address',
     $FIELD_IPV6_DUID                            => 'ipv6_duid',
     $FIELD_IPV6_END_PREFIX                      => 'ipv6_end_prefix',
     $FIELD_IPV6_IAID                            => 'ipv6_iaid',
     $FIELD_IPV6_PREFERRED_LIFETIME              => 'ipv6_preferred_lifetime',
-    $FIELD_IPV6PREFIX                           => 'ipv6prefix',
-    $FIELD_IPV6_PREFIX_BITS                     => 'ipv6_prefix_bits',
+    $FIELD_IPV6_PREFIX                           => 'ipv6_prefix',
+    $FIELD_IPV6_PREFIX_BITS                      => 'ipv6_prefix_bits',
     $FIELD_IPV6_START_PREFIX                    => 'ipv6_start_prefix',
     $FIELD_IS_CONFLICT                          => 'is_conflict',
     $FIELD_IS_DEFAULT                           => 'is_default',
@@ -819,6 +825,7 @@ Readonly::Hash our %_FIELD_NAME => (
     $FIELD_SERVER_ASSOCIATION_TYPE              => 'server_association_type',
     $FIELD_SERVER_HOST_NAME                     => 'server_host_name',
     $FIELD_SET_SOA_SERIAL_NUMBER                => 'set_soa_serial_number',
+    $FIELD_SHARED_NETWORK_NAME                  => 'shared_network_name',
     $FIELD_SOA_DEFAULT_TTL                      => 'soa_default_ttl',
     $FIELD_SOA_EMAIL                            => 'soa_email',
     $FIELD_SOA_EXPIRE                           => 'soa_expire',
@@ -866,6 +873,7 @@ Readonly::Hash our %_FIELD_NAME => (
     $FIELD_USE_CHECK_NAMES_POLICY               => 'use_check_names_policy',
     $FIELD_USE_COPY_XFER_TO_NOTIFY              => 'use_copy_xfer_to_notify',
     $FIELD_USE_DDNS_DOMAINNAME                  => 'use_ddns_domainname',
+    $FIELD_USE_DDNS_ENABLE_OPTION_FQDN          => 'use_enable_option_fqdn',
     $FIELD_USE_DDNS_GENERATE_HOSTNAME           => 'use_ddns_generate_hostname',
     $FIELD_USE_DDNS_TTL                         => 'use_ddns_ttl',
     $FIELD_USE_DDNS_UPDATE_FIXED_ADDRESSES      => 'use_ddns_update_fixed_addresses',
@@ -1062,14 +1070,16 @@ Readonly::Hash our %_NAME_FIELD => (
     'ip_address'                           => $FIELD_IP_ADDRESS,
     'ipv4addr'                             => $FIELD_IPV4ADDR,
     'ipv4addrs'                            => $FIELD_IPV4ADDRS,
+    'ipv4_address'                            => $FIELD_IPV4_ADDRESS,
     'ipv6addr'                             => $FIELD_IPV6ADDR,
     'ipv6addrs'                            => $FIELD_IPV6ADDRS,
+    'ipv6_address'                            => $FIELD_IPV6_ADDRESS,
     'ipv6_duid'                            => $FIELD_IPV6_DUID,
     'ipv6_end_prefix'                      => $FIELD_IPV6_END_PREFIX,
     'ipv6_end_prefix'                      => $FIELD_IPV6_IAID,
     'ipv6_preferred_lifetime'              => $FIELD_IPV6_PREFERRED_LIFETIME,
-    'ipv6prefix'                           => $FIELD_IPV6PREFIX,
-    'ipv6_prefix_bits'                     => $FIELD_IPV6_PREFIX_BITS,
+    'ipv6_prefix'                           => $FIELD_IPV6_PREFIX,
+    'ipv6_prefix_bits'                      => $FIELD_IPV6_PREFIX_BITS,
     'ipv6_start_prefix'                    => $FIELD_IPV6_START_PREFIX,
     'is_conflict'                          => $FIELD_IS_CONFLICT,
     'is_default'                           => $FIELD_IS_DEFAULT,
@@ -1160,6 +1170,7 @@ Readonly::Hash our %_NAME_FIELD => (
     'server_association_type'              => $FIELD_SERVER_ASSOCIATION_TYPE,
     'server_host_name'                     => $FIELD_SERVER_HOST_NAME,
     'set_soa_serial_number'                => $FIELD_SET_SOA_SERIAL_NUMBER,
+    'shared_network_name' => $FIELD_SHARED_NETWORK_NAME                ,
     'soa_default_ttl'                      => $FIELD_SOA_DEFAULT_TTL,
     'soa_email'                            => $FIELD_SOA_EMAIL,
     'soa_expire'                           => $FIELD_SOA_EXPIRE,
@@ -1313,6 +1324,7 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_CREATE_UNDERSCORE_ZONES              => $TYPE_UNKNOWN,
     $FIELD_CUSTOM_ROOT_NAME_SERVERS             => $TYPE_UNKNOWN,
     $FIELD_DDNS_DOMAINNAME                      => $TYPE_STRING,
+    $FIELD_DDNS_GENERATE_HOSTNAME               => $TYPE_BOOL,
     $FIELD_DDNS_GENERATE_HOSTNAME               => $TYPE_STRING,
     $FIELD_DDNS_HOSTNAME                        => $TYPE_STRING,
     $FIELD_DDNS_SERVER_ALWAYS_UPDATES           => $TYPE_BOOL,
@@ -1349,7 +1361,7 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_DO_HOST_ABSTRACTION                  => $TYPE_UNKNOWN,
     $FIELD_DOMAIN_NAME                          => $TYPE_UNKNOWN,
     $FIELD_DOMAIN_NAME_SERVERS                  => $TYPE_UNKNOWN,
-    $FIELD_DUID                                 => $TYPE_UNKNOWN,
+    $FIELD_DUID                                 => $TYPE_STRING,
     $FIELD_EFFECTIVE_CHECK_NAMES_POLICY         => $TYPE_UNKNOWN,
     $FIELD_EFFECTIVE_RECORD_NAME_POLICY         => $TYPE_UNKNOWN,
     $FIELD_EMAIL_LIST                           => $TYPE_STRING_ARRAY,
@@ -1406,15 +1418,17 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_IMPORT_FROM                          => $TYPE_UNKNOWN,
     $FIELD_IP_ADDRESS                           => $TYPE_STRING,
     $FIELD_IPV4ADDR                             => $TYPE_STRING,
-    $FIELD_IPV4ADDRS                            => $TYPE_UNKNOWN,
-    $FIELD_IPV6ADDR                             => $TYPE_UNKNOWN,
-    $FIELD_IPV6ADDRS                            => $TYPE_UNKNOWN,
+    $FIELD_IPV4ADDRS                            => $TYPE_STRING,
+    $FIELD_IPV4_ADDRESS                            => $TYPE_STRING,
+    $FIELD_IPV6ADDR                             => $TYPE_STRING,
+    $FIELD_IPV6ADDRS                            => $TYPE_STRING,
+    $FIELD_IPV6_ADDRESS                            => $TYPE_STRING,
     $FIELD_IPV6_DUID                            => $TYPE_STRING,
     $FIELD_IPV6_END_PREFIX                      => $TYPE_UNKNOWN,
     $FIELD_IPV6_IAID                            => $TYPE_STRING,
     $FIELD_IPV6_PREFERRED_LIFETIME              => $TYPE_INT,
-    $FIELD_IPV6PREFIX                           => $TYPE_UNKNOWN,
-    $FIELD_IPV6_PREFIX_BITS                     => $TYPE_UINT,
+    $FIELD_IPV6_PREFIX                           => $TYPE_UNKNOWN,
+    $FIELD_IPV6_PREFIX_BITS                      => $TYPE_UINT,
     $FIELD_IPV6_START_PREFIX                    => $TYPE_UNKNOWN,
     $FIELD_IS_CONFLICT                          => $TYPE_BOOL,
     $FIELD_IS_DEFAULT                           => $TYPE_UNKNOWN,
@@ -1505,6 +1519,7 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_SERVER_ASSOCIATION_TYPE              => $TYPE_UNKNOWN,
     $FIELD_SERVER_HOST_NAME                     => $TYPE_STRING,
     $FIELD_SET_SOA_SERIAL_NUMBER                => $TYPE_UNKNOWN,
+    $FIELD_SHARED_NETWORK_NAME                  => $TYPE_STRING,
     $FIELD_SOA_DEFAULT_TTL                      => $TYPE_UNKNOWN,
     $FIELD_SOA_EMAIL                            => $TYPE_UNKNOWN,
     $FIELD_SOA_EXPIRE                           => $TYPE_UNKNOWN,
@@ -1539,74 +1554,75 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_UNKNOWN_CLIENTS                      => $TYPE_UNKNOWN,
     $FIELD_UPDATE_DNS_ON_LEASE_RENEWAL          => $TYPE_BOOL,
     $FIELD_UPDATE_FORWARDING                    => $TYPE_BOOL,
-#    $FIELD_USAGE                                => $TYPE_BOOL,
-    $FIELD_USAGE                                => $TYPE_STRING_ARRAY,
-    $FIELD_USE_ALLOW_ACTIVE_DIR                 => $TYPE_BOOL,
-    $FIELD_USE_ALLOW_QUERY                      => $TYPE_BOOL,
-    $FIELD_USE_ALLOW_TRANSFER                   => $TYPE_BOOL,
-    $FIELD_USE_ALLOW_UPDATE                     => $TYPE_BOOL,
-    $FIELD_USE_ALLOW_UPDATE_FORWARDING          => $TYPE_BOOL,
-    $FIELD_USE_AUTHORITY                        => $TYPE_BOOL,
-    $FIELD_USE_BLACKLIST                        => $TYPE_BOOL,
-    $FIELD_USE_BOOTFILE                         => $TYPE_BOOL,
-    $FIELD_USE_BOOTSERVER                       => $TYPE_BOOL,
-    $FIELD_USE_CHECK_NAMES_POLICY               => $TYPE_BOOL,
-    $FIELD_USE_COPY_XFER_TO_NOTIFY              => $TYPE_BOOL,
-    $FIELD_USE_DDNS_DOMAINNAME                  => $TYPE_BOOL,
-    $FIELD_USE_DDNS_GENERATE_HOSTNAME           => $TYPE_BOOL,
-    $FIELD_USE_DDNS_TTL                         => $TYPE_BOOL,
-    $FIELD_USE_DDNS_UPDATE_FIXED_ADDRESSES      => $TYPE_BOOL,
-    $FIELD_USE_DDNS_USE_OPTION81                => $TYPE_BOOL,
-    $FIELD_USE_DELEGATED_TTL                    => $TYPE_BOOL,
-    $FIELD_USE_DENY_BOOTP                       => $TYPE_BOOL,
-    $FIELD_USE_DNS64                            => $TYPE_BOOL,
-    $FIELD_USE_DNSSEC                           => $TYPE_BOOL,
-    $FIELD_USE_DNSSEC_KEY_PARAMS                => $TYPE_BOOL,
-    $FIELD_USE_DOMAIN_NAME                      => $TYPE_BOOL,
-    $FIELD_USE_DOMAIN_NAME_SERVERS              => $TYPE_BOOL,
-    $FIELD_USE_EMAIL_LIST                       => $TYPE_BOOL,
-    $FIELD_USE_ENABLE_DDNS                      => $TYPE_BOOL,
-    $FIELD_USE_ENABLE_DHCP_THRESHOLDS           => $TYPE_BOOL,
-    $FIELD_USE_ENABLE_IFMAP_PUBLISHING          => $TYPE_BOOL,
-    $FIELD_USE_EXTERNAL_PRIMARY                 => $TYPE_BOOL,
-    $FIELD_USE_FILTER_AAAA                      => $TYPE_BOOL,
-    $FIELD_USE_FOR_EA_INHERITANCE               => $TYPE_BOOL,
-    $FIELD_USE_FORWARDERS                       => $TYPE_BOOL,
-    $FIELD_USE_GRID_ZONE_TIMER                  => $TYPE_BOOL,
-    $FIELD_USE_IGNORE_CLIENT_REQUESTED_OPTIONS  => $TYPE_BOOL,
-    $FIELD_USE_IGNORE_DHCP_OPTION_LIST_REQUEST  => $TYPE_BOOL,
-    $FIELD_USE_IMPORT_FROM                      => $TYPE_BOOL,
-    $FIELD_USE_KNOWN_CLIENTS                    => $TYPE_BOOL,
-    $FIELD_USE_LAME_TTL                         => $TYPE_BOOL,
-    $FIELD_USE_LEASE_SCAVENGE_TIME              => $TYPE_BOOL,
-    $FIELD_USE_NEXTSERVER                       => $TYPE_BOOL,
-    $FIELD_USE_NOTIFY_DELAY                     => $TYPE_BOOL,
-    $FIELD_USE_NXDOMAIN_REDIRECT                => $TYPE_BOOL,
-    $FIELD_USE_OPTIONS                          => $TYPE_BOOL,
-    $FIELD_USE_PREFERRED_LIFETIME               => $TYPE_BOOL,
-    $FIELD_USE_PXE_LEASE_TIME                   => $TYPE_BOOL,
-    $FIELD_USE_RECORD_NAME_POLICY               => $TYPE_BOOL,
-    $FIELD_USE_RECURSION                        => $TYPE_BOOL,
-    $FIELD_USE_RECYCLE_LEASES                   => $TYPE_BOOL,
-    $FIELD_USE_ROOT_NAME_SERVER                 => $TYPE_BOOL,
-    $FIELD_USE_SOA_EMAIL                        => $TYPE_BOOL,
-    $FIELD_USE_SOA_MNAME                        => $TYPE_BOOL,
-    $FIELD_USE_SORTLIST                         => $TYPE_BOOL,
-    $FIELD_USE_TTL                              => $TYPE_BOOL,
-    $FIELD_USE_UNKNOWN_CLIENTS                  => $TYPE_BOOL,
-    $FIELD_USE_UPDATE_DNS_ON_LEASE_RENEWAL      => $TYPE_BOOL,
-    $FIELD_USE_VALID_LIFETIME                   => $TYPE_BOOL,
-    $FIELD_USE_ZONE_ASSOCIATIONS                => $TYPE_BOOL,
-    $FIELD_USING_SRG_ASSOCIATIONS               => $TYPE_UNKNOWN,
-    $FIELD_USERNAME                             => $TYPE_STRING,
-    $FIELD_VALID_LIFETIME                       => $TYPE_UNKNOWN,
-    $FIELD_VARIABLE                             => $TYPE_STRING,
-    $FIELD_VIEW                                 => $TYPE_UNKNOWN,
-    $FIELD_WEIGHT                               => $TYPE_UNKNOWN,
-    $FIELD_ZONE                                 => $TYPE_UNKNOWN,
-    $FIELD_ZONE_ASSOCIATIONS                    => $TYPE_ZONE_ASSOCIATIONS,
-    $FIELD_ZONE_FORMAT                          => $TYPE_UNKNOWN,
-    $FIELD_ZONE_NOT_QUERIED_ENABLED_TIME        => $TYPE_UNKNOWN,
+
+    #    $FIELD_USAGE                                => $TYPE_BOOL,
+    $FIELD_USAGE                               => $TYPE_STRING_ARRAY,
+    $FIELD_USE_ALLOW_ACTIVE_DIR                => $TYPE_BOOL,
+    $FIELD_USE_ALLOW_QUERY                     => $TYPE_BOOL,
+    $FIELD_USE_ALLOW_TRANSFER                  => $TYPE_BOOL,
+    $FIELD_USE_ALLOW_UPDATE                    => $TYPE_BOOL,
+    $FIELD_USE_ALLOW_UPDATE_FORWARDING         => $TYPE_BOOL,
+    $FIELD_USE_AUTHORITY                       => $TYPE_BOOL,
+    $FIELD_USE_BLACKLIST                       => $TYPE_BOOL,
+    $FIELD_USE_BOOTFILE                        => $TYPE_BOOL,
+    $FIELD_USE_BOOTSERVER                      => $TYPE_BOOL,
+    $FIELD_USE_CHECK_NAMES_POLICY              => $TYPE_BOOL,
+    $FIELD_USE_COPY_XFER_TO_NOTIFY             => $TYPE_BOOL,
+    $FIELD_USE_DDNS_DOMAINNAME                 => $TYPE_BOOL,
+    $FIELD_USE_DDNS_GENERATE_HOSTNAME          => $TYPE_BOOL,
+    $FIELD_USE_DDNS_TTL                        => $TYPE_BOOL,
+    $FIELD_USE_DDNS_UPDATE_FIXED_ADDRESSES     => $TYPE_BOOL,
+    $FIELD_USE_DDNS_USE_OPTION81               => $TYPE_BOOL,
+    $FIELD_USE_DELEGATED_TTL                   => $TYPE_BOOL,
+    $FIELD_USE_DENY_BOOTP                      => $TYPE_BOOL,
+    $FIELD_USE_DNS64                           => $TYPE_BOOL,
+    $FIELD_USE_DNSSEC                          => $TYPE_BOOL,
+    $FIELD_USE_DNSSEC_KEY_PARAMS               => $TYPE_BOOL,
+    $FIELD_USE_DOMAIN_NAME                     => $TYPE_BOOL,
+    $FIELD_USE_DOMAIN_NAME_SERVERS             => $TYPE_BOOL,
+    $FIELD_USE_EMAIL_LIST                      => $TYPE_BOOL,
+    $FIELD_USE_ENABLE_DDNS                     => $TYPE_BOOL,
+    $FIELD_USE_ENABLE_DHCP_THRESHOLDS          => $TYPE_BOOL,
+    $FIELD_USE_ENABLE_IFMAP_PUBLISHING         => $TYPE_BOOL,
+    $FIELD_USE_EXTERNAL_PRIMARY                => $TYPE_BOOL,
+    $FIELD_USE_FILTER_AAAA                     => $TYPE_BOOL,
+    $FIELD_USE_FOR_EA_INHERITANCE              => $TYPE_BOOL,
+    $FIELD_USE_FORWARDERS                      => $TYPE_BOOL,
+    $FIELD_USE_GRID_ZONE_TIMER                 => $TYPE_BOOL,
+    $FIELD_USE_IGNORE_CLIENT_REQUESTED_OPTIONS => $TYPE_BOOL,
+    $FIELD_USE_IGNORE_DHCP_OPTION_LIST_REQUEST => $TYPE_BOOL,
+    $FIELD_USE_IMPORT_FROM                     => $TYPE_BOOL,
+    $FIELD_USE_KNOWN_CLIENTS                   => $TYPE_BOOL,
+    $FIELD_USE_LAME_TTL                        => $TYPE_BOOL,
+    $FIELD_USE_LEASE_SCAVENGE_TIME             => $TYPE_BOOL,
+    $FIELD_USE_NEXTSERVER                      => $TYPE_BOOL,
+    $FIELD_USE_NOTIFY_DELAY                    => $TYPE_BOOL,
+    $FIELD_USE_NXDOMAIN_REDIRECT               => $TYPE_BOOL,
+    $FIELD_USE_OPTIONS                         => $TYPE_BOOL,
+    $FIELD_USE_PREFERRED_LIFETIME              => $TYPE_BOOL,
+    $FIELD_USE_PXE_LEASE_TIME                  => $TYPE_BOOL,
+    $FIELD_USE_RECORD_NAME_POLICY              => $TYPE_BOOL,
+    $FIELD_USE_RECURSION                       => $TYPE_BOOL,
+    $FIELD_USE_RECYCLE_LEASES                  => $TYPE_BOOL,
+    $FIELD_USE_ROOT_NAME_SERVER                => $TYPE_BOOL,
+    $FIELD_USE_SOA_EMAIL                       => $TYPE_BOOL,
+    $FIELD_USE_SOA_MNAME                       => $TYPE_BOOL,
+    $FIELD_USE_SORTLIST                        => $TYPE_BOOL,
+    $FIELD_USE_TTL                             => $TYPE_BOOL,
+    $FIELD_USE_UNKNOWN_CLIENTS                 => $TYPE_BOOL,
+    $FIELD_USE_UPDATE_DNS_ON_LEASE_RENEWAL     => $TYPE_BOOL,
+    $FIELD_USE_VALID_LIFETIME                  => $TYPE_BOOL,
+    $FIELD_USE_ZONE_ASSOCIATIONS               => $TYPE_BOOL,
+    $FIELD_USING_SRG_ASSOCIATIONS              => $TYPE_UNKNOWN,
+    $FIELD_USERNAME                            => $TYPE_STRING,
+    $FIELD_VALID_LIFETIME                      => $TYPE_UNKNOWN,
+    $FIELD_VARIABLE                            => $TYPE_STRING,
+    $FIELD_VIEW                                => $TYPE_UNKNOWN,
+    $FIELD_WEIGHT                              => $TYPE_UNKNOWN,
+    $FIELD_ZONE                                => $TYPE_UNKNOWN,
+    $FIELD_ZONE_ASSOCIATIONS                   => $TYPE_ZONE_ASSOCIATIONS,
+    $FIELD_ZONE_FORMAT                         => $TYPE_UNKNOWN,
+    $FIELD_ZONE_NOT_QUERIED_ENABLED_TIME       => $TYPE_UNKNOWN,
 );
 
 Readonly::Hash our %_MODULE_OBJ_NAME => (
@@ -1771,8 +1787,8 @@ our @EXPORT = qw (
   $IB_FIELDS
   $IB_TRUE
   $IB_FALSE
-$IB_STRUCT_FIELDS
-$IB_STRUCT_TYPES
+  $IB_STRUCT_FIELDS
+  $IB_STRUCT_TYPES
   $IB_RETURN_FIELDS
   $IB_RETURN_FIELDS_PLUS
   $IB_RETURN_TYPE
@@ -1838,6 +1854,7 @@ $IB_STRUCT_TYPES
   $FIELD_CREATE_UNDERSCORE_ZONES
   $FIELD_CUSTOM_ROOT_NAME_SERVERS
   $FIELD_DDNS_DOMAINNAME
+  $FIELD_DDNS_ENABLE_OPTION_FQDN
   $FIELD_DDNS_GENERATE_HOSTNAME
   $FIELD_DDNS_HOSTNAME
   $FIELD_DDNS_SERVER_ALWAYS_UPDATES
@@ -1933,13 +1950,15 @@ $IB_STRUCT_TYPES
   $FIELD_IP_ADDRESS
   $FIELD_IPV4ADDR
   $FIELD_IPV4ADDRS
+  $FIELD_IPV4_ADDRESS
   $FIELD_IPV6ADDR
   $FIELD_IPV6ADDRS
+  $FIELD_IPV6_ADDRESS
   $FIELD_IPV6_DUID
   $FIELD_IPV6_END_PREFIX
   $FIELD_IPV6_IAID
   $FIELD_IPV6_PREFERRED_LIFETIME
-  $FIELD_IPV6PREFIX
+  $FIELD_IPV6_PREFIX
   $FIELD_IPV6_PREFIX_BITS
   $FIELD_IPV6_START_PREFIX
   $FIELD_IS_CONFLICT
@@ -2031,6 +2050,7 @@ $IB_STRUCT_TYPES
   $FIELD_SERVER_ASSOCIATION_TYPE
   $FIELD_SERVER_HOST_NAME
   $FIELD_SET_SOA_SERIAL_NUMBER
+    $FIELD_SHARED_NETWORK_NAME              
   $FIELD_SOA_DEFAULT_TTL
   $FIELD_SOA_EMAIL
   $FIELD_SOA_EXPIRE
@@ -2078,6 +2098,7 @@ $IB_STRUCT_TYPES
   $FIELD_USE_CHECK_NAMES_POLICY
   $FIELD_USE_COPY_XFER_TO_NOTIFY
   $FIELD_USE_DDNS_DOMAINNAME
+  $FIELD_USE_DDNS_ENABLE_OPTION_FQDN
   $FIELD_USE_DDNS_GENERATE_HOSTNAME
   $FIELD_USE_DDNS_TTL
   $FIELD_USE_DDNS_UPDATE_FIXED_ADDRESSES
@@ -2087,7 +2108,7 @@ $IB_STRUCT_TYPES
   $FIELD_USE_DNS64
   $FIELD_USE_DNSSEC
   $FIELD_USE_DNSSEC_KEY_PARAMS
-  $FIELD_USE_DOMAIN_NAME
+  $FIELD_USE_DOMAIN_NAME       
   $FIELD_USE_DOMAIN_NAME_SERVERS
   $FIELD_USE_EMAIL_LIST
   $FIELD_USE_ENABLE_DDNS
@@ -2481,7 +2502,7 @@ sub _LOG {
 
     defined $_LOG_LEVEL{$level} || confess "LEVEL NOT DEFINED: '$level'";
 
-    if ( $_LOG_LEVEL{$level} <= $_LOGGING_LEVEL  || !$_LOG_LEVEL{$level} ) {
+    if ( $_LOG_LEVEL{$level} <= $_LOGGING_LEVEL || !$_LOG_LEVEL{$level} ) {
 
         if ( $level eq $LOG_ENTER ) {
             $spaces = '>' x $_SUB_LEVEL++;
@@ -2495,12 +2516,12 @@ sub _LOG {
         $spaces .= '|';
 
         if ( defined caller(2) ) {
-	    if( (caller(2))[3] eq '(eval)' ) {
-            	$caller = '{' .( ( ( caller(3) )[3] ) . ':' . ( ( caller(2) )[2] ) ) . '}';
-		}
-	    else {
-            	$caller = ( ( ( caller(2) )[3] ) . ':' . ( ( caller(1) )[2] ) );
-		}
+            if ( ( caller(2) )[3] eq '(eval)' ) {
+                $caller = '{' . ( ( ( caller(3) )[3] ) . ':' . ( ( caller(2) )[2] ) ) . '}';
+            }
+            else {
+                $caller = ( ( ( caller(2) )[3] ) . ':' . ( ( caller(1) )[2] ) );
+            }
         }
         else {
             $caller = ( ( ( (caller)[1] ) . ':' . ( (caller)[2] ) ) );

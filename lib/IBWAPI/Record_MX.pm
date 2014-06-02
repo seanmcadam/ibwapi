@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-package IBWAPI::Networkview;
+package IBWAPI::Record_MX;
 use FindBin;
 use lib "$FindBin::Bin/..";
 use IBConsts;
@@ -31,24 +31,37 @@ our @EXPORT = qw (
 );
 
 Readonly::Hash our %_FIELDS => (
-    $FIELD_COMMENT    => 1,
-    $FIELD_EXTATTRS   => 1,
-    $FIELD_IS_DEFAULT => 1,
-    $FIELD_NAME       => 1,
+    $FIELD_COMMENT            => 1,
+    $FIELD_DISABLE            => 1,
+    $FIELD_DNS_MAIL_EXCHANGER => 1,
+    $FIELD_DNS_NAME           => 1,
+    $FIELD_EXTATTRS           => 1,
+    $FIELD_MAIL_EXCHANGER     => 1,
+    $FIELD_NAME               => 1,
+    $FIELD_PREFERENCE         => 1,
+    $FIELD_TTL                => 1,
+    $FIELD_USE_TTL            => 1,
+    $FIELD_VIEW               => 1,
+    $FIELD_ZONE               => 1,
 );
 
 Readonly::Hash our %_BASE_FIELDS => (
-    $FIELD_COMMENT    => 1,
-    $FIELD_IS_DEFAULT => 1,
-    $FIELD_NAME       => 1,
+    $FIELD_MAIL_EXCHANGER => 1,
+    $FIELD_NAME           => 1,
+    $FIELD_PREFERENCE     => 1,
+    $FIELD_VIEW           => 1,
 );
 
 Readonly::Hash our %_REQUIRED_FIELDS => (
-    $FIELD_NAME => 1,
+    $FIELD_MAIL_EXCHANGER => 1,
+    $FIELD_NAME           => 1,
+    $FIELD_PREFERENCE     => 1,
 );
 
 Readonly::Hash our %_READONLY_FIELDS => (
-    $FIELD_IS_DEFAULT => 1,
+    $FIELD_DNS_MAIL_EXCHANGER => 1,
+    $FIELD_DNS_NAME           => 1,
+    $FIELD_ZONE               => 1,
 );
 
 Readonly::Hash our %_SEARCHABLE_FIELDS => (
@@ -57,13 +70,24 @@ Readonly::Hash our %_SEARCHABLE_FIELDS => (
         $SEARCH_PARM_CASE_INSENSATIVE => 1,
         $SEARCH_PARM_REGEX            => 1,
     },
-    $FIELD_IS_DEFAULT => {
+    $FIELD_MAIL_EXCHANGER => {
         $SEARCH_PARM_EQUAL => 1,
+        $SEARCH_PARM_REGEX => 1,
     },
     $FIELD_NAME => {
-        $SEARCH_PARM_EQUAL            => 1,
-        $SEARCH_PARM_CASE_INSENSATIVE => 1,
-        $SEARCH_PARM_REGEX            => 1,
+        $SEARCH_PARM_EQUAL => 1,
+        $SEARCH_PARM_REGEX => 1,
+    },
+    $FIELD_PREFERENCE => {
+        $SEARCH_PARM_EQUAL => 1,
+        $SEARCH_PARM_GT    => 1,
+        $SEARCH_PARM_LT    => 1,
+    },
+    $FIELD_VIEW => {
+        $SEARCH_PARM_EQUAL => 1,
+    },
+    $FIELD_ZONE => {
+        $SEARCH_PARM_EQUAL => 1,
     },
 );
 

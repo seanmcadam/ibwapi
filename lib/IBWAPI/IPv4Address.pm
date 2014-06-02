@@ -140,11 +140,6 @@ Readonly::Hash our %_SEARCHABLE_FIELDS => (
         $SEARCH_PARM_CASE_INSENSATIVE => 1,
         $SEARCH_PARM_REGEX            => 1,
       },
-    $FIELD_COMMENT => {
-        $SEARCH_PARM_EQUAL            => 1,
-        $SEARCH_PARM_CASE_INSENSATIVE => 1,
-        $SEARCH_PARM_REGEX            => 1,
-      },
 );
 
 Readonly::Hash our %_SEARCHONLY_FIELDS => (
