@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-package IBStruct::MSDHCPServer;
+package IBStruct::MSDNSServer;
 use FindBin;
 use lib "$FindBin::Bin/..";
 use IBConsts;

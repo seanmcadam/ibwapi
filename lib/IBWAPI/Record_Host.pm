@@ -1,7 +1,7 @@
 
 #!/usr/bin/perl
 
-package IBWAPI::Record_A;
+package IBWAPI::Record_Host;
 use FindBin;
 use lib "$FindBin::Bin/..";
 use IBConsts;
