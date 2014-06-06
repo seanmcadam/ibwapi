@@ -49,7 +49,7 @@ sub new {
     my $self;
     LOG_ENTER_SUB;
     defined $parm_ref || LOG_FATAL;
-    eval $EVAL_NEW_OBJECT_CODE;
+    eval $EVAL_NEW_STRUCT_CODE;
     if ($@) { LOG_FATAL "EVAL:" . $@; }
     LOG_EXIT_SUB;
     $self;

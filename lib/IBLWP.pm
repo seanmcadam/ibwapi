@@ -131,7 +131,9 @@ our @EXPORT = qw (
 # new()
 # ---------------------------
 sub new {
+
     my ( $class, $parent_obj, $parm_ref ) = @_;
+    # my ( $class, $parm_ref ) = @_;
     my %h;
     my $self = \%h;
 
@@ -141,12 +143,9 @@ sub new {
     # Whose my parent?
     #
     defined($parent_obj) || LOG_FATAL;
-    defined($parm_ref)   || LOG_FATAL;
-    ( ref($parent_obj) ne '' && ( ref($parent_obj) =~ /^IBWAPI::/ ) ) || LOG_FATAL " " . ref($parent_obj);
-    ref($parm_ref) eq 'HASH' || LOG_FATAL;
 
+    ref($parent_obj) =~ /^IBWAPI/  || LOG_FATAL " " . ref($parent_obj);
     $h{$_IBLWP_PARENT_OBJ} = $parent_obj;
-
     defined( $h{$_JSON_OBJ} = JSON->new() )           || LOG_FATAL;
     defined( $h{$_UA}       = LWP::UserAgent->new() ) || LOG_FATAL;
     $h{$_UA}->agent($_UA_AGENT);
@@ -167,6 +166,7 @@ sub new {
     $h{$_LAST_REQUEST} = '';
 
     if ( defined $parm_ref ) {
+        ref($parm_ref) eq 'HASH' || LOG_FATAL;
         foreach my $p ( sort( keys(%$parm_ref) ) ) {
             if ( !defined $_NEW_PARM_NAMES{$p} ) { next; }
             $h{ $_NEW_PARM_NAMES{$p} } = $parm_ref->{$p};
@@ -195,60 +195,70 @@ sub new {
 # _REF
 #
 # ---------------------------
-sub get {
-    my ( $self, $parm_ref ) = @_;
+sub get_module {
+    my ( $self, $module, $parm_ref ) = @_;
 
     LOG_ENTER_SUB;
 
-    defined $parm_ref || LOG_FATAL;
+    defined $module || LOG_FATAL;
 
     $self->_get_reset();
 
-    #
-    # Get generic Object record, with optional Search Parameters
-    #
-    if ( defined $parm_ref->{$IBLWP_GET_OBJTYPE} ) {
-        my $type;
+    $self->_set_objtype( $module );
 
-        LOG_DEBUG4( " GOT OBJTYPE: " . $parm_ref->{$IBLWP_GET_OBJTYPE} );
+    #if ( URL_MODULE_EXISTS( $parm_ref->{$IBLWP_GET_OBJTYPE} ) ) {
+    #    $self->_set_objtype( $parm_ref->{$IBLWP_GET_OBJTYPE} );
+    #}
+    #elsif ( URL_REF_MODULE_EXISTS( $parm_ref->{$IBLWP_GET_OBJTYPE} ) ) {
+    #    $self->_set_objtype( URL_REF_MODULE_NAME( $parm_ref->{$IBLWP_GET_OBJTYPE} ) );
+    #}
+    #else {
+    #    LOG_FATAL " GOT OBJTYPE: " . $parm_ref->{$IBLWP_GET_OBJTYPE};
+    #}
 
-        if ( URL_MODULE_EXISTS( $parm_ref->{$IBLWP_GET_OBJTYPE} ) ) {
-            $self->_set_objtype( $parm_ref->{$IBLWP_GET_OBJTYPE} );
-        }
-        elsif ( URL_REF_MODULE_EXISTS( $parm_ref->{$IBLWP_GET_OBJTYPE} ) ) {
-            $self->_set_objtype( URL_REF_MODULE_NAME( $parm_ref->{$IBLWP_GET_OBJTYPE} ) );
-        }
-        else {
-            LOG_FATAL " GOT OBJTYPE: " . $parm_ref->{$IBLWP_GET_OBJTYPE};
-        }
-
-        $self->_set_objtype( $parm_ref->{$IBLWP_GET_OBJTYPE} );
-
-        if ( defined $parm_ref->{$IBLWP_GET_SEARCH_REF} ) {
-            $self->_add_search_fields( $parm_ref->{$IBLWP_GET_SEARCH_REF} );
-        }
-    }
-
-    #
-    # Get IBRecord ( OBJ, REF )
-    #
-    elsif ( defined $parm_ref->{$IBLWP_GET_RECORD} ) {
-
-        LOG_DEBUG4 " GOT REF: " . ref( $parm_ref->{$IBLWP_GET_RECORD} );
-
-        ref( $parm_ref->{$IBLWP_GET_RECORD} ) eq $PERL_MODULE_IBRECORD || LOG_FATAL( " " . ref( $parm_ref->{$IBLWP_GET_RECORD} ) );
-        defined $parm_ref->{$IBLWP_GET_SEARCH_REF} && LOG_FATAL;
-
-        $self->_set_objref( $parm_ref->{$IBLWP_GET_RECORD}->get_ref() );
-    }
-    else {
-        LOG_FATAL " NO RECORD TYPE SPECIFIED ";
+    if ( defined $parm_ref->{$IBLWP_GET_SEARCH_REF} ) {
+        $self->_add_search_fields( $parm_ref->{$IBLWP_GET_SEARCH_REF} );
     }
 
     if ( defined $parm_ref->{$IBLWP_GET_RETURN_REF} ) {
         $self->_add_return_fields( $parm_ref->{$IBLWP_GET_RETURN_REF} );
     }
-    if ( defined $parm_ref->{$IBLWP_GET_RETURN_PLUS_REF} ) {
+    elsif ( defined $parm_ref->{$IBLWP_GET_RETURN_PLUS_REF} ) {
+        $self->_add_return_fields_plus( $parm_ref->{$IBLWP_GET_RETURN_PLUS_REF} );
+    }
+
+    my $ret = $self->_get_url;
+
+    LOG_EXIT_SUB;
+
+    return $ret;
+
+}
+
+# ---------------------------
+# get( {params} ) return [_ref,_ref,...]
+# And update the parent object IBRecords
+#
+# WAPI OBJ [+search fields] [+return fields]
+# IBRecord Obj [+return fields]
+# _REF
+#
+# ---------------------------
+sub get_record {
+    my ( $self, $ref, $parm_ref ) = @_;
+
+    LOG_ENTER_SUB;
+
+    ( defined $ref && URL_REF_MODULE_EXISTS($ref) ) || LOG_FATAL;
+    defined $parm_ref->{$IBLWP_GET_SEARCH_REF} && LOG_FATAL;
+
+    $self->_get_reset();
+    $self->_set_objref($ref);
+
+    if ( defined $parm_ref->{$IBLWP_GET_RETURN_REF} ) {
+        $self->_add_return_fields( $parm_ref->{$IBLWP_GET_RETURN_REF} );
+    }
+    elsif ( defined $parm_ref->{$IBLWP_GET_RETURN_PLUS_REF} ) {
         $self->_add_return_fields_plus( $parm_ref->{$IBLWP_GET_RETURN_PLUS_REF} );
     }
 
@@ -388,7 +398,7 @@ sub _get_url {
 
             push( @$ret_array_ref, $ref );
 
-            LOG_DEBUG4 Dumper $record_ref->{$ref} ;
+            LOG_DEBUG4 Dumper $record_ref->{$ref};
 
             my $ibrec;
             if ( defined( $ibrec = $self->_parent->verify_record($ref) ) ) {
@@ -466,9 +476,9 @@ sub _parent {
 
     LOG_ENTER_SUB;
 
-    if ( defined $self->{$_IBLWP_PARENT_OBJ} ) {
-        $ret = $self->{$_IBLWP_PARENT_OBJ};
-    }
+    defined $self->{$_IBLWP_PARENT_OBJ} || LOG_FATAL;
+    $ret = $self->{$_IBLWP_PARENT_OBJ};
+
     LOG_EXIT_SUB;
     $ret;
 }

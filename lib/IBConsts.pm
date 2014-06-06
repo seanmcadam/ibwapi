@@ -83,12 +83,155 @@ Readonly::Hash our %_LOG_LEVEL => (
     $LOG_DEBUG4 => $_LOG_DEBUG4,
 );
 
-Readonly our $PERL_MODULE_EXTATTR      => 'IBStruct::ExtensibleAttributes';
-Readonly our $PERL_MODULE_IBCONSTS     => 'IBConsts';
-Readonly our $PERL_MODULE_IBLWP        => 'IBLWP';
-Readonly our $PERL_MODULE_IBRECORD     => 'IBRecord';
-Readonly our $PERL_MODULE_IBWAPI       => 'IBWAPI';
-Readonly our $PERL_MODULE_JSON_BOOLEAN => 'JSON::XS::Boolean';
+#
+# These match the file names of the perl modules
+#
+Readonly our $MODULE_FIXEDADDRESS         => 'Fixedaddress';
+Readonly our $MODULE_GRID                 => 'Grid';
+Readonly our $MODULE_IPV4ADDRESS          => 'IPv4Address';
+Readonly our $MODULE_IPV6ADDRESS          => 'IPv6Address';
+Readonly our $MODULE_IPV6FIXEDADDRESS     => 'IPv6Fixedaddress';
+Readonly our $MODULE_IPV6NETWORKCONTAINER => 'IPv6Networkcontainer';
+Readonly our $MODULE_IPV6NETWORK          => 'IPv6Network';
+Readonly our $MODULE_IPV6RANGE            => 'IPv6Range';
+Readonly our $MODULE_LEASE                => 'Lease';
+Readonly our $MODULE_MACFILTERADDRESS     => 'Macfilteraddress';
+Readonly our $MODULE_MEMBER               => 'Member';
+Readonly our $MODULE_NAMEDACL             => 'Namedacl';
+Readonly our $MODULE_NETWORK              => 'Network';
+Readonly our $MODULE_NETWORKCONTAINER     => 'Networkcontainer';
+Readonly our $MODULE_NETWORKVIEW          => 'Networkview';
+Readonly our $MODULE_RANGE                => 'Range';
+Readonly our $MODULE_RECORD_AAAA          => 'Record_AAAA';
+Readonly our $MODULE_RECORD_A             => 'Record_A';
+Readonly our $MODULE_RECORD_CNAME         => 'Record_CNAME';
+Readonly our $MODULE_RECORD_HOST          => 'Record_Host';
+Readonly our $MODULE_RECORD_HOST_IPV4ADDR => 'Record_Host_IPv4Addr';
+Readonly our $MODULE_RECORD_HOST_IPV6ADDR => 'Record_Host_IPv6Addr';
+Readonly our $MODULE_RECORD_MX            => 'Record_MX';
+Readonly our $MODULE_RECORD_PTR           => 'Record_PTR';
+Readonly our $MODULE_RECORD_SRV           => 'Record_SRV';
+Readonly our $MODULE_RECORD_TXT           => 'Record_TXT';
+Readonly our $MODULE_RESTARTSERVICESTATUS => 'Restartservicestatus';
+Readonly our $MODULE_SCHEDULEDTASK        => 'Scheduledtask';
+Readonly our $MODULE_SEARCH               => 'Search';
+Readonly our $MODULE_VIEW                 => 'View';
+Readonly our $MODULE_ZONE_AUTH            => 'Zone_Auth';
+Readonly our $MODULE_ZONE_DELEGATED       => 'Zone_Delegated';
+Readonly our $MODULE_ZONE_FORWARD         => 'Zone_Forward';
+Readonly our $MODULE_ZONE_STUB            => 'Zone_Stub';
+
+Readonly our $PERL_MODULE_EXTATTR                   => 'IBStruct::ExtensibleAttributes';
+Readonly our $PERL_MODULE_IBCONSTS                  => 'IBConsts';
+Readonly our $PERL_MODULE_IBLWP                     => 'IBLWP';
+Readonly our $PERL_MODULE_IBRECORD                  => 'IBRecord';
+Readonly our $PERL_MODULE_IBWAPI                    => 'IBWAPI';
+Readonly our $PERL_MODULE_JSON_BOOLEAN              => 'JSON::XS::Boolean';
+Readonly our $PERL_MODULE_FIXEDADDRESS              => $PERL_MODULE_IBWAPI . '::' . $MODULE_FIXEDADDRESS;
+Readonly our $PERL_MODULE_GRID                      => $PERL_MODULE_IBWAPI . '::' . $MODULE_GRID;
+Readonly our $PERL_MODULE_IPV4ADDRESS               => $PERL_MODULE_IBWAPI . '::' . $MODULE_IPV4ADDRESS;
+Readonly our $PERL_MODULE_IPV6ADDRESS               => $PERL_MODULE_IBWAPI . '::' . $MODULE_IPV6ADDRESS;
+Readonly our $PERL_MODULE_IPV6FIXEDADDRESS          => $PERL_MODULE_IBWAPI . '::' . $MODULE_IPV6FIXEDADDRESS;
+Readonly our $PERL_MODULE_IPV6NETWORKCONTAINER      => $PERL_MODULE_IBWAPI . '::' . $MODULE_IPV6NETWORKCONTAINER;
+Readonly our $PERL_MODULE_IPV6NETWORK               => $PERL_MODULE_IBWAPI . '::' . $MODULE_IPV6NETWORK;
+Readonly our $PERL_MODULE_IPV6RANGE                 => $PERL_MODULE_IBWAPI . '::' . $MODULE_IPV6RANGE;
+Readonly our $PERL_MODULE_LEASE                     => $PERL_MODULE_IBWAPI . '::' . $MODULE_LEASE;
+Readonly our $PERL_MODULE_MACFILTERADDRESS          => $PERL_MODULE_IBWAPI . '::' . $MODULE_MACFILTERADDRESS;
+Readonly our $PERL_MODULE_MEMBER                    => $PERL_MODULE_IBWAPI . '::' . $MODULE_MEMBER;
+Readonly our $PERL_MODULE_NAMEDACL                  => $PERL_MODULE_IBWAPI . '::' . $MODULE_NAMEDACL;
+Readonly our $PERL_MODULE_NETWORKCONTAINER          => $PERL_MODULE_IBWAPI . '::' . $MODULE_NETWORKCONTAINER;
+Readonly our $PERL_MODULE_NETWORK                   => $PERL_MODULE_IBWAPI . '::' . $MODULE_NETWORK;
+Readonly our $PERL_MODULE_NETWORKVIEW               => $PERL_MODULE_IBWAPI . '::' . $MODULE_NETWORKVIEW;
+Readonly our $PERL_MODULE_RANGE                     => $PERL_MODULE_IBWAPI . '::' . $MODULE_RANGE;
+Readonly our $PERL_MODULE_RECORD_AAAA               => $PERL_MODULE_IBWAPI . '::' . $MODULE_RECORD_A;
+Readonly our $PERL_MODULE_RECORD_A                  => $PERL_MODULE_IBWAPI . '::' . $MODULE_RECORD_AAAA;
+Readonly our $PERL_MODULE_RECORD_CNAME              => $PERL_MODULE_IBWAPI . '::' . $MODULE_RECORD_CNAME;
+Readonly our $PERL_MODULE_RECORD_HOST_IPV4ADDR      => $PERL_MODULE_IBWAPI . '::' . $MODULE_RECORD_HOST_IPV4ADDR;
+Readonly our $PERL_MODULE_RECORD_HOST_IPV6ADDR      => $PERL_MODULE_IBWAPI . '::' . $MODULE_RECORD_HOST_IPV6ADDR;
+Readonly our $PERL_MODULE_RECORD_HOST               => $PERL_MODULE_IBWAPI . '::' . $MODULE_RECORD_HOST;
+Readonly our $PERL_MODULE_RECORD_MX                 => $PERL_MODULE_IBWAPI . '::' . $MODULE_RECORD_MX;
+Readonly our $PERL_MODULE_RECORD_PTR                => $PERL_MODULE_IBWAPI . '::' . $MODULE_RECORD_PTR;
+Readonly our $PERL_MODULE_RECORD_SRV                => $PERL_MODULE_IBWAPI . '::' . $MODULE_RECORD_SRV;
+Readonly our $PERL_MODULE_RECORD_TXT                => $PERL_MODULE_IBWAPI . '::' . $MODULE_RECORD_TXT;
+Readonly our $PERL_MODULE_RESTARTSERVICESTATUS      => $PERL_MODULE_IBWAPI . '::' . $MODULE_RESTARTSERVICESTATUS;
+Readonly our $PERL_MODULE_SCHEDULEDTASK             => $PERL_MODULE_IBWAPI . '::' . $MODULE_SCHEDULEDTASK;
+Readonly our $PERL_MODULE_SEARCH                    => $PERL_MODULE_IBWAPI . '::' . $MODULE_SEARCH;
+Readonly our $PERL_MODULE_VIEW                      => $PERL_MODULE_IBWAPI . '::' . $MODULE_VIEW;
+Readonly our $PERL_MODULE_ZONE_AUTH                 => $PERL_MODULE_IBWAPI . '::' . $MODULE_ZONE_AUTH;
+Readonly our $PERL_MODULE_ZONE_DELEGATED            => $PERL_MODULE_IBWAPI . '::' . $MODULE_ZONE_DELEGATED;
+Readonly our $PERL_MODULE_ZONE_FORWARD              => $PERL_MODULE_IBWAPI . '::' . $MODULE_ZONE_FORWARD;
+Readonly our $PERL_MODULE_ZONE_STUB                 => $PERL_MODULE_IBWAPI . '::' . $MODULE_ZONE_STUB;
+Readonly our $PERL_MODULE_FIXEDADDRESS_FILE         => $PERL_MODULE_IBWAPI . '/' . $MODULE_FIXEDADDRESS . '.pm';
+Readonly our $PERL_MODULE_GRID_FILE                 => $PERL_MODULE_IBWAPI . '/' . $MODULE_GRID . '.pm';
+Readonly our $PERL_MODULE_IPV4ADDRESS_FILE          => $PERL_MODULE_IBWAPI . '/' . $MODULE_IPV4ADDRESS . '.pm';
+Readonly our $PERL_MODULE_IPV6ADDRESS_FILE          => $PERL_MODULE_IBWAPI . '/' . $MODULE_IPV6ADDRESS . '.pm';
+Readonly our $PERL_MODULE_IPV6FIXEDADDRESS_FILE     => $PERL_MODULE_IBWAPI . '/' . $MODULE_IPV6FIXEDADDRESS . '.pm';
+Readonly our $PERL_MODULE_IPV6NETWORKCONTAINER_FILE => $PERL_MODULE_IBWAPI . '/' . $MODULE_IPV6NETWORKCONTAINER . '.pm';
+Readonly our $PERL_MODULE_IPV6NETWORK_FILE          => $PERL_MODULE_IBWAPI . '/' . $MODULE_IPV6NETWORK . '.pm';
+Readonly our $PERL_MODULE_IPV6RANGE_FILE            => $PERL_MODULE_IBWAPI . '/' . $MODULE_IPV6RANGE . '.pm';
+Readonly our $PERL_MODULE_LEASE_FILE                => $PERL_MODULE_IBWAPI . '/' . $MODULE_LEASE . '.pm';
+Readonly our $PERL_MODULE_MACFILTERADDRESS_FILE     => $PERL_MODULE_IBWAPI . '/' . $MODULE_MACFILTERADDRESS . '.pm';
+Readonly our $PERL_MODULE_MEMBER_FILE               => $PERL_MODULE_IBWAPI . '/' . $MODULE_MEMBER . '.pm';
+Readonly our $PERL_MODULE_NAMEDACL_FILE             => $PERL_MODULE_IBWAPI . '/' . $MODULE_NAMEDACL . '.pm';
+Readonly our $PERL_MODULE_NETWORKCONTAINER_FILE     => $PERL_MODULE_IBWAPI . '/' . $MODULE_NETWORKCONTAINER . '.pm';
+Readonly our $PERL_MODULE_NETWORK_FILE              => $PERL_MODULE_IBWAPI . '/' . $MODULE_NETWORK . '.pm';
+Readonly our $PERL_MODULE_NETWORKVIEW_FILE          => $PERL_MODULE_IBWAPI . '/' . $MODULE_NETWORKVIEW . '.pm';
+Readonly our $PERL_MODULE_RANGE_FILE                => $PERL_MODULE_IBWAPI . '/' . $MODULE_RANGE . '.pm';
+Readonly our $PERL_MODULE_RECORD_AAAA_FILE          => $PERL_MODULE_IBWAPI . '/' . $MODULE_RECORD_A . '.pm';
+Readonly our $PERL_MODULE_RECORD_A_FILE             => $PERL_MODULE_IBWAPI . '/' . $MODULE_RECORD_AAAA . '.pm';
+Readonly our $PERL_MODULE_RECORD_CNAME_FILE         => $PERL_MODULE_IBWAPI . '/' . $MODULE_RECORD_CNAME . '.pm';
+Readonly our $PERL_MODULE_RECORD_HOST_IPV4ADDR_FILE => $PERL_MODULE_IBWAPI . '/' . $MODULE_RECORD_HOST_IPV4ADDR . '.pm';
+Readonly our $PERL_MODULE_RECORD_HOST_IPV6ADDR_FILE => $PERL_MODULE_IBWAPI . '/' . $MODULE_RECORD_HOST_IPV6ADDR . '.pm';
+Readonly our $PERL_MODULE_RECORD_HOST_FILE          => $PERL_MODULE_IBWAPI . '/' . $MODULE_RECORD_HOST . '.pm';
+Readonly our $PERL_MODULE_RECORD_MX_FILE            => $PERL_MODULE_IBWAPI . '/' . $MODULE_RECORD_MX . '.pm';
+Readonly our $PERL_MODULE_RECORD_PTR_FILE           => $PERL_MODULE_IBWAPI . '/' . $MODULE_RECORD_PTR . '.pm';
+Readonly our $PERL_MODULE_RECORD_SRV_FILE           => $PERL_MODULE_IBWAPI . '/' . $MODULE_RECORD_SRV . '.pm';
+Readonly our $PERL_MODULE_RECORD_TXT_FILE           => $PERL_MODULE_IBWAPI . '/' . $MODULE_RECORD_TXT . '.pm';
+Readonly our $PERL_MODULE_RESTARTSERVICESTATUS_FILE => $PERL_MODULE_IBWAPI . '/' . $MODULE_RESTARTSERVICESTATUS . '.pm';
+Readonly our $PERL_MODULE_SCHEDULEDTASK_FILE        => $PERL_MODULE_IBWAPI . '/' . $MODULE_SCHEDULEDTASK . '.pm';
+Readonly our $PERL_MODULE_SEARCH_FILE               => $PERL_MODULE_IBWAPI . '/' . $MODULE_SEARCH . '.pm';
+Readonly our $PERL_MODULE_VIEW_FILE                 => $PERL_MODULE_IBWAPI . '/' . $MODULE_VIEW . '.pm';
+Readonly our $PERL_MODULE_ZONE_AUTH_FILE            => $PERL_MODULE_IBWAPI . '/' . $MODULE_ZONE_AUTH . '.pm';
+Readonly our $PERL_MODULE_ZONE_DELEGATED_FILE       => $PERL_MODULE_IBWAPI . '/' . $MODULE_ZONE_DELEGATED . '.pm';
+Readonly our $PERL_MODULE_ZONE_FORWARD_FILE         => $PERL_MODULE_IBWAPI . '/' . $MODULE_ZONE_FORWARD . '.pm';
+Readonly our $PERL_MODULE_ZONE_STUB_FILE            => $PERL_MODULE_IBWAPI . '/' . $MODULE_ZONE_STUB . '.pm';
+
+Readonly::Hash our %PERL_MODULE_FILE_NAMES => (
+    $PERL_MODULE_FIXEDADDRESS         => $PERL_MODULE_FIXEDADDRESS_FILE,
+    $PERL_MODULE_GRID                 => $PERL_MODULE_GRID_FILE,
+    $PERL_MODULE_IPV4ADDRESS          => $PERL_MODULE_IPV4ADDRESS_FILE,
+    $PERL_MODULE_IPV6ADDRESS          => $PERL_MODULE_IPV6ADDRESS_FILE,
+    $PERL_MODULE_IPV6FIXEDADDRESS     => $PERL_MODULE_IPV6FIXEDADDRESS_FILE,
+    $PERL_MODULE_IPV6NETWORKCONTAINER => $PERL_MODULE_IPV6NETWORKCONTAINER_FILE,
+    $PERL_MODULE_IPV6NETWORK          => $PERL_MODULE_IPV6NETWORK_FILE,
+    $PERL_MODULE_IPV6RANGE            => $PERL_MODULE_IPV6RANGE_FILE,
+    $PERL_MODULE_LEASE                => $PERL_MODULE_LEASE_FILE,
+    $PERL_MODULE_MACFILTERADDRESS     => $PERL_MODULE_MACFILTERADDRESS_FILE,
+    $PERL_MODULE_MEMBER               => $PERL_MODULE_MEMBER_FILE,
+    $PERL_MODULE_NAMEDACL             => $PERL_MODULE_NAMEDACL_FILE,
+    $PERL_MODULE_NETWORKCONTAINER     => $PERL_MODULE_NETWORKCONTAINER_FILE,
+    $PERL_MODULE_NETWORK              => $PERL_MODULE_NETWORK_FILE,
+    $PERL_MODULE_NETWORKVIEW          => $PERL_MODULE_NETWORKVIEW_FILE,
+    $PERL_MODULE_RANGE                => $PERL_MODULE_RANGE_FILE,
+    $PERL_MODULE_RECORD_AAAA          => $PERL_MODULE_RECORD_AAAA_FILE,
+    $PERL_MODULE_RECORD_A             => $PERL_MODULE_RECORD_A_FILE,
+    $PERL_MODULE_RECORD_CNAME         => $PERL_MODULE_RECORD_CNAME_FILE,
+    $PERL_MODULE_RECORD_HOST_IPV4ADDR => $PERL_MODULE_RECORD_HOST_IPV4ADDR_FILE,
+    $PERL_MODULE_RECORD_HOST_IPV6ADDR => $PERL_MODULE_RECORD_HOST_IPV6ADDR_FILE,
+    $PERL_MODULE_RECORD_HOST          => $PERL_MODULE_RECORD_HOST_FILE,
+    $PERL_MODULE_RECORD_MX            => $PERL_MODULE_RECORD_MX_FILE,
+    $PERL_MODULE_RECORD_PTR           => $PERL_MODULE_RECORD_PTR_FILE,
+    $PERL_MODULE_RECORD_SRV           => $PERL_MODULE_RECORD_SRV_FILE,
+    $PERL_MODULE_RECORD_TXT           => $PERL_MODULE_RECORD_TXT_FILE,
+    $PERL_MODULE_RESTARTSERVICESTATUS => $PERL_MODULE_RESTARTSERVICESTATUS_FILE,
+    $PERL_MODULE_SCHEDULEDTASK        => $PERL_MODULE_SCHEDULEDTASK_FILE,
+    $PERL_MODULE_SEARCH               => $PERL_MODULE_SEARCH_FILE,
+    $PERL_MODULE_VIEW                 => $PERL_MODULE_VIEW_FILE,
+    $PERL_MODULE_ZONE_AUTH            => $PERL_MODULE_ZONE_AUTH_FILE,
+    $PERL_MODULE_ZONE_DELEGATED       => $PERL_MODULE_ZONE_DELEGATED_FILE,
+    $PERL_MODULE_ZONE_FORWARD         => $PERL_MODULE_ZONE_FORWARD_FILE,
+    $PERL_MODULE_ZONE_STUB            => $PERL_MODULE_ZONE_STUB_FILE,
+);
 
 # ---------------------------
 Readonly our $_IB_REF => '_ref';
@@ -509,44 +652,6 @@ Readonly our $FIELD_ZONE                                 => 'FIELD_ZONE';
 Readonly our $FIELD_ZONE_ASSOCIATIONS                    => 'FIELD_ZONE_ASSOCIATIONS';
 Readonly our $FIELD_ZONE_FORMAT                          => 'FIELD_ZONE_FORMAT';
 Readonly our $FIELD_ZONE_NOT_QUERIED_ENABLED_TIME        => 'FIELD_ZONE_NOT_QUERIED_ENABLED_TIME';
-
-#
-# These match the file names of the perl modules
-#
-Readonly our $MODULE_FIXEDADDRESS         => 'Fixedaddress';
-Readonly our $MODULE_GRID                 => 'Grid';
-Readonly our $MODULE_IPV4ADDRESS          => 'IPv4Address';
-Readonly our $MODULE_IPV6ADDRESS          => 'IPv6Address';
-Readonly our $MODULE_IPV6FIXEDADDRESS     => 'IPv6Fixedaddress';
-Readonly our $MODULE_IPV6NETWORKCONTAINER => 'IPv6Networkcontainer';
-Readonly our $MODULE_IPV6NETWORK          => 'IPv6Network';
-Readonly our $MODULE_IPV6RANGE            => 'IPv6Range';
-Readonly our $MODULE_LEASE                => 'Lease';
-Readonly our $MODULE_MACFILTERADDRESS     => 'Macfilteraddress';
-Readonly our $MODULE_MEMBER               => 'Member';
-Readonly our $MODULE_NAMEDACL             => 'Namedacl';
-Readonly our $MODULE_NETWORK              => 'Network';
-Readonly our $MODULE_NETWORKCONTAINER     => 'Networkcontainer';
-Readonly our $MODULE_NETWORKVIEW          => 'Networkview';
-Readonly our $MODULE_RANGE                => 'Range';
-Readonly our $MODULE_RECORD_AAAA          => 'Record_aaaa';
-Readonly our $MODULE_RECORD_A             => 'Record_a';
-Readonly our $MODULE_RECORD_CNAME         => 'Record_cname';
-Readonly our $MODULE_RECORD_HOST          => 'Record_host';
-Readonly our $MODULE_RECORD_IPV4ADDR      => 'Record_host_ipv4addr';
-Readonly our $MODULE_RECORD_IPV6ADDR      => 'Record_host_ipv6addr';
-Readonly our $MODULE_RECORD_MX            => 'Record_mx';
-Readonly our $MODULE_RECORD_PTR           => 'Record_ptr';
-Readonly our $MODULE_RECORD_SRV           => 'Record_srv';
-Readonly our $MODULE_RECORD_TXT           => 'Record_txt';
-Readonly our $MODULE_RESTARTSERVICESTATUS => 'Restartservicestatus';
-Readonly our $MODULE_SCHEDULEDTASK        => 'Scheduledtask';
-Readonly our $MODULE_SEARCH               => 'Search';
-Readonly our $MODULE_VIEW                 => 'View';
-Readonly our $MODULE_ZONE_AUTH            => 'Zone_auth';
-Readonly our $MODULE_ZONE_DELEGATED       => 'Zone_delegated';
-Readonly our $MODULE_ZONE_FORWARD         => 'Zone_forward';
-Readonly our $MODULE_ZONE_STUB            => 'Zone_stub';
 
 Readonly::Hash our %_TYPE_NAME => (
     $TYPE_BOOL              => $TYPE_BOOL,
@@ -1633,6 +1738,43 @@ Readonly::Hash our %_FIELD_TYPE => (
     $FIELD_ZONE_NOT_QUERIED_ENABLED_TIME       => $TYPE_UNKNOWN,
 );
 
+Readonly::Hash our %_MODULES => (
+    $PERL_MODULE_FIXEDADDRESS         => 1,
+    $PERL_MODULE_GRID                 => 1,
+    $PERL_MODULE_IPV4ADDRESS          => 1,
+    $PERL_MODULE_IPV6ADDRESS          => 1,
+    $PERL_MODULE_IPV6FIXEDADDRESS     => 1,
+    $PERL_MODULE_IPV6NETWORKCONTAINER => 1,
+    $PERL_MODULE_IPV6NETWORK          => 1,
+    $PERL_MODULE_IPV6RANGE            => 1,
+    $PERL_MODULE_LEASE                => 1,
+    $PERL_MODULE_MACFILTERADDRESS     => 1,
+    $PERL_MODULE_MEMBER               => 1,
+    $PERL_MODULE_NAMEDACL             => 1,
+    $PERL_MODULE_NETWORKCONTAINER     => 1,
+    $PERL_MODULE_NETWORK              => 1,
+    $PERL_MODULE_NETWORKVIEW          => 1,
+    $PERL_MODULE_RANGE                => 1,
+    $PERL_MODULE_RECORD_AAAA          => 1,
+    $PERL_MODULE_RECORD_A             => 1,
+    $PERL_MODULE_RECORD_CNAME         => 1,
+    $PERL_MODULE_RECORD_HOST_IPV4ADDR => 1,
+    $PERL_MODULE_RECORD_HOST_IPV6ADDR => 1,
+    $PERL_MODULE_RECORD_HOST          => 1,
+    $PERL_MODULE_RECORD_MX            => 1,
+    $PERL_MODULE_RECORD_PTR           => 1,
+    $PERL_MODULE_RECORD_SRV           => 1,
+    $PERL_MODULE_RECORD_TXT           => 1,
+    $PERL_MODULE_RESTARTSERVICESTATUS => 1,
+    $PERL_MODULE_SCHEDULEDTASK        => 1,
+    $PERL_MODULE_SEARCH               => 1,
+    $PERL_MODULE_VIEW                 => 1,
+    $PERL_MODULE_ZONE_AUTH            => 1,
+    $PERL_MODULE_ZONE_DELEGATED       => 1,
+    $PERL_MODULE_ZONE_FORWARD         => 1,
+    $PERL_MODULE_ZONE_STUB            => 1,
+);
+
 Readonly::Hash our %_MODULE_OBJ_NAME => (
     $MODULE_FIXEDADDRESS         => 'fixedaddress',
     $MODULE_GRID                 => 'grid',
@@ -1653,8 +1795,8 @@ Readonly::Hash our %_MODULE_OBJ_NAME => (
     $MODULE_RECORD_AAAA          => 'record_aaaa',
     $MODULE_RECORD_A             => 'record_a',
     $MODULE_RECORD_CNAME         => 'record_cname',
-    $MODULE_RECORD_IPV4ADDR      => 'record_host_ipv4addr',
-    $MODULE_RECORD_IPV6ADDR      => 'record_host_ipv6addr',
+    $MODULE_RECORD_HOST_IPV4ADDR => 'record_host_ipv4addr',
+    $MODULE_RECORD_HOST_IPV6ADDR => 'record_host_ipv6addr',
     $MODULE_RECORD_HOST          => 'record_host',
     $MODULE_RECORD_MX            => 'record_mx',
     $MODULE_RECORD_PTR           => 'record_ptr',
@@ -1668,6 +1810,40 @@ Readonly::Hash our %_MODULE_OBJ_NAME => (
     $MODULE_ZONE_DELEGATED       => 'zone_delegated',
     $MODULE_ZONE_FORWARD         => 'zone_forward',
     $MODULE_ZONE_STUB            => 'zone_stub',
+    $PERL_MODULE_FIXEDADDRESS         => 'fixedaddress',
+    $PERL_MODULE_GRID                 => 'grid',
+    $PERL_MODULE_IPV4ADDRESS          => 'ipv4address',
+    $PERL_MODULE_IPV6ADDRESS          => 'ipv6address',
+    $PERL_MODULE_IPV6FIXEDADDRESS     => 'ipv6fixedaddress',
+    $PERL_MODULE_IPV6NETWORKCONTAINER => 'ipv6networkcontainer',
+    $PERL_MODULE_IPV6NETWORK          => 'ipv6network',
+    $PERL_MODULE_IPV6RANGE            => 'ipv6range',
+    $PERL_MODULE_LEASE                => 'lease',
+    $PERL_MODULE_MACFILTERADDRESS     => 'macfilteraddress',
+    $PERL_MODULE_MEMBER               => 'member',
+    $PERL_MODULE_NAMEDACL             => 'namedacl',
+    $PERL_MODULE_NETWORKCONTAINER     => 'networkcontainer',
+    $PERL_MODULE_NETWORK              => 'network',
+    $PERL_MODULE_NETWORKVIEW          => 'networkview',
+    $PERL_MODULE_RANGE                => 'range',
+    $PERL_MODULE_RECORD_AAAA          => 'record_aaaa',
+    $PERL_MODULE_RECORD_A             => 'record_a',
+    $PERL_MODULE_RECORD_CNAME         => 'record_cname',
+    $PERL_MODULE_RECORD_HOST_IPV4ADDR => 'record_host_ipv4addr',
+    $PERL_MODULE_RECORD_HOST_IPV6ADDR => 'record_host_ipv6addr',
+    $PERL_MODULE_RECORD_HOST          => 'record_host',
+    $PERL_MODULE_RECORD_MX            => 'record_mx',
+    $PERL_MODULE_RECORD_PTR           => 'record_ptr',
+    $PERL_MODULE_RECORD_SRV           => 'record_srv',
+    $PERL_MODULE_RECORD_TXT           => 'record_txt',
+    $PERL_MODULE_RESTARTSERVICESTATUS => 'restartservicestatus',
+    $PERL_MODULE_SCHEDULEDTASK        => 'scheduledtask',
+    $PERL_MODULE_SEARCH               => 'search',
+    $PERL_MODULE_VIEW                 => 'view',
+    $PERL_MODULE_ZONE_AUTH            => 'zone_auth',
+    $PERL_MODULE_ZONE_DELEGATED       => 'zone_delegated',
+    $PERL_MODULE_ZONE_FORWARD         => 'zone_forward',
+    $PERL_MODULE_ZONE_STUB            => 'zone_stub',
 );
 
 Readonly::Hash our %_NAME_MODULE_OBJ => (
@@ -1691,8 +1867,8 @@ Readonly::Hash our %_NAME_MODULE_OBJ => (
     'record_aaaa'          => $MODULE_RECORD_AAAA,
     'record_cname'         => $MODULE_RECORD_CNAME,
     'record_host'          => $MODULE_RECORD_HOST,
-    'record_host_ipv4addr' => $MODULE_RECORD_IPV4ADDR,
-    'record_host_ipv6addr' => $MODULE_RECORD_IPV6ADDR,
+    'record_host_ipv4addr' => $MODULE_RECORD_HOST_IPV4ADDR,
+    'record_host_ipv6addr' => $MODULE_RECORD_HOST_IPV6ADDR,
     'record_mx'            => $MODULE_RECORD_MX,
     'record_ptr'           => $MODULE_RECORD_PTR,
     'record_srv'           => $MODULE_RECORD_SRV,
@@ -1716,17 +1892,6 @@ Readonly our $EVAL_NEW_STRUCT_CODE => '
     bless $self, $class;
 ';
 
-Readonly our $EVAL_NEW_OBJECT_CODE => '
-    $parm_ref->{$IB_FIELDS}            = \%_FIELDS;
-    $parm_ref->{$IB_BASE_FIELDS}       = \%_BASE_FIELDS;
-    $parm_ref->{$IB_READONLY_FIELDS}   = \%_READONLY_FIELDS;
-    $parm_ref->{$IB_SEARCHABLE_FIELDS} = \%_SEARCHABLE_FIELDS;
-    $parm_ref->{$IB_SEARCHONLY_FIELDS} = \%_SEARCHONLY_FIELDS;
-    $self = $class->SUPER::new( $_OBJECT_NAME, $parm_ref );
-    bless $self, $class;
-    $self->create_lwp($parm_ref);
-';
-
 my $_LOGGING_LEVEL = $_LOG_FATAL;
 my $_SUB_LEVEL     = 0;
 
@@ -1736,7 +1901,6 @@ my $_SUB_LEVEL     = 0;
 # ---------------------------
 our @EXPORT = qw (
   $DEBUG
-  $EVAL_NEW_OBJECT_CODE
   $EVAL_NEW_STRUCT_CODE
   LOG_ENTER_SUB
   LOG_EXIT_SUB
@@ -1783,12 +1947,81 @@ our @EXPORT = qw (
   PRINT_MYNAMELINE
   $_IB_VERSION
   $_IB_REF
-  $PERL_MODULE_EXTATTR
   $PERL_MODULE_IBCONSTS
   $PERL_MODULE_IBLWP
   $PERL_MODULE_IBRECORD
   $PERL_MODULE_IBWAPI
   $PERL_MODULE_JSON_BOOLEAN
+  $PERL_MODULE_EXTATTR
+  $PERL_MODULE_FIXEDADDRESS
+  $PERL_MODULE_GRID
+  $PERL_MODULE_IPV4ADDRESS
+  $PERL_MODULE_IPV6ADDRESS
+  $PERL_MODULE_IPV6FIXEDADDRESS
+  $PERL_MODULE_IPV6NETWORKCONTAINER
+  $PERL_MODULE_IPV6NETWORK
+  $PERL_MODULE_IPV6RANGE
+  $PERL_MODULE_LEASE
+  $PERL_MODULE_MACFILTERADDRESS
+  $PERL_MODULE_MEMBER
+  $PERL_MODULE_NAMEDACL
+  $PERL_MODULE_NETWORKCONTAINER
+  $PERL_MODULE_NETWORK
+  $PERL_MODULE_NETWORKVIEW
+  $PERL_MODULE_RANGE
+  $PERL_MODULE_RECORD_AAAA
+  $PERL_MODULE_RECORD_A
+  $PERL_MODULE_RECORD_CNAME
+  $PERL_MODULE_RECORD_HOST_IPV4ADDR
+  $PERL_MODULE_RECORD_HOST_IPV6ADDR
+  $PERL_MODULE_RECORD_HOST
+  $PERL_MODULE_RECORD_MX
+  $PERL_MODULE_RECORD_PTR
+  $PERL_MODULE_RECORD_SRV
+  $PERL_MODULE_RECORD_TXT
+  $PERL_MODULE_RESTARTSERVICESTATUS
+  $PERL_MODULE_SCHEDULEDTASK
+  $PERL_MODULE_SEARCH
+  $PERL_MODULE_VIEW
+  $PERL_MODULE_ZONE_AUTH
+  $PERL_MODULE_ZONE_DELEGATED
+  $PERL_MODULE_ZONE_FORWARD
+  $PERL_MODULE_ZONE_STUB
+  $PERL_MODULE_FIXEDADDRESS_FILE
+  $PERL_MODULE_GRID_FILE
+  $PERL_MODULE_IPV_FILE4ADDRESS
+  $PERL_MODULE_IPV_FILE6ADDRESS
+  $PERL_MODULE_IPV_FILE6FIXEDADDRESS
+  $PERL_MODULE_IPV_FILE6NETWORKCONTAINER
+  $PERL_MODULE_IPV_FILE6NETWORK
+  $PERL_MODULE_IPV_FILE6RANGE
+  $PERL_MODULE_LEASE_FILE
+  $PERL_MODULE_MACFILTERADDRESS_FILE
+  $PERL_MODULE_MEMBER_FILE
+  $PERL_MODULE_NAMEDACL_FILE
+  $PERL_MODULE_NETWORKCONTAINER_FILE
+  $PERL_MODULE_NETWORK_FILE
+  $PERL_MODULE_NETWORKVIEW_FILE
+  $PERL_MODULE_RANGE_FILE
+  $PERL_MODULE_RECORD_AAAA_FILE
+  $PERL_MODULE_RECORD_A_FILE
+  $PERL_MODULE_RECORD_CNAME_FILE
+  $PERL_MODULE_RECORD_HOST_IPV4ADDR_FILE
+  $PERL_MODULE_RECORD_HOST_IPV6ADDR_FILE
+  $PERL_MODULE_RECORD_HOST_FILE
+  $PERL_MODULE_RECORD_MX_FILE
+  $PERL_MODULE_RECORD_PTR_FILE
+  $PERL_MODULE_RECORD_SRV_FILE
+  $PERL_MODULE_RECORD_TXT_FILE
+  $PERL_MODULE_RESTARTSERVICESTATUS_FILE
+  $PERL_MODULE_SCHEDULEDTASK_FILE
+  $PERL_MODULE_SEARCH_FILE
+  $PERL_MODULE_VIEW_FILE
+  $PERL_MODULE_ZONE_AUTH_FILE
+  $PERL_MODULE_ZONE_DELEGATED_FILE
+  $PERL_MODULE_ZONE_FORWARD_FILE
+  $PERL_MODULE_ZONE_STUB_FILE
+  %PERL_MODULE_FILE_NAMES
   $IB_BASE_FIELDS
   $IB_CRED
   $IB_MAX_RESULTS

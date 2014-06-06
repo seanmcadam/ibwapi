@@ -66,7 +66,7 @@ sub new {
     LOG_ENTER_SUB;
 
     defined $parent || LOG_FATAL;
-    ref($parent) =~ /IBWAPI::/ || LOG_FATAL;
+    ref($parent) =~ /^IBWAPI/ || LOG_FATAL;
     defined $field_ref || LOG_FATAL;
     ref($field_ref) eq 'HASH' || LOG_FATAL;
     defined $field_ref->{$FIELD_REF} || LOG_FATAL;

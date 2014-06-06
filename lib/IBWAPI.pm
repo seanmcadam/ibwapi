@@ -48,7 +48,7 @@ sub get_extattr;
 sub set_field;
 sub is_field_searchable;
 sub is_field_readonly;
-sub _obj_name;
+#### sub _obj_name;
 sub _lwp;
 sub _get_search_parameters;
 sub _verify_search_parameters;
@@ -69,6 +69,7 @@ Readonly our $_OPTIONS              => 'options';
 Readonly our $_IB_RECORDS           => '_IB_RECORDS';
 Readonly our $_IB_BASE_FIELDS       => '_IB_BASE_FIELDS';
 Readonly our $_IB_PARM_REF_TYPES    => '_IB_PARM_REF_TYPES';
+Readonly our $_IB_MODULES           => '_IB_MODULES';
 Readonly our $_IB_MAX_RESULTS       => '_IB_MAX_RESULTS';
 Readonly our $_IB_OBJECT_NAME       => '_IB_OBJECT_NAME';
 Readonly our $_IB_READONLY_FIELDS   => '_IB_READONLY_FIELDS';
@@ -77,54 +78,499 @@ Readonly our $_IB_SEARCHABLE_FIELDS => '_IB_SEARCHABLE_FIELDS';
 Readonly our $_IB_SEARCHONLY_FIELDS => '_IB_SEARCHONLY_FIELDS';
 Readonly our $_IB_URL               => '_IB_URL';
 
-# ---------------------------
-# EXPORTS
-# ---------------------------
-our @EXPORT = qw (
-);
-
 Readonly::Hash our %_PARM_REF_TYPES => (
     $IB_MAX_RESULTS        => '',
     $IB_RETURN_FIELDS      => 'ARRAY',
     $IB_RETURN_FIELDS_PLUS => 'ARRAY',
 );
 
+my $_CURRENT_MODULE    = undef;
+my $_FIELDS            = {};
+my $_BASE_FIELDS       = {};
+my $_REQUIRED_FIELDS   = {};
+my $_READONLY_FIELDS   = {};
+my $_SEARCHABLE_FIELDS = {};
+my $_SEARCHONLY_FIELDS = {};
+
+# ---------------------------
+# EXPORTS
+# ---------------------------
+our @EXPORT = qw (
+);
+
 # ---------------------------
 # new()
 # ---------------------------
 sub new {
-    my ( $class, $module_name, $parm_ref ) = @_;
+    my ( $class, $a, $b ) = @_;
     my %h;
-    my %r;
     my $self = \%h;
+    my $parm_ref;
+    my $module_name;
 
     LOG_ENTER_SUB;
 
-    defined $module_name || LOG_FATAL;
-    # URL_REF_MODULE_EXISTS( $module_name ) || LOG_FATAL "Module Name: '$module_name'";
+    # defined $a || LOG_FATAL;
 
-    $h{$_IB_OBJECT_NAME} = $module_name;
-    $h{$_IB_RECORDS}     = \%r;
+    if ( defined $a ) {
+    if ( ref($a) eq 'HASH' ) {
+        $parm_ref = $a;
+        my %m;
 
-    defined $parm_ref->{$IB_FIELDS}            || LOG_FATAL;
-    defined $parm_ref->{$IB_BASE_FIELDS}       || LOG_FATAL;
-    defined $parm_ref->{$IB_READONLY_FIELDS}   || LOG_FATAL;
-    defined $parm_ref->{$IB_SEARCHABLE_FIELDS} || LOG_FATAL;
-    defined $parm_ref->{$IB_SEARCHONLY_FIELDS} || LOG_FATAL;
+        $self->{$_IB_MODULES} = \%m;
+    }
+    else {
+        ( defined $b && ref($b) eq 'HASH' ) || LOG_FATAL;
+        $parm_ref    = $b;
+        $module_name = $a;
 
-    $h{$_IB_MAX_RESULTS} = ( defined $parm_ref->{$IB_MAX_RESULTS} ) ? $parm_ref->{$IB_MAX_RESULTS} : $_DEFAULT_MAX_RESULTS;
+        my %r;
 
-    $h{$_IB_FIELDS}            = $parm_ref->{$IB_FIELDS};
-    $h{$_IB_BASE_FIELDS}       = $parm_ref->{$IB_BASE_FIELDS};
-    $h{$_IB_READONLY_FIELDS}   = $parm_ref->{$IB_READONLY_FIELDS};
-    $h{$_IB_SEARCHABLE_FIELDS} = $parm_ref->{$IB_SEARCHABLE_FIELDS};
-    $h{$_IB_SEARCHONLY_FIELDS} = $parm_ref->{$IB_SEARCHONLY_FIELDS};
+        #URL_REF_MODULE_EXISTS( $module_name ) || LOG_FATAL "Module Name: '$module_name'";
+
+        $h{$_IB_OBJECT_NAME} = $module_name;
+        $h{$_IB_RECORDS}     = \%r;
+
+        defined $parm_ref->{$IB_FIELDS}            || LOG_FATAL;
+        defined $parm_ref->{$IB_BASE_FIELDS}       || LOG_FATAL;
+        defined $parm_ref->{$IB_READONLY_FIELDS}   || LOG_FATAL;
+        defined $parm_ref->{$IB_SEARCHABLE_FIELDS} || LOG_FATAL;
+        defined $parm_ref->{$IB_SEARCHONLY_FIELDS} || LOG_FATAL;
+
+        $h{$_IB_MAX_RESULTS} = ( defined $parm_ref->{$IB_MAX_RESULTS} ) ? $parm_ref->{$IB_MAX_RESULTS} : $_DEFAULT_MAX_RESULTS;
+
+        $h{$_IB_FIELDS}            = $parm_ref->{$IB_FIELDS};
+        $h{$_IB_BASE_FIELDS}       = $parm_ref->{$IB_BASE_FIELDS};
+        $h{$_IB_READONLY_FIELDS}   = $parm_ref->{$IB_READONLY_FIELDS};
+        $h{$_IB_SEARCHABLE_FIELDS} = $parm_ref->{$IB_SEARCHABLE_FIELDS};
+        $h{$_IB_SEARCHONLY_FIELDS} = $parm_ref->{$IB_SEARCHONLY_FIELDS};
+
+    }
+    }
 
     bless $self, $class;
+    $self->{$_LWP_OBJ} = IBLWP->new( $self, $parm_ref );
 
     LOG_EXIT_SUB;
 
     $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub FIXEDADDRESS {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_FIXEDADDRESS);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub GRID {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_GRID);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub IPV4ADDRESS {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_IPV4ADDRESS);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub IPV6ADDRESS {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_IPV6ADDRESS);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub IPV6FIXEDADDRESS {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_IPV6FIXEDADDRESS);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub IPV6NETWORK {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_IPV6NETWORK);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub IPV6NETWORKCONTAINER {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_IPV6NETWORKCONTAINER);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub IPV6RANGE {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_IPV6RANGE);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub LEASE {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_LEASE);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub MACFILTERADDRESS {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_MACFILTERADDRESS);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub MEMBER {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_MEMBER);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub NAMEDACL {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_NAMEDACL);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub NETWORK {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_NETWORK);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub NETWORKCONTAINER {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_NETWORKCONTAINER);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub NETWORKVIEW {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_NETWORKVIEW);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub RANGE {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_RANGE);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub RECORD_A {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_RECORD_A);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub RECORD_AAAA {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_RECORD_AAAA);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub RECORD_CNAME {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_RECORD_CNAME);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub RECORD_HOST {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_RECORD_HOST);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub RECORD_HOST_IPV4ADDR {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_RECORD_HOST_IPV4ADDR);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub RECORD_HOST_IPV6ADDR {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_RECORD_HOST_IPV6ADDR);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub RECORD_MX {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_RECORD_MX);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub RECORD_PTR {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_RECORD_PTR);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub RECORD_SRV {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_RECORD_SRV);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub RECORD_TXT {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_RECORD_TXT);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub RESTARTSERVICESSTATUS {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_RESTARTSERVICESTATUS);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub SCHEDULEDTASK {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_SCHEDULEDTASK);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub SEARCH {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_SEARCH);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub VIEW {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_VIEW);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub ZONE_AUTH {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_ZONE_AUTH);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub ZONE_DELEGATED {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_ZONE_DELEGATED);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub ZONE_FORWARD {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_ZONE_FORWARD);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub ZONE_STUB {
+    my ($self) = @_;
+    LOG_ENTER_SUB;
+    $self->set_module($PERL_MODULE_ZONE_STUB);
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub set_module {
+    my ($self,$module) = @_;
+    LOG_ENTER_SUB;
+    ref($self) eq $PERL_MODULE_IBWAPI || LOG_FATAL;
+    $_CURRENT_MODULE = $module;
+    if ( !defined $self->{$_IB_MODULES}->{$_CURRENT_MODULE} ) {
+        $self->load_current_module;
+    }
+    LOG_EXIT_SUB;
+    return $self;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub load_current_module {
+    my ($self) = @_;
+
+    LOG_ENTER_SUB;
+
+    defined $_CURRENT_MODULE || LOG_FATAL;
+    defined $PERL_MODULE_FILE_NAMES{$_CURRENT_MODULE} || LOG_FATAL;
+    defined $self->{$_IB_MODULES}->{$_CURRENT_MODULE} && LOG_WARN "CURRENT_MODULE $_CURRENT_MODULE ALREADY LOADED";
+
+    if ( !defined $self->{$_IB_MODULES}->{$_CURRENT_MODULE} ) {
+        my $hash_name;
+        require $PERL_MODULE_FILE_NAMES{$_CURRENT_MODULE};
+        no strict 'refs';
+        $_FIELDS->{$_CURRENT_MODULE}            = \%{ $_CURRENT_MODULE . "::_FIELDS" };
+        $_BASE_FIELDS->{$_CURRENT_MODULE}       = \%{ $_CURRENT_MODULE . "::_BASE_FIELDS" };
+        $_REQUIRED_FIELDS->{$_CURRENT_MODULE}   = \%{ $_CURRENT_MODULE . "::_REQUIRED_FIELDS" };
+        $_READONLY_FIELDS->{$_CURRENT_MODULE}   = \%{ $_CURRENT_MODULE . "::_READONLY_FIELDS" };
+        $_SEARCHABLE_FIELDS->{$_CURRENT_MODULE} = \%{ $_CURRENT_MODULE . "::_SEARCHABLE_FIELDS" };
+        $_SEARCHONLY_FIELDS->{$_CURRENT_MODULE} = \%{ $_CURRENT_MODULE . "::_SEARCHONLY_FIELDS" };
+    }
+
+    LOG_EXIT_SUB;
+
 }
 
 # ---------------------------
@@ -151,7 +597,7 @@ sub GET {
 
     LOG_ENTER_SUB;
 
-    ref( $self->_lwp ) eq $PERL_MODULE_IBLWP || LOG_FATAL;
+    # ref( $self->_lwp ) eq $PERL_MODULE_IBLWP || LOG_FATAL;
     defined $search_field_ref && ( ref($search_field_ref) eq 'HASH'  || LOG_FATAL );
     defined $return_field_ref && ( ref($return_field_ref) eq 'ARRAY' || LOG_FATAL );
 
@@ -161,12 +607,13 @@ sub GET {
     $self->_verify_search_parameters($search_field_ref) if ( defined $search_field_ref );
     $self->_verify_return_fields($return_field_ref)     if ( defined $return_field_ref );
 
-    $ret_array_ref = $self->_lwp->get(
+    $ret_array_ref = $self->_lwp->get_module(
+        $_CURRENT_MODULE,
         {
-            $IBLWP_GET_OBJTYPE         => $self->_obj_name,
             $IBLWP_GET_SEARCH_REF      => $search_field_ref,
             $IBLWP_GET_RETURN_PLUS_REF => $return_field_ref,
-        } );
+        }
+    );
 
     LOG_DEBUG4( "RETURN ARRAY of REF:" . Dumper $ret_array_ref );
 
@@ -208,8 +655,8 @@ sub PUT {
     defined $ib_rec || LOG_FATAL "No record for REF: $ref";
 
     if ( $ib_rec->is_dirty ) {
-         $ib_rec->flush();
-         $ret = 1;
+        $ib_rec->flush();
+        $ret = 1;
     }
     else {
         LOG_WARN "IB REC Not Dirty: $ref";
@@ -253,7 +700,7 @@ sub get_ib_record {
     # Or go Get it from IB
     #
     else {
-        ($ibr_rec) = $self->_lwp->get($ref);
+        ($ibr_rec) = $self->_lwp->get_record($ref);
     }
 
     LOG_EXIT_SUB;
@@ -280,9 +727,9 @@ sub load_record_field {
         $ibr = $self->get_ib_record($ref);
     }
 
-    my $ret = $self->_lwp->get(
+    my $ret = $self->_lwp->get_record(
+        $ibr->get_ref,
         {
-            $IBLWP_GET_RECORD => $ibr,
             $IBLWP_GET_RETURN_PLUS_REF => { $f => 1, },
         } );
 
@@ -391,7 +838,7 @@ sub add_ib_record {
     my $name = ( split( /\//, $ref ) )[0];
     my $obj_name = URL_NAME_MODULE($name);
 
-    ( $obj_name eq $self->_obj_name ) || LOG_FATAL;
+    #### ( $obj_name eq $self->_obj_name ) || LOG_FATAL;
 
     if ( defined $self->{$_IB_RECORDS}->{$ref} ) {
         LOG_FATAL "Adding the same object: '$ref'\n";
@@ -507,7 +954,9 @@ sub _verify_search_parameters {
 
     foreach my $p ( sort( keys(%$parm_ref) ) ) {
         if ( URL_FIELD_EXISTS($p) ) {
-            ( $self->is_field_searchable($p) ) || LOG_FATAL;
+
+            # ( $self->is_field_searchable($p) ) || LOG_FATAL;
+            $self->_searchable_field_exists($p) || LOG_FATAL "Field: $p";
             ( ref( $parm_ref->{$p} ) eq 'ARRAY' ) || LOG_WARN;
 
             # Verify Type HERE
@@ -556,7 +1005,8 @@ sub _return_field_exists {
     defined $f || LOG_FATAL PRINT_MYNAMELINE;
     URL_FIELD_EXISTS($f) || LOG_FATAL PRINT_MYNAMELINE;
 
-    my $ret = $self->_field_exists( $self->{$_IB_FIELDS}, $f );
+    # my $ret = $self->_field_exists( $self->{$_IB_FIELDS}, $f );
+    my $ret = $self->_field_exists( $_FIELDS->{$_CURRENT_MODULE}, $f );
     LOG_EXIT_SUB;
     return $ret;
 }
@@ -572,7 +1022,8 @@ sub _base_field_exists {
     defined $f || LOG_FATAL PRINT_MYNAMELINE;
     URL_FIELD_EXISTS($f) || LOG_FATAL PRINT_MYNAMELINE;
 
-    my $ret = $self->_field_exists( $self->{$_IB_BASE_FIELDS}, $f );
+    # my $ret = $self->_field_exists( $self->{$_IB_BASE_FIELDS}, $f );
+    my $ret = $self->_field_exists( $_BASE_FIELDS->{$_CURRENT_MODULE}, $f );
     LOG_EXIT_SUB;
     return $ret;
 }
@@ -588,7 +1039,8 @@ sub _readonly_field_exists {
     defined $f || LOG_FATAL PRINT_MYNAMELINE;
     URL_FIELD_EXISTS($f) || LOG_FATAL PRINT_MYNAMELINE;
 
-    my $ret = $self->_field_exists( $self->{$_IB_READONLY_FIELDS}, $f );
+    # my $ret = $self->_field_exists( $self->{$_IB_READONLY_FIELDS}, $f );
+    my $ret = $self->_field_exists( $_READONLY_FIELDS->{$_CURRENT_MODULE}, $f );
     LOG_EXIT_SUB;
     return $ret;
 }
@@ -604,7 +1056,8 @@ sub _searchable_field_exists {
     defined $f || LOG_FATAL PRINT_MYNAMELINE;
     URL_FIELD_EXISTS($f) || LOG_FATAL PRINT_MYNAMELINE;
 
-    my $ret = $self->_field_exists( $self->{$_IB_SEARCHABLE_FIELDS}, $f );
+    # my $ret = $self->_field_exists( $self->{$_IB_SEARCHABLE_FIELDS}, $f );
+    my $ret = $self->_field_exists( $_SEARCHABLE_FIELDS->{$_CURRENT_MODULE}, $f );
     LOG_EXIT_SUB;
     return $ret;
 }
@@ -619,7 +1072,7 @@ sub _field_exists {
 
     defined $table_ref   || LOG_FATAL PRINT_MYNAMELINE;
     defined $f           || LOG_FATAL PRINT_MYNAMELINE;
-    URL_FIELD_EXISTS($f) || LOG_FATAL PRINT_MYNAMELINE;
+    URL_FIELD_EXISTS($f) || LOG_FATAL PRINT_MYNAMELINE . "NO FIELD: '$f'";
 
     my $ret = defined $table_ref->{$f};
     LOG_EXIT_SUB;
