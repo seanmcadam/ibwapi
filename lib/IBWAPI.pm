@@ -767,8 +767,8 @@ sub get_field {
 
     LOG_ENTER_SUB;
 
-    ( defined $ref && URL_REF_MODULE_EXISTS($ref) ) || LOG_FATAL;
-    $self->_return_field_exists($field) || LOG_FATAL;
+    ( defined $ref && URL_REF_MODULE_EXISTS($ref) ) || LOG_FATAL "$ref";
+    $self->_return_field_exists($field) || LOG_FATAL "RETURN FIELD DNE: $ref";
 
     if ( defined( $ibr_rec = $self->get_ib_record($ref) ) ) {
         $ret_field = $ibr_rec->get_field($field);
@@ -846,7 +846,7 @@ sub add_ib_record {
     else {
         $self->{$_IB_RECORDS}->{$ref} = $obj;
         $ret = 1;
-        LOG_INFO "Adding the new ib record: '$ref'\n";
+        LOG_DEBUG2 "Adding the new ib record: '$ref'\n";
     }
 
     LOG_EXIT_SUB;
