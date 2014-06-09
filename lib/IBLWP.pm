@@ -133,6 +133,7 @@ our @EXPORT = qw (
 sub new {
 
     my ( $class, $parent_obj, $parm_ref ) = @_;
+
     # my ( $class, $parm_ref ) = @_;
     my %h;
     my $self = \%h;
@@ -144,7 +145,7 @@ sub new {
     #
     defined($parent_obj) || LOG_FATAL;
 
-    ref($parent_obj) =~ /^IBWAPI/  || LOG_FATAL " " . ref($parent_obj);
+    ref($parent_obj) =~ /^IBWAPI/ || LOG_FATAL " " . ref($parent_obj);
     $h{$_IBLWP_PARENT_OBJ} = $parent_obj;
     defined( $h{$_JSON_OBJ} = JSON->new() )           || LOG_FATAL;
     defined( $h{$_UA}       = LWP::UserAgent->new() ) || LOG_FATAL;
@@ -204,7 +205,7 @@ sub get_module {
 
     $self->_get_reset();
 
-    $self->_set_objtype( $module );
+    $self->_set_objtype($module);
 
     #if ( URL_MODULE_EXISTS( $parm_ref->{$IBLWP_GET_OBJTYPE} ) ) {
     #    $self->_set_objtype( $parm_ref->{$IBLWP_GET_OBJTYPE} );
@@ -293,9 +294,10 @@ sub _get_reset {
 #
 # ---------------------------
 sub _get_url {
-    my ($self)        = @_;
-    my @ret           = ();
-    my $ret_array_ref = \@ret;
+    my ($self)          = @_;
+    my @ret             = ();
+    my $ret_array_ref   = \@ret;
+    my @expected_fields = ();
 
     LOG_ENTER_SUB;
 
@@ -340,6 +342,7 @@ sub _get_url {
           . '='
           . ( join( ',', ( map { URL_FIELD_NAME($_) } sort( keys( %{ $self->{$_IBLWP_RETURN_FIELDS} } ) ) ) ) )
           ;
+        @expected_fields = sort( keys( %{ $self->{$_IBLWP_RETURN_FIELDS} } ) );
     }
     elsif ( defined $self->{$_IBLWP_RETURN_FIELDS_PLUS} ) {
         $self->{$_IBLWP_URL} .=
@@ -348,6 +351,7 @@ sub _get_url {
           . '='
           . ( join( ',', ( map { URL_FIELD_NAME($_) } sort( keys( %{ $self->{$_IBLWP_RETURN_FIELDS_PLUS} } ) ) ) ) )
           ;
+        @expected_fields = sort( keys( %{ $self->{$_IBLWP_RETURN_FIELDS_PLUS} } ) );
     }
 
     if ( defined $self->{$_IBLWP_SEARCH_FIELDS} ) {
@@ -361,7 +365,7 @@ sub _get_url {
         }
     }
 
-    LOG_DEBUG4 " SEND URL: " . $self->{$_IBLWP_URL};
+    LOG_URL ": " . $self->{$_IBLWP_URL};
 
     $self->{$_HTTP_REQUEST_OBJ} = HTTP::Request->new( GET => $self->{$_IBLWP_URL} );
     $self->{$_HTTP_RESPONSE_OBJ} = $self->{$_UA}->request( $self->{_HTTP_REQUEST_OBJ} );
@@ -375,17 +379,17 @@ sub _get_url {
         # Is it a JSON Array?
         my $json = decode_json( $self->_response()->content() );
 
-        LOG_DEBUG4( "RETURN JSON " . Dumper $json );
+        LOG_DEBUG2( "RETURN JSON " . Dumper $json );
         my $record_ref;
 
         # Is this an array?
         if ( ref($json) eq 'ARRAY' ) {
-            $record_ref = CONVERT_JSON_ARRAY_TO_IB_FORMAT($json);
+            $record_ref = CONVERT_JSON_ARRAY_TO_IB_FORMAT( $json, \@expected_fields );
         }
 
         # Is this a hash (single value)?
         elsif ( ref($json) eq 'HASH' ) {
-            $record_ref = CONVERT_JSON_HASH_TO_IB_FORMAT($json);
+            $record_ref = CONVERT_JSON_HASH_TO_IB_FORMAT( $json, \@expected_fields );
         }
 
         # What the hell is it?

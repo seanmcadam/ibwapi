@@ -113,39 +113,39 @@ sub new {
     # defined $a || LOG_FATAL;
 
     if ( defined $a ) {
-    if ( ref($a) eq 'HASH' ) {
-        $parm_ref = $a;
-        my %m;
+        if ( ref($a) eq 'HASH' ) {
+            $parm_ref = $a;
+            my %m;
 
-        $self->{$_IB_MODULES} = \%m;
-    }
-    else {
-        ( defined $b && ref($b) eq 'HASH' ) || LOG_FATAL;
-        $parm_ref    = $b;
-        $module_name = $a;
+            $self->{$_IB_MODULES} = \%m;
+        }
+        else {
+            ( defined $b && ref($b) eq 'HASH' ) || LOG_FATAL;
+            $parm_ref    = $b;
+            $module_name = $a;
 
-        my %r;
+            my %r;
 
-        #URL_REF_MODULE_EXISTS( $module_name ) || LOG_FATAL "Module Name: '$module_name'";
+            #URL_REF_MODULE_EXISTS( $module_name ) || LOG_FATAL "Module Name: '$module_name'";
 
-        $h{$_IB_OBJECT_NAME} = $module_name;
-        $h{$_IB_RECORDS}     = \%r;
+            $h{$_IB_OBJECT_NAME} = $module_name;
+            $h{$_IB_RECORDS}     = \%r;
 
-        defined $parm_ref->{$IB_FIELDS}            || LOG_FATAL;
-        defined $parm_ref->{$IB_BASE_FIELDS}       || LOG_FATAL;
-        defined $parm_ref->{$IB_READONLY_FIELDS}   || LOG_FATAL;
-        defined $parm_ref->{$IB_SEARCHABLE_FIELDS} || LOG_FATAL;
-        defined $parm_ref->{$IB_SEARCHONLY_FIELDS} || LOG_FATAL;
+            defined $parm_ref->{$IB_FIELDS}            || LOG_FATAL;
+            defined $parm_ref->{$IB_BASE_FIELDS}       || LOG_FATAL;
+            defined $parm_ref->{$IB_READONLY_FIELDS}   || LOG_FATAL;
+            defined $parm_ref->{$IB_SEARCHABLE_FIELDS} || LOG_FATAL;
+            defined $parm_ref->{$IB_SEARCHONLY_FIELDS} || LOG_FATAL;
 
-        $h{$_IB_MAX_RESULTS} = ( defined $parm_ref->{$IB_MAX_RESULTS} ) ? $parm_ref->{$IB_MAX_RESULTS} : $_DEFAULT_MAX_RESULTS;
+            $h{$_IB_MAX_RESULTS} = ( defined $parm_ref->{$IB_MAX_RESULTS} ) ? $parm_ref->{$IB_MAX_RESULTS} : $_DEFAULT_MAX_RESULTS;
 
-        $h{$_IB_FIELDS}            = $parm_ref->{$IB_FIELDS};
-        $h{$_IB_BASE_FIELDS}       = $parm_ref->{$IB_BASE_FIELDS};
-        $h{$_IB_READONLY_FIELDS}   = $parm_ref->{$IB_READONLY_FIELDS};
-        $h{$_IB_SEARCHABLE_FIELDS} = $parm_ref->{$IB_SEARCHABLE_FIELDS};
-        $h{$_IB_SEARCHONLY_FIELDS} = $parm_ref->{$IB_SEARCHONLY_FIELDS};
+            $h{$_IB_FIELDS}            = $parm_ref->{$IB_FIELDS};
+            $h{$_IB_BASE_FIELDS}       = $parm_ref->{$IB_BASE_FIELDS};
+            $h{$_IB_READONLY_FIELDS}   = $parm_ref->{$IB_READONLY_FIELDS};
+            $h{$_IB_SEARCHABLE_FIELDS} = $parm_ref->{$IB_SEARCHABLE_FIELDS};
+            $h{$_IB_SEARCHONLY_FIELDS} = $parm_ref->{$IB_SEARCHONLY_FIELDS};
 
-    }
+        }
     }
 
     bless $self, $class;
@@ -534,7 +534,7 @@ sub ZONE_STUB {
 #
 # ---------------------------
 sub set_module {
-    my ($self,$module) = @_;
+    my ( $self, $module ) = @_;
     LOG_ENTER_SUB;
     ref($self) eq $PERL_MODULE_IBWAPI || LOG_FATAL;
     $_CURRENT_MODULE = $module;
@@ -880,6 +880,39 @@ sub is_field_searchable {
 
 }
 
+# ---------------------------
+#
+# ---------------------------
+sub get_current_module {
+    my ($self) = @_;
+    my $ret;
+
+    LOG_ENTER_SUB;
+
+    defined $_CURRENT_MODULE || LOG_FATAL;
+    $ret = $_CURRENT_MODULE;
+
+    LOG_EXIT_SUB;
+    $ret;
+}
+
+# ---------------------------
+#
+# ---------------------------
+sub get_field_hash_ref {
+    my ( $self, $module ) = @_;
+    my $ret;
+
+    LOG_ENTER_SUB;
+
+    defined $module || LOG_FATAL;
+    defined $_FIELDS->{$module} || LOG_FATAL;
+    $ret = $_FIELDS->{$module};
+
+    LOG_EXIT_SUB;
+    $ret;
+}
+
 # ---------------------------------------------------------------------------------
 #
 # ---------------------------------------------------------------------------------
@@ -949,8 +982,8 @@ sub _verify_search_parameters {
 
     if ( !defined $parm_ref ) {
         LOG_WARN MYNAMELINE . " NO PARM_REF defined\n";
-        return;
     }
+    else {
 
     foreach my $p ( sort( keys(%$parm_ref) ) ) {
         if ( URL_FIELD_EXISTS($p) ) {
@@ -962,6 +995,7 @@ sub _verify_search_parameters {
             # Verify Type HERE
 
         }
+    }
     }
     LOG_EXIT_SUB;
 }

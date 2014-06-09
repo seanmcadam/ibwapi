@@ -56,6 +56,7 @@ Readonly our $LOG_DEBUG3 => 'LOG_DEBUG3';
 Readonly our $LOG_DEBUG4 => 'LOG_DEBUG4';
 Readonly our $LOG_ENTER  => ' SUB ENTER';
 Readonly our $LOG_EXIT   => ' SUB  EXIT';
+Readonly our $LOG_URL    => '       URL';
 
 Readonly our $_LOG_FATAL  => 0;
 Readonly our $_LOG_ERROR  => $_LOG_FATAL + 1;
@@ -67,7 +68,8 @@ Readonly our $_LOG_DEBUG2 => $_LOG_DEBUG1 + 1;
 Readonly our $_LOG_DEBUG3 => $_LOG_DEBUG2 + 1;
 Readonly our $_LOG_DEBUG4 => $_LOG_DEBUG3 + 1;
 
-Readonly our $_LOG_SUB_ROUTINE_LEVEL => $_LOG_DEBUG3;
+Readonly our $_LOG_SUB_ROUTINE_LEVEL => $_LOG_DEBUG0;
+Readonly our $_LOG_URL_LEVEL         => $_LOG_DEBUG1;
 
 Readonly::Hash our %_LOG_LEVEL => (
     $LOG_FATAL  => $_LOG_FATAL,
@@ -78,9 +80,10 @@ Readonly::Hash our %_LOG_LEVEL => (
     $LOG_DEBUG1 => $_LOG_DEBUG1,
     $LOG_DEBUG2 => $_LOG_DEBUG2,
     $LOG_DEBUG3 => $_LOG_DEBUG3,
+    $LOG_DEBUG4 => $_LOG_DEBUG4,
     $LOG_ENTER  => $_LOG_SUB_ROUTINE_LEVEL,
     $LOG_EXIT   => $_LOG_SUB_ROUTINE_LEVEL,
-    $LOG_DEBUG4 => $_LOG_DEBUG4,
+    $LOG_URL    => $_LOG_URL_LEVEL,
 );
 
 #
@@ -237,6 +240,7 @@ Readonly::Hash our %PERL_MODULE_FILE_NAMES => (
 Readonly our $_IB_REF => '_ref';
 
 Readonly our $IB_FIELDS             => 'IB_FIELDS';
+Readonly our $IB_EMPTY_FIELD        => 'IB_EMPTY_FIELD';
 Readonly our $IB_TRUE               => 'IB_TRUE';
 Readonly our $IB_FALSE              => 'IB_FALSE';
 Readonly our $IB_USERNAME           => 'IB_USERNAME';
@@ -1276,7 +1280,7 @@ Readonly::Hash our %_NAME_FIELD => (
     'reserved_for_infoblox'                => $FIELD_RESERVED_FOR_INFOBLOX,
     'root_name_server_type'                => $FIELD_ROOT_NAME_SERVER_TYPE,
     'rr_not_queried_enabled_time'          => $FIELD_RR_NOT_QUERIED_ENABLED_TIME,
-    'rrset_order'                   => $FIELD_RRSET_ORDER,
+    'rrset_order'                          => $FIELD_RRSET_ORDER,
     'scheduled_time'                       => $FIELD_SCHEDULED_TIME,
     'served_by'                            => $FIELD_SERVED_BY,
     'server_association_type'              => $FIELD_SERVER_ASSOCIATION_TYPE,
@@ -1905,6 +1909,7 @@ our @EXPORT = qw (
   $EVAL_NEW_STRUCT_CODE
   LOG_ENTER_SUB
   LOG_EXIT_SUB
+  LOG_URL
   SET_LOGGING
   LOG_DEBUG4
   LOG_DEBUG3
@@ -2027,6 +2032,7 @@ our @EXPORT = qw (
   $IB_CRED
   $IB_MAX_RESULTS
   $IB_FIELDS
+  $IB_EMPTY_FIELD
   $IB_TRUE
   $IB_FALSE
   $IB_STRUCT_FIELDS
@@ -2665,13 +2671,18 @@ sub MYNAMELINE {
 
 # ------------------------------------------------------
 # ------------------------------------------------------
+sub LOG_URL {
+    if ( $_LOGGING_LEVEL >= $_LOG_URL_LEVEL ) { _LOG( $LOG_ENTER, @_ ); }
+}
+
+# ------------------------------------------------------
 sub LOG_ENTER_SUB {
-    if ( $_LOGGING_LEVEL >= $_LOG_DEBUG3 ) { _LOG( $LOG_ENTER, @_ ); }
+    if ( $_LOGGING_LEVEL >= $_LOG_SUB_ROUTINE_LEVEL ) { _LOG( $LOG_ENTER, @_ ); }
 }
 
 # ------------------------------------------------------
 sub LOG_EXIT_SUB {
-    if ( $_LOGGING_LEVEL >= $_LOG_DEBUG3 ) { _LOG( $LOG_EXIT, @_ ); }
+    if ( $_LOGGING_LEVEL >= $_LOG_SUB_ROUTINE_LEVEL ) { _LOG( $LOG_EXIT, @_ ); }
 }
 
 # ------------------------------------------------------
@@ -2745,6 +2756,8 @@ sub _LOG {
     my $spaces = '';
 
     defined $_LOG_LEVEL{$level} || confess "LEVEL NOT DEFINED: '$level'";
+
+    if( $_SUB_LEVEL > 20 ) { confess; }
 
     if ( $_LOG_LEVEL{$level} <= $_LOGGING_LEVEL || !$_LOG_LEVEL{$level} ) {
 

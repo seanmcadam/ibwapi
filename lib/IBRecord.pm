@@ -81,6 +81,18 @@ sub new {
     bless $self, $class;
 
     #
+    # Init the object values
+    #
+    my $parent_field_ref = $parent->get_field_hash_ref( $parent->get_current_module );
+    foreach my $key ( sort( keys(%$parent_field_ref) ) ) {
+        next if ( $key eq $FIELD_REF );
+        LOG_DEBUG4 "INIT FIELD $key";
+        $l{$key} = $IB_EMPTY_FIELD;
+        $l{$key} = 0;
+        $d{$key} = 0;
+    }
+
+    #
     # Load the object filed values
     #
     foreach my $key ( sort( keys(%$field_ref) ) ) {
@@ -95,7 +107,6 @@ sub new {
         $self->_create_or_update_value( $key, $field_ref->{$key} );
 
         $l{$key} = 1;
-        $d{$key} = 0;
 
     }
 
@@ -116,45 +127,54 @@ sub get_field {
     LOG_ENTER_SUB "($f)";
 
     ( defined $f && $f ne '' ) || LOG_FATAL;
-    URL_FIELD_EXISTS($f) || LOG_FATAL;
+    URL_FIELD_EXISTS($f) || LOG_FATAL "No Field: $f";
+    defined $self->{$_IBR_FIELD_LOADED}->{$f} || LOG_FATAL;
 
     my $type = URL_FIELD_TYPE($f);
 
     #
     # Field not loaded so go get it, then proceed
     #
-    if ( !defined $self->{$_IBR_FIELD_LOADED}->{$f} || $self->{$_IBR_FIELD_LOADED}->{$f} ) {
-        LOG_DEBUG4 Dumper $self->{$_IBR_FIELD_LOADED};
+    if ( !defined $self->{$_IBR_FIELD_LOADED}->{$f} ) {
+        LOG_DEBUG4 "LOAD Value for $f";
         $self->_load_field($f);
     }
 
-    if (
-        ( $type eq $TYPE_STRING )
-        || ( $type eq $TYPE_STRING_ARRAY )
-        || ( $type eq $TYPE_BOOL )
-        || ( $type eq $TYPE_INT )
-        || ( $type eq $TYPE_TIMESTAMP )
-        || ( $type eq $TYPE_UINT )
-      ) {
-        $ret = $self->{$_IBR_FIELD_VALUES}->{$f};
-    }
-    elsif ( $type eq $TYPE_EXTATTRS ) {
-        ref( $self->{$_IBR_FIELD_VALUES}->{$f} ) eq $PERL_MODULE_EXTATTR 
-		|| LOG_FATAL "REF:" . Dumper( $self->{$_IBR_FIELD_VALUES}->{$f} );
-        ( defined $f2 && $f2 ne '' ) || LOG_FATAL Dumper $f2;
-
-        $ret = $self->{$_IBR_FIELD_VALUES}->{$f}->get_field($f2);
-    }
-    #
-    # IBStruct
-    #
-    elsif ( ref( $self->{$_IBR_FIELD_VALUES}->{$f} ) ne '' ) {
-        ( defined $f2 && $f2 eq '' ) || LOG_FATAL;
-
-        $ret = $self->{$_IBR_FIELD_VALUES}->{$f}->get_field($f2);
+    if ( $self->{$_IBR_FIELD_VALUES}->{$f} eq $IB_EMPTY_FIELD ) {
+        LOG_DEBUG4 "RETURN EMPTY Value for $f";
+        $ret = undef;
     }
     else {
-        LOG_FATAL "get TYPE: $type not supported\n";
+
+        if (
+            ( $type eq $TYPE_STRING )
+            || ( $type eq $TYPE_STRING_ARRAY )
+            || ( $type eq $TYPE_BOOL )
+            || ( $type eq $TYPE_INT )
+            || ( $type eq $TYPE_TIMESTAMP )
+            || ( $type eq $TYPE_UINT )
+          ) {
+            $ret = $self->{$_IBR_FIELD_VALUES}->{$f};
+        }
+        elsif ( $type eq $TYPE_EXTATTRS ) {
+            ref( $self->{$_IBR_FIELD_VALUES}->{$f} ) eq $PERL_MODULE_EXTATTR
+              || LOG_FATAL "REF:" . Dumper( $self->{$_IBR_FIELD_VALUES}->{$f} );
+            ( defined $f2 && $f2 ne '' ) || LOG_FATAL Dumper $f2;
+
+            $ret = $self->{$_IBR_FIELD_VALUES}->{$f}->get_field($f2);
+        }
+
+        #
+        # IBStruct
+        #
+        elsif ( ref( $self->{$_IBR_FIELD_VALUES}->{$f} ) ne '' ) {
+            ( defined $f2 && $f2 eq '' ) || LOG_FATAL;
+
+            $ret = $self->{$_IBR_FIELD_VALUES}->{$f}->get_field($f2);
+        }
+        else {
+            LOG_FATAL "get TYPE: $type not supported\n";
+        }
     }
 
     LOG_EXIT_SUB;
@@ -218,73 +238,110 @@ sub _create_or_update_value {
 
     if ( $f ne $FIELD_REF ) {
 
+        defined $self->{$_IBR_FIELD_VALUES} || LOG_FATAL;
+        defined $v || LOG_FATAL;
+
         URL_FIELD_EXISTS($f) || LOG_FATAL;
 
         my $type = URL_FIELD_TYPE($f);
 
-        my $current = $self->{$_IBR_FIELD_VALUES}->{$f};
+        my $current       = $self->{$_IBR_FIELD_VALUES}->{$f};
+        my $current_empty = ( exists $self->{$_IBR_FIELD_VALUES}->{$f} && $current eq $IB_EMPTY_FIELD ) ? 1 : 0;
+        my $new_empty     = ( $v eq $IB_EMPTY_FIELD ) ? 1 : 0;
 
         LOG_DEBUG4 "FIELD:$f";
         LOG_DEBUG4 "TYPE:$type";
-        LOG_DEBUG4 "VALUE:" . Dumper $v;
-        LOG_DEBUG4 "CURRENT:" . Dumper $current;
+        LOG_DEBUG4 "VALUE:" .   ( ($new_empty)     ? "EMPTY" : Dumper $v );
+        LOG_DEBUG4 "CURRENT:" . ( ($current_empty) ? "EMPTY" : "KEY $f: " . Dumper $self->{$_IBR_FIELD_VALUES} );
 
-	#
-	# INT and UINT
-	#
-        if ( $type eq $TYPE_INT || $type eq $TYPE_UINT ) {
+        #
+        # If new is EMPTY, and current is not, MARK as EMTPY
+        #
+        if ($new_empty) {
+            if ( !$current_empty ) {
+                $self->{$_IBR_FIELD_VALUES}->{$f} = $IB_EMPTY_FIELD;
+                $dirty++;
+                LOG_DEBUG4 "New value is EMPTY";
+            }
+            else {
+                LOG_DEBUG4 "Both new and old are EMPTY";
+            }
+        }
+
+        #
+        # INT and UINT
+        #
+        elsif ( $type eq $TYPE_INT || $type eq $TYPE_UINT ) {
             $type eq $TYPE_UINT && $v < 0 && LOG_FATAL;
 
-            if ( !( $current == $v ) ) {
+            if ( $current_empty || $current == $v ) {
                 $self->{$_IBR_FIELD_VALUES}->{$f} = $v;
                 $dirty++;
             }
         }
-	#
-	# STRING and TIMESTAMP
-	#
+
+        #
+        # STRING and TIMESTAMP
+        #
         elsif ( $type eq $TYPE_STRING || $type eq $TYPE_TIMESTAMP ) {
             $type eq $TYPE_TIMESTAMP && !VERIFY_TIMESTAMP($v) && LOG_FATAL;
-            if ( $current ne $v ) {
+            if ( $current_empty || $current ne $v ) {
                 $self->{$_IBR_FIELD_VALUES}->{$f} = $v;
                 $dirty++;
             }
         }
-	#
-	# STRING_ARRAY
-	#
+
+        #
+        # STRING_ARRAY
+        #
         elsif ( $type eq $TYPE_STRING_ARRAY ) {
-            if ( $current ne $v ) {
+            ref($v) eq 'ARRAY' || LOG_FATAL "ref($v) NOT an ARRAY";
+
+            if ($current_empty) {
+                $self->{$_IBR_FIELD_VALUES}->{$f} = $v;
+            }
+            else {
+                defined $current && ( ref($current) ne 'ARRAY' ) && LOG_FATAL;
+
+                #
+                # Compare two arrays.... needs work here
+                # Or just replace for now.
+                #
                 $self->{$_IBR_FIELD_VALUES}->{$f} = $v;
                 $dirty++;
             }
         }
-	#
-	# EXTATTRS
-	#
+
+        #
+        # EXTATTRS
+        #
+        # Not sure how to handle differences here - needs work
+        #
         elsif ( $type eq $TYPE_EXTATTRS ) {
             $self->{$_IBR_FIELD_VALUES}->{$f} = IBStruct::ExtensibleAttributes->new($v);
             $dirty++;
         }
-	#
-	# BOOL
-	#
+
+        #
+        # BOOL
+        #
         elsif ( $type eq $TYPE_BOOL ) {
             ref($v) eq $PERL_MODULE_JSON_BOOLEAN || LOG_FATAL "REF:" . ref($v) . ' ne ' . $PERL_MODULE_JSON_BOOLEAN;
-            if ( !defined $current || $current eq ( $v ? $IB_TRUE : $IB_FALSE ) ) {
+            if ( $current_empty || $current eq ( $v ? $IB_TRUE : $IB_FALSE ) ) {
                 $self->{$_IBR_FIELD_VALUES}->{$f} = ( $v ? $IB_TRUE : $IB_FALSE );
                 $dirty++;
             }
         }
-	#
-	# OH NO!
-	#
+
+        #
+        # OH NO!
+        #
         else {
             LOG_FATAL "Updating TYPE: $type Not supported yet";
         }
+
     }
 
-    #$TYPE_EXTATTRS
     #$TYPE_MEMBERS
     #$TYPE_OPTIONS
     #$TYPE_STRING_ARRAY
@@ -306,6 +363,7 @@ sub _update_value_mark_dirty {
         $self->{$_IBR_DIRTY}++;
         $self->{$_IBR_DIRTY_FIELDS}->{$f}++;
     }
+
     LOG_EXIT_SUB;
 }
 
@@ -443,7 +501,7 @@ sub _flush {
 #
 # ---------------------------
 sub CONVERT_JSON_ARRAY_TO_IB_FORMAT {
-    my ($json_array) = @_;
+    my ( $json_array, $expected_field_arr_ref ) = @_;
     my %result = ();
 
     LOG_ENTER_SUB;
@@ -455,6 +513,17 @@ sub CONVERT_JSON_ARRAY_TO_IB_FORMAT {
 
         my %r = ();
         $result{ $rec->{$_IB_REF} } = \%r;
+
+        #
+        # Load the filed with undef
+        # If no data is found there is a marker showing it
+        #
+        if ( defined $expected_field_arr_ref ) {
+            foreach my $e (@$expected_field_arr_ref) {
+                $r{$e} = $IB_EMPTY_FIELD;
+            }
+        }
+
         foreach my $r ( keys(%$rec) ) {
             $r{ URL_NAME_FIELD($r) } = $rec->{$r};
         }
@@ -471,7 +540,7 @@ sub CONVERT_JSON_ARRAY_TO_IB_FORMAT {
 #
 # ---------------------------
 sub CONVERT_JSON_HASH_TO_IB_FORMAT {
-    my ($json_hash) = @_;
+    my ( $json_hash, $expected_field_arr_ref ) = @_;
     my %result = ();
 
     LOG_ENTER_SUB;
@@ -481,6 +550,17 @@ sub CONVERT_JSON_HASH_TO_IB_FORMAT {
 
     my %r = ();
     $result{ $json_hash->{$_IB_REF} } = \%r;
+
+    #
+    # Load the filed with undef
+    # If no data is found there is a marker showing it
+    #
+    if ( defined $expected_field_arr_ref ) {
+        foreach my $e (@$expected_field_arr_ref) {
+            $r{$e} = $IB_EMPTY_FIELD;
+        }
+    }
+
     foreach my $r ( keys(%$json_hash) ) {
         $r{ URL_NAME_FIELD($r) } = $json_hash->{$r};
     }
