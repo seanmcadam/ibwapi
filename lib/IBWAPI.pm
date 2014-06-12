@@ -985,17 +985,17 @@ sub _verify_search_parameters {
     }
     else {
 
-    foreach my $p ( sort( keys(%$parm_ref) ) ) {
-        if ( URL_FIELD_EXISTS($p) ) {
+        foreach my $p ( sort( keys(%$parm_ref) ) ) {
+            if ( URL_FIELD_EXISTS($p) ) {
 
-            # ( $self->is_field_searchable($p) ) || LOG_FATAL;
-            $self->_searchable_field_exists($p) || LOG_FATAL "Field: $p";
-            ( ref( $parm_ref->{$p} ) eq 'ARRAY' ) || LOG_WARN;
+                # ( $self->is_field_searchable($p) ) || LOG_FATAL;
+                $self->_searchable_field_exists($p) || LOG_FATAL "Field: $p";
+                ( ref( $parm_ref->{$p} ) eq 'ARRAY' ) || LOG_WARN;
 
-            # Verify Type HERE
+                # Verify Type HERE
 
+            }
         }
-    }
     }
     LOG_EXIT_SUB;
 }

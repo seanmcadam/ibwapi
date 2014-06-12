@@ -92,6 +92,9 @@ Readonly our $_IBLWP_RETURN_TYPE        => '_IBLWP_RETURN_TYPE';
 Readonly our $_IBLWP_SEARCH_FIELDS      => '_IBLWP_SEARCH_FIELDS';
 Readonly our $_IBLWP_RETURN_FIELDS      => '_IBLWP_RETURN_FIELDS';
 Readonly our $_IBLWP_RETURN_FIELDS_PLUS => '_IBLWP_RETURN_FIELDS_PLUS';
+Readonly our $_IBLWP_ERROR              => '_IBLWP_ERROR';
+Readonly our $_IBLWP_ERROR_TEXT         => '_IBLWP_ERROR_TEXT';
+Readonly our $_IBLWP_ERROR_CODE         => '_IBLWP_ERROR_CODE';
 
 Readonly our $IBLWP_GET_RECORD          => 'IBLWP_GET_RECORD';
 Readonly our $IBLWP_GET_OBJTYPE         => 'IBLWP_GET_OBJTYPE';
@@ -163,6 +166,9 @@ sub new {
     $h{$_IBLWP_SEARCH_FIELDS}      = undef;
     $h{$_IBLWP_RETURN_FIELDS}      = undef;
     $h{$_IBLWP_RETURN_FIELDS_PLUS} = undef;
+    $h{$_IBLWP_ERROR}              = undef;
+    $h{$_IBLWP_ERROR_TEXT}         = undef;
+    $h{$_IBLWP_ERROR_CODE}         = undef;
 
     $h{$_LAST_REQUEST} = '';
 
@@ -283,6 +289,9 @@ sub _get_reset {
     $self->{$_HTTP_RESPONSE_OBJ} = undef;
     $self->{$_IBLWP_OBJTYPE}     = undef;
     $self->{$_IBLWP_OBJREF}      = undef;
+    $self->{$_IBLWP_ERROR}       = undef;
+    $self->{$_IBLWP_ERROR_TEXT}  = undef;
+    $self->{$_IBLWP_ERROR_CODE}  = undef;
     $self->_reset_search_fields();
     $self->_reset_return_fields();
 
@@ -336,22 +345,30 @@ sub _get_url {
     }
 
     if ( defined $self->{$_IBLWP_RETURN_FIELDS} ) {
-        $self->{$_IBLWP_URL} .=
-          '&'
-          . URL_PARM_NAME($IB_RETURN_FIELDS)
-          . '='
-          . ( join( ',', ( map { URL_FIELD_NAME($_) } sort( keys( %{ $self->{$_IBLWP_RETURN_FIELDS} } ) ) ) ) )
-          ;
-        @expected_fields = sort( keys( %{ $self->{$_IBLWP_RETURN_FIELDS} } ) );
+
+        # Only load this up if there are fileds in the hash
+        if ( ( keys( %{ $self->{$_IBLWP_RETURN_FIELDS_PLUS} } ) ) ) {
+            $self->{$_IBLWP_URL} .=
+              '&'
+              . URL_PARM_NAME($IB_RETURN_FIELDS)
+              . '='
+              . ( join( ',', ( map { URL_FIELD_NAME($_) } sort( keys( %{ $self->{$_IBLWP_RETURN_FIELDS} } ) ) ) ) )
+              ;
+            @expected_fields = sort( keys( %{ $self->{$_IBLWP_RETURN_FIELDS} } ) );
+        }
     }
     elsif ( defined $self->{$_IBLWP_RETURN_FIELDS_PLUS} ) {
-        $self->{$_IBLWP_URL} .=
-          '&'
-          . URL_PARM_NAME($IB_RETURN_FIELDS_PLUS)
-          . '='
-          . ( join( ',', ( map { URL_FIELD_NAME($_) } sort( keys( %{ $self->{$_IBLWP_RETURN_FIELDS_PLUS} } ) ) ) ) )
-          ;
-        @expected_fields = sort( keys( %{ $self->{$_IBLWP_RETURN_FIELDS_PLUS} } ) );
+
+        # Only load this up if there are fileds in the hash
+        if ( ( keys( %{ $self->{$_IBLWP_RETURN_FIELDS_PLUS} } ) ) ) {
+            $self->{$_IBLWP_URL} .=
+              '&'
+              . URL_PARM_NAME($IB_RETURN_FIELDS_PLUS)
+              . '='
+              . ( join( ',', ( map { URL_FIELD_NAME($_) } sort( keys( %{ $self->{$_IBLWP_RETURN_FIELDS_PLUS} } ) ) ) ) )
+              ;
+            @expected_fields = sort( keys( %{ $self->{$_IBLWP_RETURN_FIELDS_PLUS} } ) );
+        }
     }
 
     if ( defined $self->{$_IBLWP_SEARCH_FIELDS} ) {
@@ -414,6 +431,10 @@ sub _get_url {
             }
         }
     }
+    else {
+        my $json = decode_json( $self->_response()->content() );
+        LOG_WARN( "BAD RETURN " . Dumper $json );
+    }
 
     LOG_EXIT_SUB;
 
@@ -452,6 +473,51 @@ sub is_error {
 
     LOG_EXIT_SUB;
     $ret;
+}
+
+# ---------------------------
+# get_error()
+# ---------------------------
+sub get_error {
+    my ($self) = @_;
+    my $ret = '';
+    LOG_ENTER_SUB;
+
+    if ( defined $self->{$_IBLWP_ERROR} ) {
+        $ret = $self->{$_IBLWP_ERROR};
+    }
+    LOG_EXIT_SUB;
+    retufn $ret;
+}
+
+# ---------------------------
+# get_error_text()
+# ---------------------------
+sub get_error_text {
+    my ($self) = @_;
+    my $ret = '';
+    LOG_ENTER_SUB;
+
+    if ( defined $self->{$_IBLWP_ERROR_TEXT} ) {
+        $ret = $self->{$_IBLWP_ERROR_TEXT}
+    }
+    LOG_EXIT_SUB;
+    retufn $ret;
+}
+
+# ---------------------------
+# get_error_code()
+# ---------------------------
+sub get_error_code {
+    my ($self) = @_;
+    my $ret = '';
+    LOG_ENTER_SUB;
+
+    if ( defined $self->{$_IBLWP_ERROR_CODE} ) {
+        $ret = $self->{$_IBLWP_ERROR_CODE};
+    }
+    LOG_EXIT_SUB;
+    retufn $ret;
 }
 
 # ---------------------------

@@ -417,12 +417,16 @@ sub get_ref {
 # ---------------------------
 sub is_dirty {
     my ($self) = @_;
+    my $ret;
 
     LOG_ENTER_SUB;
 
+    $ret = $self->{$_IBR_DIRTY};
+
     LOG_EXIT_SUB;
 
-    $self->{$_IBR_DIRTY};
+    $ret;
+
 }
 
 # ---------------------------
@@ -441,7 +445,7 @@ sub flush {
 }
 
 # ---------------------------
-# _get_field, go to the server and get the field, and return it
+# _load_field, go to the server and get the field, and return it
 # Returns nothing
 # ---------------------------
 sub _load_field {
