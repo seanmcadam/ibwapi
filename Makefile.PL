@@ -4,8 +4,8 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
     NAME   => "IBWAPI",
     AUTHOR => 'Sean McAdam (sean@fredcom.com)',
-    PREFIX => "~/ibwapi",
-    LIB    => "~/ibwapi/lib",
+    #PREFIX => "~/ibwapi",
+    #LIB    => "~/ibwapi/lib",
 
     #    PMLIBDIRS => [ 'lib', ],
     PM => {
